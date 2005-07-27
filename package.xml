@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="ISO-8859-1" ?>
+<!DOCTYPE package SYSTEM "http://pear.php.net/dtd/package-1.0">
+<package version="1.0" packagerversion="1.4.0a12">
+ <name>HTML_AJAX</name>
+ <summary>Provides PHP and JavaScript library for AJAX</summary>
+ <description>Provides PHP and JavaScript libraries for performing AJAX (Communication from JavaScript to your browser without reloading the page)
+
+Offers OO proxies in JavaScript of registered PHP or proxyless operation
+Serialization of data sent between PHP and JavaScript is provided by a driver model,
+currently JSON and Null encodings are provided
+ </description>
+ <maintainers>
+  <maintainer>
+   <user>jeichorn</user>
+   <name>Joshua Eichorn</name>
+   <email>josh@bluga.net</email>
+   <role>lead</role>
+  </maintainer>
+  </maintainers>
+ <release>
+  <version>0.1.0</version>
+  <date>2005-07-28</date>
+  <license>PHP License</license>
+  <state>alpha</state>
+  <notes>initial release
+  </notes>
+  <deps>
+   <dep type="pkg" rel="ge" version="1.3.5" optional="no">PEAR</dep>
+   <dep type="php" rel="ge" version="4.3.0" optional="no"/>
+  </deps>
+  <provides type="class" name="HTML_AJAX_Serializer_Error" extends="HTML_AJAX_Serializer_JSON" />
+  <provides type="class" name="HTML_AJAX_Serializer_JSON" />
+  <provides type="function" name="HTML_AJAX_Serializer_JSON::serialize" />
+  <provides type="function" name="HTML_AJAX_Serializer_JSON::unserialize" />
+  <provides type="class" name="HTML_AJAX_Serializer_Null" />
+  <provides type="function" name="HTML_AJAX_Serializer_Null::serialize" />
+  <provides type="function" name="HTML_AJAX_Serializer_Null::unserialize" />
+  <provides type="class" name="HTML_AJAX_JSON" />
+  <provides type="function" name="HTML_AJAX_JSON::encode" />
+  <provides type="function" name="HTML_AJAX_JSON::enc" />
+  <provides type="function" name="HTML_AJAX_JSON::name_value" />
+  <provides type="function" name="HTML_AJAX_JSON::reduce_string" />
+  <provides type="function" name="HTML_AJAX_JSON::decode" />
+  <provides type="function" name="HTML_AJAX_JSON::dec" />
+  <provides type="class" name="HTML_AJAX_Server" />
+  <provides type="function" name="HTML_AJAX_Server::handleRequest" />
+  <provides type="function" name="HTML_AJAX_Server::registerClass" />
+  <provides type="function" name="HTML_AJAX_Server::generateClient" />
+  <provides type="class" name="HTML_AJAX" />
+  <provides type="function" name="HTML_AJAX::registerClass" />
+  <provides type="function" name="HTML_AJAX::generateJavaScriptClient" />
+  <provides type="function" name="HTML_AJAX::generateClassStub" />
+  <filelist>
+   <file role="php" baseinstalldir="HTML" md5sum="a19b35d9f95c140af98409ad680f8baf" name="AJAX/Serializer/Error.php"/>
+   <file role="php" baseinstalldir="HTML" md5sum="d817b626c64ba1e84c0f01c69854b929" name="AJAX/Serializer/JSON.php"/>
+   <file role="php" baseinstalldir="HTML" md5sum="d77ee485607811cf542696b981c99553" name="AJAX/Serializer/Null.php"/>
+   <file role="php" baseinstalldir="HTML" md5sum="bc644af2ca57e5d5192be6229a764f23" name="AJAX/JSON.php"/>
+   <file role="php" baseinstalldir="HTML" md5sum="677195c2f023b10824ade2936fc48f0a" name="AJAX/Server.php">
+    <replace type="pear-config" from="@data-dir@" to="data_dir"/>
+   </file>
+   <file role="doc" baseinstalldir="HTML" md5sum="a9228917cfb8840ffd41a634b7964429" name="docs/todo"/>
+   <file role="doc" baseinstalldir="HTML" md5sum="4422f95626884f8e94da8bad501d52b1" name="examples/auto_server.php"/>
+   <file role="doc" baseinstalldir="HTML" md5sum="8dd89dffa85bd7c3a6964a10a8c331e1" name="examples/proxyless_usage.php"/>
+   <file role="doc" baseinstalldir="HTML" md5sum="d4800c48b5f676e85ea071b86abbc054" name="examples/proxy_usage_inline_javascript.php"/>
+   <file role="doc" baseinstalldir="HTML" md5sum="bb812a9f978f22f10475d3e28b439265" name="examples/proxy_usage_server.php"/>
+   <file role="doc" baseinstalldir="HTML" md5sum="8b8d614cd636e89154f212a5dca9e9a8" name="examples/README"/>
+   <file role="doc" baseinstalldir="HTML" md5sum="e69b2019b60ed87f8ae2eacd4c2d9d08" name="examples/server.php"/>
+   <file role="doc" baseinstalldir="HTML" md5sum="5228b42a4965387008ea66d7bf6b36fe" name="examples/test.class.php"/>
+   <file role="doc" baseinstalldir="HTML" md5sum="45e074a5329664bd7e03176ec25fdbac" name="examples/test_speed.php"/>
+   <file role="data" baseinstalldir="HTML" md5sum="a5fb3f207565811b99414a420c60c4ff" name="js/Dispatcher.js"/>
+   <file role="data" baseinstalldir="HTML" md5sum="1b24a9a10467afe6f015924a5eec0826" name="js/HTML_AJAX.js"/>
+   <file role="data" baseinstalldir="HTML" md5sum="583b360ecd02bfbb67bad2b02c513b9f" name="js/HttpClient.js"/>
+   <file role="data" baseinstalldir="HTML" md5sum="6501b734c5becc6fae97ae1a4ef58471" name="js/JSON.js"/>
+   <file role="data" baseinstalldir="HTML" md5sum="aa645512fc550ad87e434cc9646177b0" name="js/Main.js"/>
+   <file role="data" baseinstalldir="HTML" md5sum="daad97dfe7ee004f33fd86d29117b5f4" name="js/Request.js"/>
+   <file role="php" baseinstalldir="HTML" md5sum="d44186c69aec810d0b8c9da452578799" name="AJAX.php"/>
+  </filelist>
+ </release>
+ <changelog>
+   <release>
+    <version>0.1.1</version>
+    <date>2005-07-28</date>
+    <license>PHP License</license>
+    <state>alpha</state>
+    <notes>Adds Error and Event handling
+    </notes>
+   </release>
+   <release>
+    <version>0.1.0</version>
+    <date>2005-07-28</date>
+    <license>PHP License</license>
+    <state>alpha</state>
+    <notes>initial release
+    </notes>
+   </release>
+ </changelog>
+</package>

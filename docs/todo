@@ -1,0 +1,5 @@
+Autodetect encoding on client and server using Content-type
+Finish up basic usage docs
+Error handling setup in javascript
+Passing php errors to javascript
+Event handling setup in javascript

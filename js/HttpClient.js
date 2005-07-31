@@ -1,23 +1,39 @@
 /**
  * XMLHttpRequestClient
  *
- * This is heavily based on JPSPan_HttpClient by Harry Fuecks
+ * This is heavily based on JPSpan_HttpClient by Harry Fuecks
  *
  * @category   HTML
  * @package    AJAX
  * @author     Harry Fuecks
  * @author     Joshua Eichorn <josh@bluga.net>
  * @copyright  2004-2005 Harry Feucks
+ * @copyright  2005 Joshua Eichorn
  * @license    http://www.php.net/license/3_0.txt  PHP License 3.0
  */
 function HTML_AJAX_HttpClient() {}
 HTML_AJAX_HttpClient.prototype = {
+    /**
+     * XMLHttpRequest Object
+     */
     xmlhttp: null,
+
+    /**
+     * The object that contains the async callback methods
+     */
     userhandler: null,
-    timeout_id: null,
+
+    /**
+     * Id used for timing out async calls
+     */
+    _timeout_id: null,
     
-    // @throws Error code 1000
-    init: function() {
+    /**
+     * Setup an XMLHttpRequest object
+     * @throws Error code 1000
+     */
+    init: function() 
+    {
         try {
             // Mozilla / Safari
             this.xmlhttp = new XMLHttpRequest();
@@ -53,7 +69,8 @@ HTML_AJAX_HttpClient.prototype = {
      * @return string response text
      * @throws Error codes 1001 and 1002
      */
-    call: function (request,callName) {
+    call: function (request,callName) 
+    {
 
         if ( !this.xmlhttp ) {
             this.init();
@@ -66,9 +83,9 @@ HTML_AJAX_HttpClient.prototype = {
                 );
         };
 
-	if (HTML_AJAX.onOpen) {
-		HTML_AJAX.onOpen(this.dispatcher.className,callName);
-	}
+        if (HTML_AJAX.onOpen) {
+            HTML_AJAX.onOpen(this.dispatcher.className,callName);
+        }
         
 
         request.type = 'sync';
@@ -96,8 +113,8 @@ HTML_AJAX_HttpClient.prototype = {
      * @param object handler: user defined object to be called
      * @throws Error code 1001
      */
-    asyncCall: function (request,handler) {
-    
+    asyncCall: function (request,handler) 
+    {
         var callName = null;
         if ( arguments[2] ) {
             callName = arguments[2];
@@ -122,23 +139,25 @@ HTML_AJAX_HttpClient.prototype = {
 
         var self = this;
 
-        this.timeout_id = window.setTimeout(function() {
+        this._timeout_id = window.setTimeout(function() {
             self.abort(self, callName);
         },request.timeout);
 
         
         this.xmlhttp.onreadystatechange = function() {
-            self.stateChangeCallback(self, callName);
+            self._stateChangeCallback(self, callName);
         }
 
         request.send();
     },
 
     
-    // Checks to see if XmlHttpRequest is busy
-    // @return boolean TRUE if busy
-    callInProgress: function() {
-
+    /**
+     * Checks to see if XmlHttpRequest is busy
+     * @return boolean TRUE if busy
+     */
+    callInProgress: function() 
+    {
         switch ( this.xmlhttp.readyState ) {
             case 1:
             case 2:
@@ -152,10 +171,13 @@ HTML_AJAX_HttpClient.prototype = {
 
     },
     
-    // Callback for timeouts: aborts the request
-    // @access private
-    abort: function (client, callName) {
-
+    /**
+     * Callback for timeouts: aborts the request
+     * @param   HTML_AJAX_Http_Client client
+     * @param   string  callName
+     */
+    abort: function (client, callName) 
+    {
         if ( client.callInProgress() ) {
         
             client.xmlhttp.abort();
@@ -172,10 +194,14 @@ HTML_AJAX_HttpClient.prototype = {
         }
     },
     
-    // Callback for asyncCalls
-    // @access private
-    stateChangeCallback: function(client, callName) {
-
+    /**
+     * Callback for asyncCalls
+     * @param   HTML_AJAX_Http_Client client
+     * @param   string  callName
+     * @access private
+     */
+    _stateChangeCallback: function(client, callName) 
+    {
         switch (client.xmlhttp.readyState) {
 
             // XMLHTTPRequest.open() has just been called
@@ -201,53 +227,46 @@ HTML_AJAX_HttpClient.prototype = {
             
             // Download complete
             case 4:
+                window.clearTimeout(client._timeout_id);
 
-                window.clearTimeout(client.timeout_id);
-
-                //try {
-                    switch ( client.xmlhttp.status ) {
-                        case 200:
-                            if (HTML_AJAX.onLoad) {
-                                HTML_AJAX.onLoad(this.dispatcher.className, callName);
-                            }
-                            if (client.userhandler.onLoad ) {
-                                try {
-                                    client.userhandler.onLoad(client.xmlhttp.responseText, callName, this.xmlhttp.getResponseHeader('Content-Type'));
-                                } catch (e) {
-                                    if (HTML_AJAX.onError) {
-                                        HTML_AJAX.onError(e);
-                                    }
-                                    else {
-                                        throw e;
-                                    }
+                switch ( client.xmlhttp.status ) {
+                    case 200:
+                        if (HTML_AJAX.onLoad) {
+                            HTML_AJAX.onLoad(this.dispatcher.className, callName);
+                        }
+                        if (client.userhandler.onLoad ) {
+                            try {
+                                client.userhandler.onLoad(client.xmlhttp.responseText, callName, this.xmlhttp.getResponseHeader('Content-Type'));
+                            } catch (e) {
+                                if (HTML_AJAX.onError) {
+                                    HTML_AJAX.onError(e);
+                                }
+                                else {
+                                    throw e;
                                 }
                             }
-                            break;
+                        }
+                        break;
+                    
+                    // Special case for IE on aborted requests
+                    case 0:
+                        // Do nothing
+                        break;
                         
-                        // Special case for IE on aborted requests
-                        case 0:
-                            // Do nothing
-                            break;
-                            
-                        default:
-                            var e = new HTML_AJAX_Client_Error(
-                                new Error('Error in Response, HTTP Error: ['+client.xmlhttp.status+'] '+ client.xmlhttp.statusText),
-                                1002
-                            );
-                            e.headers = this.xmlhttp.getAllResponseHeaders();
-                            if (HTML_AJAX.onError) {
-                                HTML_AJAX.onError(e);
-                            }
-                            else {
-                                throw e;
-                            }
-                            break;
-                    }
-
-                //} catch (e) {
-                    // client.xmlhttp.status not available - failed requests
-                    //	client.displayHandlerError(e);
-                //}
+                    default:
+                        var e = new HTML_AJAX_Client_Error(
+                            new Error('Error in Response, HTTP Error: ['+client.xmlhttp.status+'] '+ client.xmlhttp.statusText),
+                            1002
+                        );
+                        e.headers = this.xmlhttp.getAllResponseHeaders();
+                        if (HTML_AJAX.onError) {
+                            HTML_AJAX.onError(e);
+                        }
+                        else {
+                            throw e;
+                        }
+                        break;
+                }
             break;
         }
     }

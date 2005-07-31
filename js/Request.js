@@ -8,8 +8,6 @@
  * @copyright  2004-4005 Harry Fuecks
  * @license    http://www.php.net/license/3_0.txt  PHP License 3.0
  */
-
-// Class for creating a post request on the HTML_AJAX_HttpClient
 function HTML_AJAX_Request(serializer) {
     this.serializer = serializer;
 }
@@ -39,12 +37,15 @@ HTML_AJAX_Request.prototype = {
     // Timeout in milliseconds for requests
     timeout: 20000,
     
-    // Add an argument for the remote method
-    // @param string argument name
-    // @param mixed value
-    // @return void
-    // @throws Error code 1004
-    addArg: function(name, value) {
+    /**
+     * Add an argument for the remote method
+     * @param string argument name
+     * @param mixed value
+     * @return void
+     * @throws Error code 1004
+     */
+    addArg: function(name, value) 
+    {
         if ( !this.args ) {
             this.args = [];
         }
@@ -59,10 +60,13 @@ HTML_AJAX_Request.prototype = {
         }
     },
 
-    // Reset the request object
-    // @return void
-    // @access public
-    reset: function() {
+    /**
+     * Reset the request object
+     * @return void
+     * @access public
+     */
+    reset: function() 
+    {
         this.serverurl = '';
         this.requesturl = '';
         this.body = '';
@@ -72,10 +76,12 @@ HTML_AJAX_Request.prototype = {
         this.timeout = 20000;
     },
     
-    // Build the payload using the assigned serializer
-    // @protected
-    // @abstract
-    build: function() {
+    /**
+     * Build the payload using the assigned serializer
+     * @access public
+     */ 
+    build: function() 
+    {
         try {
             this.body = this.serializer.serialize(this.args);
         } catch (e) {
@@ -84,11 +90,14 @@ HTML_AJAX_Request.prototype = {
         this.requesturl = this.serverurl;
     },
     
-    // Called from HTML_AJAX_HttpClient to prepare the XMLHttpRequest object
-    // @param XMLHttpRequest
-    // @protected
-    // @throws Error codes 1005, 1006 and 1007
-    prepare: function(http) {
+    /**
+     * Called from HTML_AJAX_HttpClient to prepare the XMLHttpRequest object
+     * @param XMLHttpRequest
+     * @access public
+     * @throws Error codes 1005, 1006 and 1007
+     */
+    prepare: function(http) 
+    {
         this.http = http;
         this.build();
         switch ( this.type ) {
@@ -119,14 +128,13 @@ HTML_AJAX_Request.prototype = {
         this.http.setRequestHeader('Content-Type',this.serializer.contentType);
     },
     
-    // Send the request
-    // @protected
-    
-    // Used by HTML_AJAX_HTTPClient to call send on the XMLHttpRequest object
-    // @return void
-    // @protected
-    // @abstract
-    send: function(http) {
+    /**
+     * Used by HTML_AJAX_HTTPClient to call send on the XMLHttpRequest object
+     * @return void
+     * @access public
+     */
+    send: function(http) 
+    {
         this.http.send(this.body);
     }
 };

@@ -18,15 +18,15 @@
 var HTML_AJAX = {
 	defaultServerUrl: false,
 	defaultEncoding: null,
-	fullcall: function(url,encoding,class,method,callback,args) {
+	fullcall: function(url,encoding,className,method,callback,args) {
 		var mode = 'sync';
 		if (callback) {
 			mode = 'async';
 		}
-		var dispatcher = new HTML_AJAX_Dispatcher(class,mode,callback,url,encoding,encoding);
+		var dispatcher = new HTML_AJAX_Dispatcher(className,mode,callback,url,encoding,encoding);
 		return dispatcher.doCall(method,args);
 	},
-	call: function(class,method,callback) {
+	call: function(className,method,callback) {
 		var args = new Array();
 		for(var i = 3; i < arguments.length; i++) {
 			args.push(arguments[i]);
@@ -36,7 +36,7 @@ var HTML_AJAX = {
             o = new Object();
             o[method] = callback;
         }
-		return HTML_AJAX.fullcall(HTML_AJAX.defaultServerUrl,HTML_AJAX.defaultEncoding,class,method,o,args);
+		return HTML_AJAX.fullcall(HTML_AJAX.defaultServerUrl,HTML_AJAX.defaultEncoding,className,method,o,args);
 	},
 	grab: function(url,callback) {
         var o = false;
@@ -82,7 +82,7 @@ var HTML_AJAX = {
         if (loading) {
             loading.style.display = 'none';
         }
-    },
+    }
     // A really basic error handler 
     /*
     onError: function(e) {
@@ -146,10 +146,13 @@ HTML_AJAX_Serialize_Error.prototype = {
 
 
 
-// Decorates a normal JS exception for client side errors
-// @param Error
-// @param string error code
-function HTML_AJAX_Client_Error(e, code) {
+/**
+ * Decorates a normal JS exception for client side errors
+ * @param Error
+ * @param string error code
+ */
+function HTML_AJAX_Client_Error(e, code) 
+{
     e.name = 'Client_Error';
     e.code = code;
     return e;
@@ -167,7 +170,8 @@ function HTML_AJAX_Client_Error(e, code) {
  * @license    http://www.php.net/license/3_0.txt  PHP License 3.0
  * @todo	build urls smartly in doCall
  */
-function HTML_AJAX_Dispatcher(className,mode,callback,serverUrl,serializer,unserializer) {
+function HTML_AJAX_Dispatcher(className,mode,callback,serverUrl,serializer,unserializer) 
+{
 	this.className = className;
 	this.mode = mode;
 	this.callback = callback;
@@ -194,16 +198,43 @@ function HTML_AJAX_Dispatcher(className,mode,callback,serverUrl,serializer,unser
 }
 
 HTML_AJAX_Dispatcher.prototype = {
+    /**
+     * HTML_AJAX_Http_Client instance
+     */
 	client: null,
+
+    /**
+     * Timeout for async calls
+     */
 	timeout: 20000,
+
+    /**
+     * Request object instance
+     */
 	request: false,
-	initClient: function() {
+
+    /**
+     * Class postfix to content-type map
+     */
+    contentTypeMap: {'JSON':'application/json','Null':'text/plain','Error':'application/error'},
+
+    /**
+     * Create a new HTML_AJAX_HttpClient
+     */
+	initClient: function() 
+    {
 		this.client = new HTML_AJAX_HttpClient();
         this.client.dispatcher = this;
 	},
-    contentTypeMap: {'JSON':'application/json','Null':'text/plain','Error':'application/error'},
 
-	doCall: function(callName,args) {
+    /**
+     * Make an ajax call
+     *
+     * @param   string callName
+     * @param   Array   args    arguments to the report method
+     */
+	doCall: function(callName,args) 
+    {
 		if ( !this.client ) {
 		    this.initClient();
 		}
@@ -225,9 +256,14 @@ HTML_AJAX_Dispatcher.prototype = {
 		}
 	},
 
-	// Call remote procedure asynchronously
-	// @access private
-	_asyncCall: function(request, callName) {
+	/**
+     * Call remote procedure asynchronously
+     * @param   object  request an instance of HTML_AJAX_Request
+     * @param   string  callName    the method being called
+	 * @access private
+     */
+	_asyncCall: function(request, callName) 
+    {
 		try {
 			this.client.asyncCall(request,this,callName);
 		} catch (e) {
@@ -236,9 +272,14 @@ HTML_AJAX_Dispatcher.prototype = {
 		return;
 	},
     
-	// Call remote procedure synchronously
-	// @access private
-	_syncCall: function(request, callName) {
+	/**
+     * Call remote procedure synchronously
+     * @param   object  request an instance of HTML_AJAX_Request
+     * @param   string  callName    the method being called
+	 * @access private
+     */
+	_syncCall: function(request, callName) 
+    {
 		try {
 			var response = this.client.call(request,callName);
 
@@ -270,8 +311,11 @@ HTML_AJAX_Dispatcher.prototype = {
 		}
 	},
     
-    // Create a unserializer for the given content-type
-    // @access private
+    /**
+     * Create a unserializer for the given content-type
+     * @param   string  contentType a Content-type from an http header
+     * @access private
+     */
     _setupUnserializer: function(contentType) {
         for(var i in this.contentTypeMap) {
             if (contentType == this.contentTypeMap[i]) {
@@ -282,7 +326,17 @@ HTML_AJAX_Dispatcher.prototype = {
         return false;
     },
 
-    onLoad: function(response, callName, contentType) {
+    /**
+     * Event handler for load event from the HttpClient
+     * 
+     * If you want to do something based on this event checkout HTML_AJAX.onLoad instead of overriding this method
+     *
+     * @param   mixed   response
+     * @param   string  callName    method that was called
+     * @param   string  contentType Content-type from the http header
+     */
+    onLoad: function(response, callName, contentType) 
+    {
         try {
             this._setupUnserializer(contentType);
             var data = this.unserialize.unserialize(response);
@@ -319,16 +373,19 @@ HTML_AJAX_Dispatcher.prototype = {
                 }
 
             } catch (e) {
-
                 e.name = 'Server_Error';
                 e.code = 2006;
                 e.response = response;
                 e.client = this.className;
                 e.call = callName;
                 this.errorFunc(e);
-
             }
     },
+
+    /**
+     * Handle an error using the global handler if it exists else rethrows the exception
+     * @param   object  e   an error object
+     */
 	errorFunc: function(e) {
         if (HTML_AJAX.onError) {
             HTML_AJAX.onError(e);
@@ -343,23 +400,39 @@ HTML_AJAX_Dispatcher.prototype = {
 /**
  * XMLHttpRequestClient
  *
- * This is heavily based on JPSPan_HttpClient by Harry Fuecks
+ * This is heavily based on JPSpan_HttpClient by Harry Fuecks
  *
  * @category   HTML
  * @package    AJAX
  * @author     Harry Fuecks
  * @author     Joshua Eichorn <josh@bluga.net>
  * @copyright  2004-2005 Harry Feucks
+ * @copyright  2005 Joshua Eichorn
  * @license    http://www.php.net/license/3_0.txt  PHP License 3.0
  */
 function HTML_AJAX_HttpClient() {}
 HTML_AJAX_HttpClient.prototype = {
+    /**
+     * XMLHttpRequest Object
+     */
     xmlhttp: null,
+
+    /**
+     * The object that contains the async callback methods
+     */
     userhandler: null,
-    timeout_id: null,
+
+    /**
+     * Id used for timing out async calls
+     */
+    _timeout_id: null,
     
-    // @throws Error code 1000
-    init: function() {
+    /**
+     * Setup an XMLHttpRequest object
+     * @throws Error code 1000
+     */
+    init: function() 
+    {
         try {
             // Mozilla / Safari
             this.xmlhttp = new XMLHttpRequest();
@@ -395,7 +468,8 @@ HTML_AJAX_HttpClient.prototype = {
      * @return string response text
      * @throws Error codes 1001 and 1002
      */
-    call: function (request,callName) {
+    call: function (request,callName) 
+    {
 
         if ( !this.xmlhttp ) {
             this.init();
@@ -408,9 +482,9 @@ HTML_AJAX_HttpClient.prototype = {
                 );
         };
 
-	if (HTML_AJAX.onOpen) {
-		HTML_AJAX.onOpen(this.dispatcher.className,callName);
-	}
+        if (HTML_AJAX.onOpen) {
+            HTML_AJAX.onOpen(this.dispatcher.className,callName);
+        }
         
 
         request.type = 'sync';
@@ -438,8 +512,8 @@ HTML_AJAX_HttpClient.prototype = {
      * @param object handler: user defined object to be called
      * @throws Error code 1001
      */
-    asyncCall: function (request,handler) {
-    
+    asyncCall: function (request,handler) 
+    {
         var callName = null;
         if ( arguments[2] ) {
             callName = arguments[2];
@@ -464,23 +538,25 @@ HTML_AJAX_HttpClient.prototype = {
 
         var self = this;
 
-        this.timeout_id = window.setTimeout(function() {
+        this._timeout_id = window.setTimeout(function() {
             self.abort(self, callName);
         },request.timeout);
 
         
         this.xmlhttp.onreadystatechange = function() {
-            self.stateChangeCallback(self, callName);
+            self._stateChangeCallback(self, callName);
         }
 
         request.send();
     },
 
     
-    // Checks to see if XmlHttpRequest is busy
-    // @return boolean TRUE if busy
-    callInProgress: function() {
-
+    /**
+     * Checks to see if XmlHttpRequest is busy
+     * @return boolean TRUE if busy
+     */
+    callInProgress: function() 
+    {
         switch ( this.xmlhttp.readyState ) {
             case 1:
             case 2:
@@ -494,10 +570,13 @@ HTML_AJAX_HttpClient.prototype = {
 
     },
     
-    // Callback for timeouts: aborts the request
-    // @access private
-    abort: function (client, callName) {
-
+    /**
+     * Callback for timeouts: aborts the request
+     * @param   HTML_AJAX_Http_Client client
+     * @param   string  callName
+     */
+    abort: function (client, callName) 
+    {
         if ( client.callInProgress() ) {
         
             client.xmlhttp.abort();
@@ -514,10 +593,14 @@ HTML_AJAX_HttpClient.prototype = {
         }
     },
     
-    // Callback for asyncCalls
-    // @access private
-    stateChangeCallback: function(client, callName) {
-
+    /**
+     * Callback for asyncCalls
+     * @param   HTML_AJAX_Http_Client client
+     * @param   string  callName
+     * @access private
+     */
+    _stateChangeCallback: function(client, callName) 
+    {
         switch (client.xmlhttp.readyState) {
 
             // XMLHTTPRequest.open() has just been called
@@ -543,53 +626,46 @@ HTML_AJAX_HttpClient.prototype = {
             
             // Download complete
             case 4:
+                window.clearTimeout(client._timeout_id);
 
-                window.clearTimeout(client.timeout_id);
-
-                //try {
-                    switch ( client.xmlhttp.status ) {
-                        case 200:
-                            if (HTML_AJAX.onLoad) {
-                                HTML_AJAX.onLoad(this.dispatcher.className, callName);
-                            }
-                            if (client.userhandler.onLoad ) {
-                                try {
-                                    client.userhandler.onLoad(client.xmlhttp.responseText, callName, this.xmlhttp.getResponseHeader('Content-Type'));
-                                } catch (e) {
-                                    if (HTML_AJAX.onError) {
-                                        HTML_AJAX.onError(e);
-                                    }
-                                    else {
-                                        throw e;
-                                    }
+                switch ( client.xmlhttp.status ) {
+                    case 200:
+                        if (HTML_AJAX.onLoad) {
+                            HTML_AJAX.onLoad(this.dispatcher.className, callName);
+                        }
+                        if (client.userhandler.onLoad ) {
+                            try {
+                                client.userhandler.onLoad(client.xmlhttp.responseText, callName, this.xmlhttp.getResponseHeader('Content-Type'));
+                            } catch (e) {
+                                if (HTML_AJAX.onError) {
+                                    HTML_AJAX.onError(e);
+                                }
+                                else {
+                                    throw e;
                                 }
                             }
-                            break;
+                        }
+                        break;
+                    
+                    // Special case for IE on aborted requests
+                    case 0:
+                        // Do nothing
+                        break;
                         
-                        // Special case for IE on aborted requests
-                        case 0:
-                            // Do nothing
-                            break;
-                            
-                        default:
-                            var e = new HTML_AJAX_Client_Error(
-                                new Error('Error in Response, HTTP Error: ['+client.xmlhttp.status+'] '+ client.xmlhttp.statusText),
-                                1002
-                            );
-                            e.headers = this.xmlhttp.getAllResponseHeaders();
-                            if (HTML_AJAX.onError) {
-                                HTML_AJAX.onError(e);
-                            }
-                            else {
-                                throw e;
-                            }
-                            break;
-                    }
-
-                //} catch (e) {
-                    // client.xmlhttp.status not available - failed requests
-                    //	client.displayHandlerError(e);
-                //}
+                    default:
+                        var e = new HTML_AJAX_Client_Error(
+                            new Error('Error in Response, HTTP Error: ['+client.xmlhttp.status+'] '+ client.xmlhttp.statusText),
+                            1002
+                        );
+                        e.headers = this.xmlhttp.getAllResponseHeaders();
+                        if (HTML_AJAX.onError) {
+                            HTML_AJAX.onError(e);
+                        }
+                        else {
+                            throw e;
+                        }
+                        break;
+                }
             break;
         }
     }
@@ -606,8 +682,6 @@ HTML_AJAX_HttpClient.prototype = {
  * @copyright  2004-4005 Harry Fuecks
  * @license    http://www.php.net/license/3_0.txt  PHP License 3.0
  */
-
-// Class for creating a post request on the HTML_AJAX_HttpClient
 function HTML_AJAX_Request(serializer) {
     this.serializer = serializer;
 }
@@ -637,12 +711,15 @@ HTML_AJAX_Request.prototype = {
     // Timeout in milliseconds for requests
     timeout: 20000,
     
-    // Add an argument for the remote method
-    // @param string argument name
-    // @param mixed value
-    // @return void
-    // @throws Error code 1004
-    addArg: function(name, value) {
+    /**
+     * Add an argument for the remote method
+     * @param string argument name
+     * @param mixed value
+     * @return void
+     * @throws Error code 1004
+     */
+    addArg: function(name, value) 
+    {
         if ( !this.args ) {
             this.args = [];
         }
@@ -657,10 +734,13 @@ HTML_AJAX_Request.prototype = {
         }
     },
 
-    // Reset the request object
-    // @return void
-    // @access public
-    reset: function() {
+    /**
+     * Reset the request object
+     * @return void
+     * @access public
+     */
+    reset: function() 
+    {
         this.serverurl = '';
         this.requesturl = '';
         this.body = '';
@@ -670,10 +750,12 @@ HTML_AJAX_Request.prototype = {
         this.timeout = 20000;
     },
     
-    // Build the payload using the assigned serializer
-    // @protected
-    // @abstract
-    build: function() {
+    /**
+     * Build the payload using the assigned serializer
+     * @access public
+     */ 
+    build: function() 
+    {
         try {
             this.body = this.serializer.serialize(this.args);
         } catch (e) {
@@ -682,11 +764,14 @@ HTML_AJAX_Request.prototype = {
         this.requesturl = this.serverurl;
     },
     
-    // Called from HTML_AJAX_HttpClient to prepare the XMLHttpRequest object
-    // @param XMLHttpRequest
-    // @protected
-    // @throws Error codes 1005, 1006 and 1007
-    prepare: function(http) {
+    /**
+     * Called from HTML_AJAX_HttpClient to prepare the XMLHttpRequest object
+     * @param XMLHttpRequest
+     * @access public
+     * @throws Error codes 1005, 1006 and 1007
+     */
+    prepare: function(http) 
+    {
         this.http = http;
         this.build();
         switch ( this.type ) {
@@ -717,14 +802,13 @@ HTML_AJAX_Request.prototype = {
         this.http.setRequestHeader('Content-Type',this.serializer.contentType);
     },
     
-    // Send the request
-    // @protected
-    
-    // Used by HTML_AJAX_HTTPClient to call send on the XMLHttpRequest object
-    // @return void
-    // @protected
-    // @abstract
-    send: function(http) {
+    /**
+     * Used by HTML_AJAX_HTTPClient to call send on the XMLHttpRequest object
+     * @return void
+     * @access public
+     */
+    send: function(http) 
+    {
         this.http.send(this.body);
     }
 };
@@ -1070,3 +1154,4 @@ outer:          while (next()) {
         return value();
     }
 };
+/* vim: set expandtab tabstop=4 shiftwidth=4 softtabstop=4: */

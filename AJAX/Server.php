@@ -1,4 +1,24 @@
 <?php
+/**
+ * OO AJAX Implementation for PHP
+ *
+ * LICENSE: This source file is subject to version 3.0 of the PHP license
+ * that is available through the world-wide-web at the following URI:
+ * http://www.php.net/license/3_0.txt.  If you did not receive a copy of
+ * the PHP License and are unable to obtain it through the web, please
+ * send a note to license@php.net so we can mail you a copy immediately.
+ *
+ * @category   HTML
+ * @package    AJAX
+ * @author     Joshua Eichorn <josh@bluga.net>
+ * @copyright  2005 Joshua Eichorn
+ * @license    http://www.php.net/license/3_0.txt  PHP License 3.0
+ * @version    Release: @package_version@
+ */
+
+/**
+ * Require the main AJAX library
+ */
 require_once 'HTML/AJAX.php';
 
 /**
@@ -22,7 +42,8 @@ require_once 'HTML/AJAX.php';
  * @link       http://pear.php.net/package/PackageName
  * @todo       Decide if a syntax is needed to generate 2 stubs at once
  */
-class HTML_AJAX_Server {
+class HTML_AJAX_Server 
+{
 
 	/**
 	 * Client options array if set to true the code looks at _GET
@@ -38,6 +59,7 @@ class HTML_AJAX_Server {
 
 	/**
 	 * Set to true if your extending the server to add init{className methods}
+     * @var boolean
 	 */
 	var $initMethods = false;
 
@@ -46,15 +68,19 @@ class HTML_AJAX_Server {
      *
      * @todo: verify that PHP_SELF always does what we want
 	 */
-	function HTML_AJAX_Server() {
+	function HTML_AJAX_Server() 
+    {
 		$this->ajax =& new HTML_AJAX();
         $this->ajax->serverUrl = $_SERVER['PHP_SELF'];
 	}
 
 	/**
 	 * Handle a client request, either generating a client or having HTML_AJAX handle the request
+     *
+     * @return  string generated client or ajax response
 	 */
-	function handleRequest() {
+	function handleRequest() 
+    {
 		if ($this->options == true) {
 			$this->_loadOptions();
 		}
@@ -73,7 +99,8 @@ class HTML_AJAX_Server {
      *
      * @see HTML_AJAX::registerClass for docs
      */
-    function registerClass(&$instance, $exportedName = false, $exportedMethods = false) {
+    function registerClass(&$instance, $exportedName = false, $exportedMethods = false) 
+    {
         $this->ajax->registerClass($instance,$exportedName,$exportedMethods);
     }
 
@@ -82,8 +109,9 @@ class HTML_AJAX_Server {
 	 *
 	 * @todo       Add Http_Cache type functionality so the client will cache the js
 	 */
-	function generateClient() {
-        header('Content-type: text/javascript');
+	function generateClient() 
+    {
+        header('Content-Type: text/javascript');
 
 		if ($this->options['stub'] === 'all') {
 			if ($this->initMethods) {
@@ -134,12 +162,13 @@ class HTML_AJAX_Server {
      * @param   string  $file   file to read
      * @access  private
      */
-    function _readFile($file) {
+    function _readFile($file) 
+    {
         if (file_exists($file)) {
             readfile($file);
         }
         else {
-                echo "alert('Unable to find javascript file: $file');";
+            echo "alert('Unable to find javascript file: $file');";
         }
     }
 
@@ -149,8 +178,9 @@ class HTML_AJAX_Server {
 	 * @return	string
 	 * @todo	figure out where this will be on an install
 	 */
-	function clientJsLocation() {
-		return '@data-dir@/HTML_AJAX/js/';
+	function clientJsLocation() 
+    {
+		return '@data-dir@'.DIRECTORY_SEPARATOR.'HTML_AJAX'.DIRECTORY_SEPARATOR.'js'.DIRECTORY_SEPARATOR;
 	}
 
 	/**
@@ -159,7 +189,8 @@ class HTML_AJAX_Server {
 	 * @access private
 	 * @todo Is this preg_replace a good enough security check?
 	 */
-	function _loadOptions() {
+	function _loadOptions() 
+    {
         $this->options = array('client'=>false,'stub'=>false);
 		if (isset($_GET['client'])) {
 			$this->options['client'] = $_GET['client'];
@@ -177,9 +208,11 @@ class HTML_AJAX_Server {
 
 	/**
 	 * Run every init method on the class
+     *
 	 * @access private
 	 */
-	function _initAll() {
+	function _initAll() 
+    {
 		$methods = get_class_methods(get_class($this));
 
 		foreach($methods as $method) {
@@ -191,11 +224,13 @@ class HTML_AJAX_Server {
 
 	/**
 	 * Init one class
+     *
 	 * @param	string	$className
 	 * @access private
 	 * @todo	error handling if the method doesn't exist
 	 */
-	function _init($className) {
+	function _init($className) 
+    {
 		$m = "init$className";
 		if (is_callable(array(&$this,$m))) {
 			$this->$m();

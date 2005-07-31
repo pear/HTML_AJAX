@@ -17,15 +17,15 @@
 var HTML_AJAX = {
 	defaultServerUrl: false,
 	defaultEncoding: null,
-	fullcall: function(url,encoding,class,method,callback,args) {
+	fullcall: function(url,encoding,className,method,callback,args) {
 		var mode = 'sync';
 		if (callback) {
 			mode = 'async';
 		}
-		var dispatcher = new HTML_AJAX_Dispatcher(class,mode,callback,url,encoding,encoding);
+		var dispatcher = new HTML_AJAX_Dispatcher(className,mode,callback,url,encoding,encoding);
 		return dispatcher.doCall(method,args);
 	},
-	call: function(class,method,callback) {
+	call: function(className,method,callback) {
 		var args = new Array();
 		for(var i = 3; i < arguments.length; i++) {
 			args.push(arguments[i]);
@@ -35,7 +35,7 @@ var HTML_AJAX = {
             o = new Object();
             o[method] = callback;
         }
-		return HTML_AJAX.fullcall(HTML_AJAX.defaultServerUrl,HTML_AJAX.defaultEncoding,class,method,o,args);
+		return HTML_AJAX.fullcall(HTML_AJAX.defaultServerUrl,HTML_AJAX.defaultEncoding,className,method,o,args);
 	},
 	grab: function(url,callback) {
         var o = false;
@@ -81,7 +81,7 @@ var HTML_AJAX = {
         if (loading) {
             loading.style.display = 'none';
         }
-    },
+    }
     // A really basic error handler 
     /*
     onError: function(e) {
@@ -145,10 +145,13 @@ HTML_AJAX_Serialize_Error.prototype = {
 
 
 
-// Decorates a normal JS exception for client side errors
-// @param Error
-// @param string error code
-function HTML_AJAX_Client_Error(e, code) {
+/**
+ * Decorates a normal JS exception for client side errors
+ * @param Error
+ * @param string error code
+ */
+function HTML_AJAX_Client_Error(e, code) 
+{
     e.name = 'Client_Error';
     e.code = code;
     return e;

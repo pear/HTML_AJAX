@@ -1,4 +1,5 @@
 <?php
+// $Id$
 /**
  * OO AJAX Implementation for PHP
  *
@@ -15,6 +16,13 @@
  * @license    http://www.php.net/license/3_0.txt  PHP License 3.0
  * @version    Release: @package_version@
  */
+
+/**
+ * This is a quick hack, loading serializers as needed doesn't work in php5
+ */
+require_once "HTML/AJAX/Serializer/JSON.php";
+require_once "HTML/AJAX/Serializer/Null.php";
+require_once "HTML/AJAX/Serializer/Error.php";
     
 /**
  * OO AJAX Implementation for PHP
@@ -158,8 +166,7 @@ class HTML_AJAX {
         $client .= "\tthis.className = '$name';\n";
         if ($this->serverUrl) {
             $client .= "\tthis.dispatcher = new HTML_AJAX_Dispatcher(this.className,mode,callback,'{$this->serverUrl}');\n}\n";
-        }
-        else {
+        } else {
             $client .= "\tthis.dispatcher = new HTML_AJAX_Dispatcher(this.className,mode,callback);\n}\n";
         }
         $client .= "$name.prototype  = {\n";
@@ -198,10 +205,9 @@ class HTML_AJAX {
     function handleRequest() 
     {
         if (isset($_GET['c']) && isset($_GET['m'])) {
-
             set_error_handler(array(&$this,'_errorHandler'));
 
-            $class = $_GET['c'];
+            $class  = $_GET['c'];
             $method = $_GET['m'];
             
             if (!isset($this->_exportedInstances[$class])) {
@@ -263,8 +269,10 @@ class HTML_AJAX {
     {
         $class = "HTML_AJAX_Serializer_$type";
 
-        // include the class
-        require_once "HTML/AJAX/Serializer/$type.php";
+        if (!class_exists($class)) {
+            // include the class only if it isn't defined
+            require_once "HTML/AJAX/Serializer/$type.php";
+        }
 
         $instance = new $class();
         return $instance;

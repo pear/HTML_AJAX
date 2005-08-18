@@ -2,7 +2,7 @@
 <!DOCTYPE package SYSTEM "http://pear.php.net/dtd/package-1.0">
 <package version="1.0" packagerversion="1.4.0a12">
  <name>HTML_AJAX</name>
- <summary>Provides PHP and JavaScript library for AJAX</summary>
+ <summary>PHP and JavaScript AJAX library</summary>
  <description>Provides PHP and JavaScript libraries for performing AJAX (Communication from JavaScript to your browser without reloading the page)
 
 Offers OO proxies in JavaScript of registered PHP or proxyless operation
@@ -16,13 +16,21 @@ currently JSON and Null encodings are provided
    <email>josh@bluga.net</email>
    <role>lead</role>
   </maintainer>
+  <maintainer>
+   <user>davidc</user>
+   <name>David Coallier</name>
+   <email>davidc@php.net</email>
+   <role>lead</role>
+  </maintainer>
   </maintainers>
  <release>
-  <version>0.1.3</version>
-  <date>2005-08-01</date>
+  <version>0.1.4</version>
+  <date>2005-08-19</date>
   <license>PHP License</license>
   <state>alpha</state>
-  <notes>Update comments to PEAR coding standards
+  <notes>PEAR CS fixes
+Support for generating multiple stubs in a single request stub=test,test2
+304 Http Cache support for Client and Stub generation, this is on by default, caching rules are configurable see docblocks for more info
   </notes>
   <deps>
    <dep type="pkg" rel="ge" version="1.3.5" optional="no">PEAR</dep>
@@ -51,26 +59,26 @@ currently JSON and Null encodings are provided
   <provides type="function" name="HTML_AJAX::generateJavaScriptClient" />
   <provides type="function" name="HTML_AJAX::generateClassStub" />
   <filelist>
-   <file role="php" baseinstalldir="HTML" md5sum="a19b35d9f95c140af98409ad680f8baf" name="AJAX/Serializer/Error.php">
+   <file role="php" baseinstalldir="HTML" md5sum="db9fc794ecfd2253c4b83221a8f93bae" name="AJAX/Serializer/Error.php">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
-   <file role="php" baseinstalldir="HTML" md5sum="d817b626c64ba1e84c0f01c69854b929" name="AJAX/Serializer/JSON.php">
+   <file role="php" baseinstalldir="HTML" md5sum="29dd54a331622833670592b82b995a6a" name="AJAX/Serializer/JSON.php">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
-   <file role="php" baseinstalldir="HTML" md5sum="d77ee485607811cf542696b981c99553" name="AJAX/Serializer/Null.php">
+   <file role="php" baseinstalldir="HTML" md5sum="7d3d98d98cefedb7b4ab8533ede4ff80" name="AJAX/Serializer/Null.php">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
    <file role="php" baseinstalldir="HTML" md5sum="bc644af2ca57e5d5192be6229a764f23" name="AJAX/JSON.php">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
-   <file role="php" baseinstalldir="HTML" md5sum="f15e4b33ecd7063268dffa55d0837c53" name="AJAX/Server.php">
+   <file role="php" baseinstalldir="HTML" md5sum="21dc256bfd5df692cf5e8c3c63298153" name="AJAX/Server.php">
     <replace type="pear-config" from="@data-dir@" to="data_dir"/>
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
    <file role="doc" baseinstalldir="HTML" md5sum="a9228917cfb8840ffd41a634b7964429" name="docs/todo">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
-   <file role="doc" baseinstalldir="HTML" md5sum="4422f95626884f8e94da8bad501d52b1" name="examples/auto_server.php">
+   <file role="doc" baseinstalldir="HTML" md5sum="a9a4e5321f742b3b5a3788a3bb033a46" name="examples/auto_server.php">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
    <file role="doc" baseinstalldir="HTML" md5sum="8dd89dffa85bd7c3a6964a10a8c331e1" name="examples/proxyless_usage.php">
@@ -89,6 +97,9 @@ currently JSON and Null encodings are provided
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
    <file role="doc" baseinstalldir="HTML" md5sum="5228b42a4965387008ea66d7bf6b36fe" name="examples/test.class.php">
+    <replace type="package-info" from="@package_version@" to="version"/>
+   </file>
+   <file role="doc" baseinstalldir="HTML" md5sum="e0bed5be701e4dbc32730390cfad1292" name="examples/test2.class.php">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
    <file role="doc" baseinstalldir="HTML" md5sum="45e074a5329664bd7e03176ec25fdbac" name="examples/test_speed.php">
@@ -115,12 +126,22 @@ currently JSON and Null encodings are provided
    <file role="data" baseinstalldir="HTML" md5sum="18ccd81dd7214e725339ef3da3fc2064" name="js/Request.js">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
-   <file role="php" baseinstalldir="HTML" md5sum="51fb5cc317bec27321e3352c6a68bc3d" name="AJAX.php">
+   <file role="php" baseinstalldir="HTML" md5sum="31763b51a35d30ff18e706b80d2fb7f7" name="AJAX.php">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
   </filelist>
  </release>
  <changelog>
+   <release>
+    <version>0.1.4</version>
+    <date>2005-08-19</date>
+    <license>PHP License</license>
+    <state>alpha</state>
+    <notes>PEAR CS fixes
+Support for generating multiple stubs in a single request stub=test,test2
+304 Http Cache support for Client and Stub generation, this is on by default, caching rules are configurable see docblocks for more info
+    </notes>
+   </release>
    <release>
     <version>0.1.3</version>
     <date>2005-08-01</date>

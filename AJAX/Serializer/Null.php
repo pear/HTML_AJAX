@@ -1,4 +1,5 @@
 <?php
+// $Id$
 /**
  * Null Serializer
  *
@@ -10,13 +11,16 @@
  * @version    Release: @package_version@
  * @link       http://pear.php.net/package/PackageName
  */
-class HTML_AJAX_Serializer_Null {
+class HTML_AJAX_Serializer_Null 
+{
     
-    function serialize($input) {
+    function serialize($input) 
+    {
         return $input;
     }
 
-    function unserialize($input) {
+    function unserialize($input) 
+    {
         return $input;
     }
 }

@@ -1,9 +1,7 @@
 <?php
-require_once 'HTML/AJAX/Serializer/JSON.php';
-// $Id
 /**
- * Error Serializer, for now just uses JSON
- *
+ * Test class used in other examples
+ * 
  * @category   HTML
  * @package    AJAX
  * @author     Joshua Eichorn <josh@bluga.net>
@@ -12,9 +10,16 @@ require_once 'HTML/AJAX/Serializer/JSON.php';
  * @version    Release: @package_version@
  * @link       http://pear.php.net/package/HTML_AJAX
  */
-class HTML_AJAX_Serializer_Error extends HTML_AJAX_Serializer_JSON 
-{
-
+class test2 {
+	function echo_string($string) {
+		return $string;
+	}
+	function slow_echo_string($string) {
+		sleep(2);
+		return $string;
+	}
+	function error_test($string) {
+		trigger_error($string);
+	}
 }
-/* vim: set expandtab tabstop=4 shiftwidth=4 softtabstop=4: */
 ?>

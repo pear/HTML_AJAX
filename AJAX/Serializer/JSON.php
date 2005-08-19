@@ -1,5 +1,6 @@
 <?php
 require_once 'HTML/AJAX/JSON.php';
+// $Id$
 /**
  * JSON Serializer
  *

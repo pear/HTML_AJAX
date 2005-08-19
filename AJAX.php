@@ -38,7 +38,8 @@ require_once "HTML/AJAX/Serializer/Error.php";
  * @todo       pass server side warnings to the client as exceptions or something like that
  * @todo       Add some sort of debugging console
  */
-class HTML_AJAX {
+class HTML_AJAX 
+{
     /**
      * An array holding the instances were exporting
      *

@@ -12,7 +12,8 @@ require_once 'HTML/AJAX/JSON.php';
  * @link       http://pear.php.net/package/PackageName
  * @todo       Support C JSON extension
  */
-class HTML_AJAX_Serializer_JSON {
+class HTML_AJAX_Serializer_JSON 
+{
 
     /**
      * JSON instance
@@ -21,15 +22,18 @@ class HTML_AJAX_Serializer_JSON {
      */
     var $_json;
 
-    function HTML_AJAX_Serializer_JSON() {
+    function HTML_AJAX_Serializer_JSON() 
+    {
         $this->_json =& new HTML_AJAX_JSON();
     }
 
-    function serialize($input) {
+    function serialize($input) 
+    {
         return $this->_json->encode($input);
     }
 
-    function unserialize($input) {
+    function unserialize($input) 
+    {
         return $this->_json->decode($input);
     }
 }

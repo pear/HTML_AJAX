@@ -19,8 +19,9 @@
  */
 require_once 'PEAR/PackageFileManager.php';
 
-$version = '0.1.3';
+$version = '0.1.4';
 $notes = <<<EOT
+Made sure that the files are PEAR CS Compliant,
 Update comments to PEAR coding standards
 EOT;
 
@@ -45,8 +46,8 @@ $result = $package->setOptions(array(
    'filelistgenerator' => 'file', // other option is 'file'
    'notes'             => $notes,
    'changelogoldtonew' => false,
-   'baseinstalldir'    => 'HTML', // if your package is like "Packagename" use ''
    'packagedirectory'  => '',
+   'baseinstalldir'    => 'HTML', // if your package is like "Packagename" use ''
    'simpleoutput'      => true
    ));
 
@@ -59,7 +60,7 @@ if (PEAR::isError($result)) {
 }
 
 $package->addMaintainer('jeichorn','lead','Joshua Eichorn','josh@bluga.net');
-
+$package->addMaintainer('davidc','lead','David Coallier','davidc@php.net');
 // dependencies can be added at will here
 $package->addDependency('PEAR', '1.3.5', 'ge', 'pkg', false);
 $package->addDependency('php', '4.3.0', 'ge', 'php', false);

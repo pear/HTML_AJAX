@@ -93,8 +93,7 @@ class HTML_AJAX_Server
 
 		if (!isset($_GET['c'])) {
 			return $this->generateClient();
-		}
-		else {
+		} else {
             $this->_init($_GET['c']);
 			return $this->ajax->handleRequest();
 		}
@@ -124,8 +123,7 @@ class HTML_AJAX_Server
 				$this->_initAll();
 			}
             echo $this->ajax->generateJavaScriptClient($this->options['stub']);
-		}
-		else {
+		} else {
             if ($this->options['stub'] !== false) {
                 $this->_init($this->options['stub']);
                 echo $this->ajax->generateClassStub($this->options['stub']);
@@ -134,30 +132,30 @@ class HTML_AJAX_Server
 
         $library = strtolower($this->options['client']);
 		switch($library) {
-            case 'all':
-            case 'html_ajax':
-                $this->_readFile($this->clientJsLocation()."HTML_AJAX.js");
-                break;
-            case 'json':
-                $this->_readFile($this->clientJsLocation()."JSON.js");
-                break;
-            case 'request':
-                $this->_readFile($this->clientJsLocation()."Request.js");
-                break;
-            case 'main':
-                $this->_readFile($this->clientJsLocation()."Main.js");
-                break;
-            case 'httpclient':
-                $this->_readFile($this->clientJsLocation()."HttpClient.js");
-                break;
-            case 'dispatcher':
-                $this->_readFile($this->clientJsLocation()."Dispatcher.js");
-                break;
-            case false:
-                break;
-            default:
-                echo "alert('Unknown javascript library:  $library');";
-                break;
+        case 'all':
+        case 'html_ajax':
+            $this->_readFile($this->clientJsLocation()."HTML_AJAX.js");
+            break;
+        case 'json':
+            $this->_readFile($this->clientJsLocation()."JSON.js");
+            break;
+        case 'request':
+            $this->_readFile($this->clientJsLocation()."Request.js");
+            break;
+        case 'main':
+            $this->_readFile($this->clientJsLocation()."Main.js");
+            break;
+        case 'httpclient':
+            $this->_readFile($this->clientJsLocation()."HttpClient.js");
+            break;
+        case 'dispatcher':
+            $this->_readFile($this->clientJsLocation()."Dispatcher.js");
+            break;
+        case false:
+            break;
+        default:
+            echo "alert('Unknown javascript library:  $library');";
+            break;
 		}
 
 	}
@@ -172,8 +170,7 @@ class HTML_AJAX_Server
     {
         if (file_exists($file)) {
             readfile($file);
-        }
-        else {
+        } else {
             echo "alert('Unable to find javascript file: $file');";
         }
     }
@@ -188,8 +185,7 @@ class HTML_AJAX_Server
     {
         if (!$this->clientJsLocation) {
             return '@data-dir@'.DIRECTORY_SEPARATOR.'HTML_AJAX'.DIRECTORY_SEPARATOR.'js'.DIRECTORY_SEPARATOR;
-        }
-        else {
+        } else {
             return $this->clientJsLocationRoot;
         }
 	}
@@ -210,8 +206,7 @@ class HTML_AJAX_Server
 			$stub = trim(preg_replace('/[^A-Za-z_0-9]/','',$_GET['stub']));
 			if (!empty($stub)) {
 				$this->options['stub'] = $stub;
-			}
-			else {
+			} else {
 				$this->options['stub'] = false;
 			}
 		}

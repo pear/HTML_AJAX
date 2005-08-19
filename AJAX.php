@@ -16,6 +16,13 @@
  * @license    http://www.php.net/license/3_0.txt  PHP License 3.0
  * @version    Release: @package_version@
  */
+
+/**
+ * This is a quick hack, loading serializers as needed doesn't work in php5
+ */
+require_once "HTML/AJAX/Serializer/JSON.php";
+require_once "HTML/AJAX/Serializer/Null.php";
+require_once "HTML/AJAX/Serializer/Error.php";
     
 /**
  * OO AJAX Implementation for PHP
@@ -31,8 +38,7 @@
  * @todo       pass server side warnings to the client as exceptions or something like that
  * @todo       Add some sort of debugging console
  */
-class HTML_AJAX 
-{
+class HTML_AJAX {
     /**
      * An array holding the instances were exporting
      *
@@ -199,10 +205,9 @@ class HTML_AJAX
     function handleRequest() 
     {
         if (isset($_GET['c']) && isset($_GET['m'])) {
-
             set_error_handler(array(&$this,'_errorHandler'));
 
-            $class = $_GET['c'];
+            $class  = $_GET['c'];
             $method = $_GET['m'];
             
             if (!isset($this->_exportedInstances[$class])) {

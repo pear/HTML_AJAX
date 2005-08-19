@@ -2,7 +2,7 @@
 <!DOCTYPE package SYSTEM "http://pear.php.net/dtd/package-1.0">
 <package version="1.0" packagerversion="1.4.0a12">
  <name>HTML_AJAX</name>
- <summary>Provides PHP and JavaScript library for AJAX</summary>
+ <summary>PHP and JavaScript AJAX library</summary>
  <description>Provides PHP and JavaScript libraries for performing AJAX (Communication from JavaScript to your browser without reloading the page)
 
 Offers OO proxies in JavaScript of registered PHP or proxyless operation
@@ -16,13 +16,20 @@ currently JSON and Null encodings are provided
    <email>josh@bluga.net</email>
    <role>lead</role>
   </maintainer>
+  <maintainer>
+   <user>davidc</user>
+   <name>David Coallier</name>
+   <email>davidc@php.net</email>
+   <role>lead</role>
+  </maintainer>
   </maintainers>
  <release>
-  <version>0.1.3</version>
-  <date>2005-08-01</date>
+  <version>0.1.4</version>
+  <date>2005-08-17</date>
   <license>PHP License</license>
   <state>alpha</state>
-  <notes>Update comments to PEAR coding standards
+  <notes>PEAR CS fixes
+Support for generating multiple stubs in a single request stub=test,test2
   </notes>
   <deps>
    <dep type="pkg" rel="ge" version="1.3.5" optional="no">PEAR</dep>
@@ -77,6 +84,9 @@ currently JSON and Null encodings are provided
      <file role="doc" name="test.class.php">
       <replace type="package-info" from="@package_version@" to="version"/>
      </file>
+     <file role="doc" name="test2.class.php">
+      <replace type="package-info" from="@package_version@" to="version"/>
+     </file>
      <file role="doc" name="test_speed.php">
       <replace type="package-info" from="@package_version@" to="version"/>
      </file>
@@ -111,6 +121,15 @@ currently JSON and Null encodings are provided
   </filelist>
  </release>
  <changelog>
+   <release>
+    <version>0.1.4</version>
+    <date>2005-08-17</date>
+    <license>PHP License</license>
+    <state>alpha</state>
+    <notes>PEAR CS fixes
+Support for generating multiple stubs in a single request stub=test,test2
+    </notes>
+   </release>
    <release>
     <version>0.1.3</version>
     <date>2005-08-01</date>

@@ -29,7 +29,7 @@ class HTML_AJAX_Serializer_JSON
     }
 
     function serialize($input) 
-    {
+    {        
         return $this->_json->encode($input);
     }
 

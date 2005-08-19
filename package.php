@@ -21,8 +21,9 @@ require_once 'PEAR/PackageFileManager.php';
 
 $version = '0.1.4';
 $notes = <<<EOT
-Made sure that the files are PEAR CS Compliant,
-Update comments to PEAR coding standards
+PEAR CS fixes
+Support for generating multiple stubs in a single request stub=test,test2
+304 Http Cache support for Client and Stub generation, this is on by default, caching rules are configurable see docblocks for more info
 EOT;
 
 $description =<<<EOT
@@ -37,7 +38,7 @@ $package = new PEAR_PackageFileManager;
 
 $result = $package->setOptions(array(
    'package'           => 'HTML_AJAX',
-   'summary'           => 'Provides PHP and JavaScript library for AJAX',
+   'summary'           => 'PHP and JavaScript AJAX library',
    'description'       => $description,
    'version'           => $version,
    'state'             => 'alpha',
@@ -46,8 +47,8 @@ $result = $package->setOptions(array(
    'filelistgenerator' => 'file', // other option is 'file'
    'notes'             => $notes,
    'changelogoldtonew' => false,
-   'packagedirectory'  => '',
    'baseinstalldir'    => 'HTML', // if your package is like "Packagename" use ''
+   'packagedirectory'  => '',
    'simpleoutput'      => true
    ));
 
@@ -61,6 +62,7 @@ if (PEAR::isError($result)) {
 
 $package->addMaintainer('jeichorn','lead','Joshua Eichorn','josh@bluga.net');
 $package->addMaintainer('davidc','lead','David Coallier','davidc@php.net');
+
 // dependencies can be added at will here
 $package->addDependency('PEAR', '1.3.5', 'ge', 'pkg', false);
 $package->addDependency('php', '4.3.0', 'ge', 'php', false);

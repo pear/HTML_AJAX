@@ -1,6 +1,6 @@
 <?php
 require_once 'HTML/AJAX/Serializer/JSON.php';
-// $Id$
+// $Id
 /**
  * Error Serializer, for now just uses JSON
  *

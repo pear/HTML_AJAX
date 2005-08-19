@@ -1,6 +1,6 @@
 <?php
 /**
- * Advanced ussage of HTML_AJAX_Server
+ * Advanced usage of HTML_AJAX_Server
  * Allows for a single server to manage exporting a large number of classes without high overhead per call
  * Also gives a single place to handle setup tasks especially useful if session setup is required
  *
@@ -29,6 +29,12 @@ class TestServer extends HTML_AJAX_Server {
 	function initTest() {
 		include 'test.class.php';
 		$this->registerClass(new test());
+	}
+
+	// init method for the test class, includes needed files an registers it for ajax
+	function initTest2() {
+		include 'test2.class.php';
+		$this->registerClass(new test2());
 	}
 	
 }

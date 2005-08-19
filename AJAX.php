@@ -1,4 +1,5 @@
 <?php
+// $Id$
 /**
  * OO AJAX Implementation for PHP
  *
@@ -30,7 +31,8 @@
  * @todo       pass server side warnings to the client as exceptions or something like that
  * @todo       Add some sort of debugging console
  */
-class HTML_AJAX {
+class HTML_AJAX 
+{
     /**
      * An array holding the instances were exporting
      *
@@ -158,8 +160,7 @@ class HTML_AJAX {
         $client .= "\tthis.className = '$name';\n";
         if ($this->serverUrl) {
             $client .= "\tthis.dispatcher = new HTML_AJAX_Dispatcher(this.className,mode,callback,'{$this->serverUrl}');\n}\n";
-        }
-        else {
+        } else {
             $client .= "\tthis.dispatcher = new HTML_AJAX_Dispatcher(this.className,mode,callback);\n}\n";
         }
         $client .= "$name.prototype  = {\n";

@@ -115,15 +115,30 @@ HTML_AJAX_Serialize_JSON.prototype = {
 	}
 }
 function HTML_AJAX_Serialize_Null() {}
+
 HTML_AJAX_Serialize_Null.prototype = {
 	contentType: 'text/plain; charset=UTF-8',
 	serialize: function(input) {
-		return input;
+		var newURL  = '';	
+		for (var i in input) {
+			input[i] = escape(input[i]);
+			newURL = newURL + i + '=' + input[i] + '&';
+		}
+		newURL = encodeURI(newURL.substr(0, (newURL.length-1)));
+		return newURL;
 	},
+	
 	unserialize: function(input) {
-		return input;
+		var newURL  = '';
+		for (var i in input) {
+			input[i] = escape(input[i]);
+			newURL = newURL + i + '=' + input[i] + '&';
+		}
+		newURL = decodeURI(newURL.substr(0, (newURL.length-1)));
+		return newURL;	
 	}
 }
+
 function HTML_AJAX_Serialize_Error() {}
 HTML_AJAX_Serialize_Error.prototype = {
 	contentType: 'application/error; charset=UTF-8',

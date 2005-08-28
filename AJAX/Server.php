@@ -176,7 +176,9 @@ class HTML_AJAX_Server
         }
 
         // do needed class init if were running an init server
+        $this->options['stub'] = array();
         $classList = $this->options['stub'];
+        
         if ($this->initMethods) {
             if (isset($this->options['stub'][0]) && $this->options['stub'][0] === 'all') {
                     $this->_initAll();

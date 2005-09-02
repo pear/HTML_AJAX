@@ -176,9 +176,11 @@ class HTML_AJAX_Server
         }
 
         // do needed class init if were running an init server
-        $this->options['stub'] = array();
+        if(!is_array($this->options['stub']))
+        {
+            $this->options['stub'] = array();
+        }
         $classList = $this->options['stub'];
-        
         if ($this->initMethods) {
             if (isset($this->options['stub'][0]) && $this->options['stub'][0] === 'all') {
                     $this->_initAll();
@@ -311,7 +313,7 @@ class HTML_AJAX_Server
         if (!$this->clientJsLocation) {
             return '@data-dir@'.DIRECTORY_SEPARATOR.'HTML_AJAX'.DIRECTORY_SEPARATOR.'js'.DIRECTORY_SEPARATOR;
         } else {
-            return $this->clientJsLocationRoot;
+            return $this->clientJsLocation;
         }
     }
 

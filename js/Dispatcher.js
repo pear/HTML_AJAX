@@ -53,11 +53,6 @@ HTML_AJAX_Dispatcher.prototype = {
 	request: false,
 
     /**
-     * Class postfix to content-type map
-     */
-    contentTypeMap: {'JSON':'application/json','Null':'text/plain','Error':'application/error'},
-
-    /**
      * Create a new HTML_AJAX_HttpClient
      */
 	initClient: function() 
@@ -150,21 +145,6 @@ HTML_AJAX_Dispatcher.prototype = {
 		}
 	},
     
-    /**
-     * Create a unserializer for the given content-type
-     * @param   string  contentType a Content-type from an http header
-     * @access private
-     */
-    _setupUnserializer: function(contentType) {
-        for(var i in this.contentTypeMap) {
-            if (contentType == this.contentTypeMap[i]) {
-                eval("this.unserialize = new HTML_AJAX_Serialize_"+i+";");
-                return true;
-            }
-        }
-        return false;
-    },
-
     /**
      * Event handler for load event from the HttpClient
      * 

@@ -25,11 +25,12 @@ currently JSON and Null encodings are provided
   </maintainers>
  <release>
   <version>0.1.4</version>
-  <date>2005-08-17</date>
+  <date>2005-08-19</date>
   <license>PHP License</license>
   <state>alpha</state>
   <notes>PEAR CS fixes
 Support for generating multiple stubs in a single request stub=test,test2
+304 Http Cache support for Client and Stub generation, this is on by default, caching rules are configurable see docblocks for more info
   </notes>
   <deps>
    <dep type="pkg" rel="ge" version="1.3.5" optional="no">PEAR</dep>
@@ -123,11 +124,12 @@ Support for generating multiple stubs in a single request stub=test,test2
  <changelog>
    <release>
     <version>0.1.4</version>
-    <date>2005-08-17</date>
+    <date>2005-08-19</date>
     <license>PHP License</license>
     <state>alpha</state>
     <notes>PEAR CS fixes
 Support for generating multiple stubs in a single request stub=test,test2
+304 Http Cache support for Client and Stub generation, this is on by default, caching rules are configurable see docblocks for more info
     </notes>
    </release>
    <release>

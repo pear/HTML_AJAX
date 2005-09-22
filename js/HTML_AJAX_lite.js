@@ -1,34 +1,45 @@
 // Main.js
 var HTML_AJAX = {
 defaultServerUrl: false,
-defaultEncoding: null,
-fullcall: function(url,encoding,className,method,callback,args) {
-var mode = 'sync';
-if (callback) {
-mode = 'async';
+defaultEncoding: 'Null',
+httpClient: function() {
+return new HTML_AJAX_HttpClient();
+},
+makeRequest: function(request) {
+var client = HTML_AJAX.httpClient();
+client.request = request;
+return client.makeRequest();
+},
+serializerForEncoding: function(encoding) {
+for(var i in HTML_AJAX.contentTypeMap) {
+if (encoding == HTML_AJAX.contentTypeMap[i] || encoding == i) {
+return eval("new HTML_AJAX_Serialize_"+i+";");
 }
-var dispatcher = new HTML_AJAX_Dispatcher(className,mode,callback,url,encoding,encoding);
-return dispatcher.doCall(method,args);
+}
+return new HTML_AJAX_Serialize_Null();
+},
+fullcall: function(url,encoding,className,method,callback,args) {
+var serializer = HTML_AJAX.serializerForEncoding(encoding);
+var request = new HTML_AJAX_Request(serializer);
+if (callback) {
+request.isAsync = true;
+}
+request.requestUrl = url;
+request.className = className;
+request.methodName = method;
+request.callback = callback;
+request.args = args;
+return HTML_AJAX.makeRequest(request);
 },
 call: function(className,method,callback) {
 var args = new Array();
 for(var i = 3; i < arguments.length; i++) {
 args.push(arguments[i]);
 }
-var o = null;
-if (callback) {
-o = new Object();
-o[method] = callback;
-}
-return HTML_AJAX.fullcall(HTML_AJAX.defaultServerUrl,HTML_AJAX.defaultEncoding,className,method,o,args);
+return HTML_AJAX.fullcall(HTML_AJAX.defaultServerUrl,HTML_AJAX.defaultEncoding,className,method,callback,args);
 },
 grab: function(url,callback) {
-var o = false;
-if (callback) {
-o = new Object();
-o.ret = callback;
-}
-return HTML_AJAX.fullcall(url,'Null',false,'ret',o,{});
+return HTML_AJAX.fullcall(url,'Null',false,null,callback,{});
 },
 replace: function(id) {
 if (arguments.length == 2) {
@@ -63,6 +74,17 @@ var loading = document.getElementById('HTML_AJAX_LOADING');
 if (loading) {
 loading.style.display = 'none';
 }
+},
+contentTypeMap: {'JSON':'application/json','Null':'text/plain','Error':'application/error'}
+}
+function HTML_AJAX_Serialize_Null() {}
+HTML_AJAX_Serialize_Null.prototype = {
+contentType: 'text/plain; charset=UTF-8;',
+serialize: function(input) {
+return new String(input).valueOf();
+},
+unserialize: function(input) {
+return new String(input).valueOf();
 }
 }
 function HTML_AJAX_Serialize_JSON() {}
@@ -79,14 +101,26 @@ return HTML_AJAX_JSON.parse(input);
 }
 }
 }
-function HTML_AJAX_Serialize_Null() {}
-HTML_AJAX_Serialize_Null.prototype = {
-contentType: 'text/plain; charset=UTF-8',
+function HTML_AJAX_Serialize_Urlencoded() {}
+HTML_AJAX_Serialize_Urlencoded.prototype = {
+contentType: 'application/x-www-form-urlencoded; charset=UTF-8',
 serialize: function(input) {
-return input;
+var newURL  = '';
+for (var i in input) {
+input[i] = escape(input[i]);
+newURL = newURL + i + '=' + input[i] + '&';
+}
+newURL = encodeURI(newURL.substr(0, (newURL.length-1)));
+return newURL;
 },
 unserialize: function(input) {
-return input;
+var newURL  = '';
+for (var i in input) {
+input[i] = escape(input[i]);
+newURL = newURL + i + '=' + input[i] + '&';
+}
+newURL = decodeURI(newURL.substr(0, (newURL.length-1)));
+return newURL;
 }
 }
 function HTML_AJAX_Serialize_Error() {}
@@ -106,249 +140,71 @@ e[i] = data[i];
 throw e;
 }
 }
-function HTML_AJAX_Client_Error(e, code)
-{
-e.name = 'Client_Error';
-e.code = code;
-return e;
-};
 // Dispatcher.js
-function HTML_AJAX_Dispatcher(className,mode,callback,serverUrl,serializer,unserializer)
+function HTML_AJAX_Dispatcher(className,mode,callback,serverUrl,serializerType)
 {
 this.className = className;
 this.mode = mode;
 this.callback = callback;
+this.serializerType = serializerType;
 if (serverUrl) {
 this.serverUrl = serverUrl
 }
 else {
 this.serverUrl = window.location;
 }
-if (serializer) {
-eval("this.serialize = new HTML_AJAX_Serialize_"+serializer+";");
-}
-else {
-this.serialize = new HTML_AJAX_Serialize_JSON();
-}
-if (unserializer) {
-eval("this.unserialize = new HTML_AJAX_Serialize_"+unserializer+";");
-}
-else {
-this.unserialize = new HTML_AJAX_Serialize_JSON();
-}
 }
 HTML_AJAX_Dispatcher.prototype = {
-client: null,
 timeout: 20000,
-request: false,
-contentTypeMap: {'JSON':'application/json','Null':'text/plain','Error':'application/error'},
-initClient: function()
-{
-this.client = new HTML_AJAX_HttpClient();
-this.client.dispatcher = this;
-},
 doCall: function(callName,args)
 {
-if ( !this.client ) {
-this.initClient();
-}
-if ( !this.request ) {
-this.request = new HTML_AJAX_Request(this.serialize);
-}
-this.request.reset();
-this.request.serverurl = this.serverUrl+"?c="+this.className+"&m="+callName;
-this.timeout = this.timeout;
+var request = new HTML_AJAX_Request();
+request.requestUrl = this.serverUrl;
+request.className = this.className;
+request.methodName = callName;
+request.timeout = this.timeout;
+request.contentType = this.contentType;
+request.serializer = eval('new HTML_AJAX_Serialize_'+this.serializerType);
 for(var i=0; i < args.length; i++) {
-this.request.addArg(i,args[i]);
+request.addArg(i,args[i]);
 };
 if ( this.mode == "async" ) {
-return this._asyncCall(this.request,callName);
+request.isAsync = true;
 } else {
-return this._syncCall(this.request,callName);
+request.isAsync = false;
 }
-},
-_asyncCall: function(request, callName)
-{
-try {
-this.client.asyncCall(request,this,callName);
-} catch (e) {
-this.errorFunc(e);
-}
-return;
-},
-_syncCall: function(request, callName)
-{
-try {
-var response = this.client.call(request,callName);
-try {
-this._setupUnserializer(this.client.xmlhttp.getResponseHeader('Content-Type'));
-var data = this.unserialize.unserialize(response);
-try {
-return data;
-} catch (e) {
-if ( e.name == 'Server_Error' ) {
-this.serverErrorFunc(e);
-} else {
-this.applicationErrorFunc(e);
-}
-}
-} catch (e) {
-e.name = 'Server_Error';
-e.code = 2006;
-e.response = response;
-this.errorFunc(e);
-}
-} catch(e) {
-this.errorFunc(e);
-}
-},
-_setupUnserializer: function(contentType) {
-for(var i in this.contentTypeMap) {
-if (contentType == this.contentTypeMap[i]) {
-eval("this.unserialize = new HTML_AJAX_Serialize_"+i+";");
-return true;
-}
-}
-return false;
-},
-onLoad: function(response, callName, contentType)
-{
-try {
-this._setupUnserializer(contentType);
-var data = this.unserialize.unserialize(response);
-try {
-if ( this.callback[callName] ) {
-try {
-this.callback[callName](data);
-} catch(e) {
-this.errorFunc(e);
-}
-} else {
-alert('Your handler must define a method '+callName);
-}
-} catch (e) {
-e.client = this.className;
-e.call = callName;
-var errorFunc = callName+'Error';
-if ( this.callback[errorFunc] ) {
-try {
-this.callback[errorFunc](e);
-} catch(e) {
-this.errorFunc(e);
-}
-} else {
-this.errorFunc(e);
-}
-}
-} catch (e) {
-e.name = 'Server_Error';
-e.code = 2006;
-e.response = response;
-e.client = this.className;
-e.call = callName;
-this.errorFunc(e);
-}
-},
-errorFunc: function(e) {
-if (HTML_AJAX.onError) {
-HTML_AJAX.onError(e);
-}
-else {
-throw(e);
-}
+var self = this;
+request.callback = function(result) { self.callback[callName](result); }
+return HTML_AJAX.makeRequest(request);
 }
 };
 // HttpClient.js
-function HTML_AJAX_HttpClient() {}
+function HTML_AJAX_HttpClient() { }
 HTML_AJAX_HttpClient.prototype = {
-xmlhttp: null,
-userhandler: null,
-_timeout_id: null,
-init: function()
+request: null,
+_timeoutId: null,
+init:function()
 {
 try {
 this.xmlhttp = new XMLHttpRequest();
 } catch (e) {
-var MSXML_XMLHTTP_PROGIDS = new Array(
+var XMLHTTP_IDS = new Array(
 'MSXML2.XMLHTTP.5.0',
 'MSXML2.XMLHTTP.4.0',
 'MSXML2.XMLHTTP.3.0',
 'MSXML2.XMLHTTP',
-'Microsoft.XMLHTTP'
-);
+'Microsoft.XMLHTTP' );
 var success = false;
-for (var i=0;i < MSXML_XMLHTTP_PROGIDS.length && !success; i++) {
+for (var i=0;i < XMLHTTP_IDS.length && !success; i++) {
 try {
-this.xmlhttp = new ActiveXObject(MSXML_XMLHTTP_PROGIDS[i]);
+this.xmlhttp = new ActiveXObject(XMLHTTP_IDS[i]);
 success = true;
 } catch (e) {}
 }
-if ( !success ) {
-throw HTML_AJAX_Client_Error(
-new Error('Unable to create XMLHttpRequest.'),
-1000
-);
+if (!success) {
+throw new Error('Unable to create XMLHttpRequest.');
 }
 }
-},
-call: function (request,callName)
-{
-if ( !this.xmlhttp ) {
-this.init();
-}
-if (this.callInProgress()) {
-throw HTML_AJAX_Client_Error(
-new Error('Call in progress'),
-1001
-);
-};
-if (HTML_AJAX.onOpen) {
-HTML_AJAX.onOpen(this.dispatcher.className,callName);
-}
-request.type = 'sync';
-request.prepare(this.xmlhttp);
-this.xmlhttp.setRequestHeader('Accept-Charset','UTF-8');
-request.send();
-if ( this.xmlhttp.status == 200 ) {
-if (HTML_AJAX.onLoad) {
-HTML_AJAX.onLoad(this.dispatcher.className,callName);
-}
-return this.xmlhttp.responseText;
-} else {
-var errorMsg = '['+this.xmlhttp.status
-+'] '+this.xmlhttp.statusText;
-var err = new Error(errorMsg);
-err.headers = this.xmlhttp.getAllResponseHeaders();
-throw HTML_AJAX_Client_Error(err,1002);
-}
-},
-asyncCall: function (request,handler)
-{
-var callName = null;
-if ( arguments[2] ) {
-callName = arguments[2];
-}
-if ( !this.xmlhttp ) {
-this.init();
-}
-if (this.callInProgress()) {
-throw HTML_AJAX_Client_Error(
-new Error('Call in progress'),
-1001
-);
-};
-this.userhandler = handler;
-request.type = 'async';
-request.prepare(this.xmlhttp);
-this.xmlhttp.setRequestHeader('Accept-Charset','UTF-8');
-var self = this;
-this._timeout_id = window.setTimeout(function() {
-self.abort(self, callName);
-},request.timeout);
-this.xmlhttp.onreadystatechange = function() {
-self._stateChangeCallback(self, callName);
-}
-request.send();
 },
 callInProgress: function()
 {
@@ -363,74 +219,101 @@ return false;
 break;
 }
 },
-abort: function (client, callName)
+makeRequest: function()
 {
-if ( client.callInProgress() ) {
-client.xmlhttp.abort();
-var errorMsg = 'Operation timed out';
-if ( callName ) {
-errorMsg += ': '+callName;
+if (!this.xmlhttp) {
+this.init();
 }
-if ( HTML_AJAX.onError ) {
-HTML_AJAX.onError(HTML_AJAX_Client_Error(new Error(errorMsg), 1003));
+try {
+this.xmlhttp.open(this.request.requestType,this.request.completeUrl(),this.request.isAsync);
+var self = this;
+this.xmlhttp.onreadystatechange = function() { self._readyStateChangeCallback(); }
+this.xmlhttp.setRequestHeader('Content-Type',this.request.getContentType());
+var payload = this.request.getSerializedPayload();
+if (payload) {
+this.xmlhttp.setRequestHeader('Content-Length', payload.length);
+}
+this.xmlhttp.send(payload);
+} catch (e) {
+this._handleError(e);
+}
+if (!this.request.isAsync) {
+if ( this.xmlhttp.status == 200 ) {
+if (this.request.onLoad) {
+this.request.onLoad();
+} else if (HTML_AJAX.onLoad) {
+HTML_AJAX.onLoad(this.request);
+}
+return this._decodeResponse();
+} else {
+var e = new Error('['+this.xmlhttp.status +'] '+this.xmlhttp.statusText);
+e.headers = this.xmlhttp.getAllResponseHeaders();
+this._handleError(e);
+}
+}
+else {
+var self = this;
+this._timeoutId = window.setTimeout(function() { self.abort(true); },this.request.timeout);
+}
+},
+abort: function (automatic)
+{
+if (this.callInProgress()) {
+this.xmlhttp.abort();
+if (automatic) {
+this._handleError(new Error('Request Timed Out'));
 }
 }
 },
-_stateChangeCallback: function(client, callName)
+_readyStateChangeCallback:function()
 {
-switch (client.xmlhttp.readyState) {
+switch(this.xmlhttp.readyState) {
 case 1:
-if(HTML_AJAX.onOpen) {
-HTML_AJAX.onOpen(this.dispatcher.className, callName);
-}
 break;
 case 2:
-if (HTML_AJAX.onSend ) {
-HTML_AJAX.onSend(this.dispatcher.className, callName);
+if (this.request.onSend) {
+this.request.onSend();
+} else if (HTML_AJAX.onSend) {
+HTML_AJAX.onSend(this.request);
 }
 break;
 case 3:
-if (HTML_AJAX.onProgress ) {
-HTML_AJAX.onProgress(this.dispatcher.className, callName);
+if (this.request.onProgress) {
+this.request.onProgress();
+} else if (HTML_AJAX.onProgress ) {
+HTML_AJAX.onProgress(this.request);
 }
 break;
 case 4:
-window.clearTimeout(client._timeout_id);
-switch ( client.xmlhttp.status ) {
-case 200:
-if (HTML_AJAX.onLoad) {
-HTML_AJAX.onLoad(this.dispatcher.className, callName);
+window.clearTimeout(this._timeout_id);
+if (this.xmlhttp.status == 200) {
+if (this.request.onLoad) {
+this.request.onLoad();
+} else if (HTML_AJAX.onLoad ) {
+HTML_AJAX.onLoad(this.request);
 }
-if (client.userhandler.onLoad ) {
-try {
-client.userhandler.onLoad(client.xmlhttp.responseText, callName, this.xmlhttp.getResponseHeader('Content-Type'));
-} catch (e) {
-if (HTML_AJAX.onError) {
-HTML_AJAX.onError(e);
+this.request.callback(this._decodeResponse());
+}
+else {
+var e = new Error('HTTP Error Making Request: ['+this.xmlhttp.status+'] '+this.xmlhttp.statusText);
+this._handleError(e);
+}
+break;
+}
+},
+_decodeResponse: function() {
+var unserializer = HTML_AJAX.serializerForEncoding(this.xmlhttp.getResponseHeader('Content-Type'));
+return unserializer.unserialize(this.xmlhttp.responseText);
+},
+_handleError: function(e)
+{
+if (this.request.onError) {
+this.request.onError(e);
+} else if (HTML_AJAX.onError) {
+HTML_AJAX.onError(e,this.request);
 }
 else {
 throw e;
-}
-}
-}
-break;
-case 0:
-break;
-default:
-var e = new HTML_AJAX_Client_Error(
-new Error('Error in Response, HTTP Error: ['+client.xmlhttp.status+'] '+ client.xmlhttp.statusText),
-1002
-);
-e.headers = this.xmlhttp.getAllResponseHeaders();
-if (HTML_AJAX.onError) {
-HTML_AJAX.onError(e);
-}
-else {
-throw e;
-}
-break;
-}
-break;
 }
 }
 }
@@ -440,83 +323,39 @@ this.serializer = serializer;
 }
 HTML_AJAX_Request.prototype = {
 serializer: null,
-serverurl: '',
-requesturl: '',
-body: '',
-args: null,
-type: null,
-http: null,
+isAsync: false,
+requestType: 'POST',
+requestUrl: '',
+className: null,
+methodName: null,
 timeout: 20000,
+args: null,
+callback: null,
 addArg: function(name, value)
 {
 if ( !this.args ) {
 this.args = [];
 }
-var illegal = /[\W_]/;
-if (!illegal.test(name) ) {
+if (!/[^a-zA-Z_0-9]/.test(name) ) {
 this.args[name] = value;
 } else {
-throw HTML_AJAX_Client_Error(
-new Error('Invalid parameter name ('+name+')'),
-1004
-);
+throw new Error('Invalid parameter name ('+name+')');
 }
 },
-reset: function()
-{
-this.serverurl = '';
-this.requesturl = '';
-this.body = '';
-this.args = null;
-this.type = null;
-this.http = null;
-this.timeout = 20000;
+getSerializedPayload: function() {
+return this.serializer.serialize(this.args);
 },
-build: function()
-{
-try {
-this.body = this.serializer.serialize(this.args);
-} catch (e) {
-throw HTML_AJAX_Client_Error(e, 1006);
-};
-this.requesturl = this.serverurl;
+getContentType: function() {
+return this.serializer.contentType;
 },
-prepare: function(http)
-{
-this.http = http;
-this.build();
-switch ( this.type ) {
-case 'async':
-try {
-this.http.open('POST',this.requesturl,true);
-} catch (e) {
-throw HTML_AJAX_Client_Error(new Error(e),1007);
-};
-break;
-case 'sync':
-try {
-this.http.open('POST',this.requesturl,false);
-} catch (e) {
-throw HTML_AJAX_Client_Error(new Error(e),1007);
-};
-break;
-default:
-throw HTML_AJAX_Client_Error(
-new Error('Call type invalid '+this.type),
-1005
-);
-break;
-};
-if (this.body) {
-this.http.setRequestHeader('Content-Length', this.body.length);
+completeUrl: function() {
+var url = this.requestUrl;
+if (this.className || this.methodName) {
+url += '?c='+escape(this.className)+'&m='+escape(this.methodName);
 }
-this.http.setRequestHeader('Content-Type',this.serializer.contentType);
-},
-send: function(http)
-{
-this.http.send(this.body);
+return url;
 }
-};
+}
 // JSON.js
 Array.prototype.______array = '______array';
 var HTML_AJAX_JSON = {

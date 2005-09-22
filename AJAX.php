@@ -35,7 +35,6 @@ require_once "HTML/AJAX/Serializer/Error.php";
  * @version    Release: @package_version@
  * @link       http://pear.php.net/package/PackageName
  * @todo       Decide if its good thing to support get
- * @todo       pass server side warnings to the client as exceptions or something like that
  * @todo       Add some sort of debugging console
  */
 class HTML_AJAX {
@@ -202,13 +201,11 @@ class HTML_AJAX {
         $client .= "function {$name}(callback) {\n";
         $client .= "\tmode = 'sync';\n";
         $client .= "\tif (callback) { mode = 'async'; }\n";
-        $client .= "\tthis.serializer = '{$this->serializer}';\n";
-        $client .= "\tthis.unserializer = '{$this->unserializer}';\n";
         $client .= "\tthis.className = '{$name}';\n";
         if ($this->serverUrl) {
-            $client .= "\tthis.dispatcher = new HTML_AJAX_Dispatcher(this.className,mode,callback,'{$this->serverUrl}');\n}\n";
+            $client .= "\tthis.dispatcher = new HTML_AJAX_Dispatcher(this.className,mode,callback,'{$this->serverUrl}','{$this->unserializer}');\n}\n";
         } else {
-            $client .= "\tthis.dispatcher = new HTML_AJAX_Dispatcher(this.className,mode,callback);\n}\n";
+            $client .= "\tthis.dispatcher = new HTML_AJAX_Dispatcher(this.className,mode,callback,false,'{$this->unserializer}');\n}\n";
         }
         $client .= "{$name}.prototype  = {\n";
         foreach($this->_exportedInstances[$name]['exportedMethods'] as $method) {

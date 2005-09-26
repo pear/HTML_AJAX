@@ -1,13 +1,11 @@
 /**
  * JavaScript library for use with HTML_AJAX
  *
- * JavaScript library contains code originally by Harry Fuecks's JPSpan project
- *
  * @category   HTML
  * @package    Ajax
  * @author     Joshua Eichorn <josh@bluga.net>
  * @copyright  2005 Joshua Eichorn
- * @license    http://www.php.net/license/3_0.txt  PHP License 3.0
+ * @license    http://www.opensource.org/licenses/lgpl-license.php  LGPL
  */
 
 
@@ -16,34 +14,50 @@
  */
 var HTML_AJAX = {
 	defaultServerUrl: false,
-	defaultEncoding: null,
+	defaultEncoding: 'Null',
+    // get an HttpClient, at some point this might be actually smart
+    httpClient: function() {
+        return new HTML_AJAX_HttpClient();
+    },
+    // make a request using an request object
+    makeRequest: function(request) {
+        var client = HTML_AJAX.httpClient();
+        client.request = request;
+        return client.makeRequest();
+    },
+    // get a serializer object for a specific encoding
+    serializerForEncoding: function(encoding) {
+        for(var i in HTML_AJAX.contentTypeMap) {
+            if (encoding == HTML_AJAX.contentTypeMap[i] || encoding == i) {
+                return eval("new HTML_AJAX_Serialize_"+i+";");
+            }
+        }
+        return new HTML_AJAX_Serialize_Null();
+    },
 	fullcall: function(url,encoding,className,method,callback,args) {
-		var mode = 'sync';
+        var serializer = HTML_AJAX.serializerForEncoding(encoding);
+
+        var request = new HTML_AJAX_Request(serializer);
 		if (callback) {
-			mode = 'async';
+            request.isAsync = true;
 		}
-		var dispatcher = new HTML_AJAX_Dispatcher(className,mode,callback,url,encoding,encoding);
-		return dispatcher.doCall(method,args);
+        request.requestUrl = url;
+        request.className = className;
+        request.methodName = method;
+        request.callback = callback;
+        request.args = args;
+
+        return HTML_AJAX.makeRequest(request);
 	},
 	call: function(className,method,callback) {
 		var args = new Array();
 		for(var i = 3; i < arguments.length; i++) {
 			args.push(arguments[i]);
 		}
-        var o = null;
-        if (callback) {
-            o = new Object();
-            o[method] = callback;
-        }
-		return HTML_AJAX.fullcall(HTML_AJAX.defaultServerUrl,HTML_AJAX.defaultEncoding,className,method,o,args);
+		return HTML_AJAX.fullcall(HTML_AJAX.defaultServerUrl,HTML_AJAX.defaultEncoding,className,method,callback,args);
 	},
 	grab: function(url,callback) {
-        var o = false;
-        if (callback) {
-            o = new Object();
-            o.ret = callback;
-        }
-		return HTML_AJAX.fullcall(url,'Null',false,'ret',o,{});
+		return HTML_AJAX.fullcall(url,'Null',false,null,callback,{});
 	},
 	replace: function(id) {
 		if (arguments.length == 2) {
@@ -81,7 +95,7 @@ var HTML_AJAX = {
         if (loading) {
             loading.style.display = 'none';
         }
-    }
+    },
     // A really basic error handler 
     /*
     onError: function(e) {
@@ -90,17 +104,33 @@ var HTML_AJAX = {
             msg += i+':'+e[i]+"\n";
         }
         alert(msg);
-    }
+    },
     */
+    // Class postfix to content-type map
+    contentTypeMap: {'JSON':'application/json','Null':'text/plain','Error':'application/error'}
 }
 
 
 
+
+
 // small classes that I don't want to put in there own file
+
+function HTML_AJAX_Serialize_Null() {}
+HTML_AJAX_Serialize_Null.prototype = {
+	contentType: 'text/plain; charset=UTF-8;',
+	serialize: function(input) {
+		return new String(input).valueOf();
+	},
+	
+	unserialize: function(input) {
+		return new String(input).valueOf();	
+	}
+}
+
 // serialization class for JSON, wrapper for JSON.stringify in json.js
 function HTML_AJAX_Serialize_JSON() {}
 HTML_AJAX_Serialize_JSON.prototype = {
-	//contentType: 'text/json; charset=UTF-8',
 	contentType: 'application/json; charset=UTF-8',
 	serialize: function(input) {
 		return HTML_AJAX_JSON.stringify(input);
@@ -114,16 +144,30 @@ HTML_AJAX_Serialize_JSON.prototype = {
         }
 	}
 }
-function HTML_AJAX_Serialize_Null() {}
-HTML_AJAX_Serialize_Null.prototype = {
-	contentType: 'text/plain; charset=UTF-8',
-	serialize: function(input) {
-		return input;
-	},
-	unserialize: function(input) {
-		return input;
-	}
+function HTML_AJAX_Serialize_Urlencoded() {}
+HTML_AJAX_Serialize_Urlencoded.prototype = {
+    contentType: 'application/x-www-form-urlencoded; charset=UTF-8',
+    serialize: function(input) {
+        var newURL  = '';	
+        for (var i in input) {
+	        input[i] = escape(input[i]);
+        	newURL = newURL + i + '=' + input[i] + '&';
+        }
+        newURL = encodeURI(newURL.substr(0, (newURL.length-1)));
+        return newURL;
+    },
+
+    unserialize: function(input) {
+        var newURL  = '';
+        for (var i in input) {
+        	input[i] = escape(input[i]);
+        	newURL = newURL + i + '=' + input[i] + '&';
+        }
+        newURL = decodeURI(newURL.substr(0, (newURL.length-1)));
+        return newURL;	
+    }
 }
+
 function HTML_AJAX_Serialize_Error() {}
 HTML_AJAX_Serialize_Error.prototype = {
 	contentType: 'application/error; charset=UTF-8',
@@ -142,18 +186,4 @@ HTML_AJAX_Serialize_Error.prototype = {
         throw e;
 	}
 }
-
-
-
-/**
- * Decorates a normal JS exception for client side errors
- * @param Error
- * @param string error code
- */
-function HTML_AJAX_Client_Error(e, code) 
-{
-    e.name = 'Client_Error';
-    e.code = code;
-    return e;
-};
 /* vim: set expandtab tabstop=4 shiftwidth=4 softtabstop=4: */

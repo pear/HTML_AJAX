@@ -8,10 +8,9 @@ require_once 'HTML/AJAX/JSON.php';
  * @package    AJAX
  * @author     Joshua Eichorn <josh@bluga.net>
  * @copyright  2005 Joshua Eichorn
- * @license    http://www.php.net/license/3_0.txt  PHP License 3.0
+ * @license    http://www.opensource.org/licenses/lgpl-license.php  LGPL
  * @version    Release: @package_version@
  * @link       http://pear.php.net/package/PackageName
- * @todo       Support C JSON extension
  */
 class HTML_AJAX_Serializer_JSON 
 {
@@ -23,19 +22,48 @@ class HTML_AJAX_Serializer_JSON
      */
     var $_json;
 
+    /**
+     * use json php extension http://www.aurore.net/projects/php-json/
+     * @access private
+     */
+    var $_jsonext;
+
     function HTML_AJAX_Serializer_JSON() 
     {
-        $this->_json =& new HTML_AJAX_JSON();
+        $this->_jsonext = $this->_detect();
+        if(!$this->_jsonext)
+        {
+            $this->_json =& new HTML_AJAX_JSON();
+        }
     }
 
     function serialize($input) 
-    {        
-        return $this->_json->encode($input);
+    {
+        if($this->_jsonext)
+        {
+            return json_encode($input);
+        }
+        else
+        {
+            return $this->_json->encode($input);
+        }
     }
 
     function unserialize($input) 
     {
-        return $this->_json->decode($input);
+        if($this->_jsonext)
+        {
+            return json_decode($input);
+        }
+        else
+        {
+            return $this->_json->decode($input);
+        }
+    }
+
+    function _detect()
+    {
+        return extension_loaded('json');
     }
 }
 /* vim: set expandtab tabstop=4 shiftwidth=4 softtabstop=4: */

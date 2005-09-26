@@ -1,12 +1,19 @@
 /**
- * Class for doing a request through the HTML_AJAX_HttpClient
+ * Class that contains everything needed to make a request
+ * This includes:
+ *    The url were calling
+ *    If were calling a remote method, the class and method name
+ *    The payload, unserialized
+ *    The timeout for async calls
+ *    The callback method
+ *    Optional event handlers: onError, onLoad, onSend
+ *    A serializer instance
  *
  * @category   HTML
  * @package    AJAX
  * @author     Joshua Eichorn <josh@bluga.net>
  * @copyright  2005 Joshua Eichorn
- * @copyright  2004-4005 Harry Fuecks
- * @license    http://www.php.net/license/3_0.txt  PHP License 3.0
+ * @license    http://www.opensource.org/licenses/lgpl-license.php  LGPL
  */
 function HTML_AJAX_Request(serializer) {
     this.serializer = serializer;
@@ -16,27 +23,30 @@ HTML_AJAX_Request.prototype = {
     // Instance of a serializer
     serializer: null,
     
-    // The URL of the server
-    serverurl: '',
+    // Is this an async request
+    isAsync: false,
+
+    // HTTP verb
+    requestType: 'POST',
     
     // The actual URL the request is sent to
-    requesturl: '',
+    requestUrl: '',
     
-    // Body of request (for HTTP POST only)
-    body: '',
-    
-    // Remote method arguments list
-    args: null,
-    
-    // Type of request (async / sync)
-    type: null,
+    // Remote Class
+    className: null,
 
-    // Instance of XMLHttpRequest
-    http: null,
+    // Remote Method
+    methodName: null,
 
     // Timeout in milliseconds for requests
     timeout: 20000,
-    
+
+    // unserialized data, for rpc calls use add args, to send raw data just set this directly
+    args: null,
+
+    // async callback method
+    callback: null,
+
     /**
      * Add an argument for the remote method
      * @param string argument name
@@ -49,93 +59,36 @@ HTML_AJAX_Request.prototype = {
         if ( !this.args ) {
             this.args = [];
         }
-        var illegal = /[\W_]/;
-        if (!illegal.test(name) ) {
+        if (!/[^a-zA-Z_0-9]/.test(name) ) {
             this.args[name] = value;
         } else {
-            throw HTML_AJAX_Client_Error(
-                    new Error('Invalid parameter name ('+name+')'),
-                    1004
-                );
+            throw new Error('Invalid parameter name ('+name+')');
         }
     },
 
     /**
-     * Reset the request object
-     * @return void
-     * @access public
+     * Get the payload in a serialized manner
      */
-    reset: function() 
-    {
-        this.serverurl = '';
-        this.requesturl = '';
-        this.body = '';
-        this.args = null;
-        this.type = null;
-        this.http = null;
-        this.timeout = 20000;
+    getSerializedPayload: function() {
+        return this.serializer.serialize(this.args);
     },
-    
+
     /**
-     * Build the payload using the assigned serializer
-     * @access public
-     */ 
-    build: function() 
-    {
-        try {
-            this.body = this.serializer.serialize(this.args);
-        } catch (e) {
-            throw HTML_AJAX_Client_Error(e, 1006);
-        };
-        this.requesturl = this.serverurl;
-    },
-    
-    /**
-     * Called from HTML_AJAX_HttpClient to prepare the XMLHttpRequest object
-     * @param XMLHttpRequest
-     * @access public
-     * @throws Error codes 1005, 1006 and 1007
+     * Get the content type
      */
-    prepare: function(http) 
-    {
-        this.http = http;
-        this.build();
-        switch ( this.type ) {
-            case 'async':
-                try {
-                    this.http.open('POST',this.requesturl,true);
-                } catch (e) {
-                    throw HTML_AJAX_Client_Error(new Error(e),1007);
-                };
-            break;
-            case 'sync':
-                try {
-                    this.http.open('POST',this.requesturl,false);
-                } catch (e) {
-                    throw HTML_AJAX_Client_Error(new Error(e),1007);
-                };
-            break;
-            default:
-                throw HTML_AJAX_Client_Error(
-                        new Error('Call type invalid '+this.type),
-                        1005
-                    );
-            break;
-        };
-        if (this.body) {
-            this.http.setRequestHeader('Content-Length', this.body.length);
+    getContentType: function() {
+        return this.serializer.contentType;
+    },
+
+    /**
+     * Get the complete url, adding in any needed get params for rpc
+     */
+    completeUrl: function() {
+        var url = this.requestUrl;
+        if (this.className || this.methodName) {
+            url += '?c='+escape(this.className)+'&m='+escape(this.methodName);
         }
-        this.http.setRequestHeader('Content-Type',this.serializer.contentType);
-    },
-    
-    /**
-     * Used by HTML_AJAX_HTTPClient to call send on the XMLHttpRequest object
-     * @return void
-     * @access public
-     */
-    send: function(http) 
-    {
-        this.http.send(this.body);
+        return url;
     }
-};
+}
 /* vim: set expandtab tabstop=4 shiftwidth=4 softtabstop=4: */

@@ -20,7 +20,7 @@
  * @package    AJAX
  * @author     Joshua Eichorn <josh@bluga.net>
  * @copyright  2005 Joshua Eichorn
- * @license    http://www.php.net/license/3_0.txt  PHP License 3.0
+ * @license    http://www.opensource.org/licenses/lgpl-license.php  LGPL
  * @version    Release: @package_version@
  * @link       http://pear.php.net/package/HTML_AJAX
  */
@@ -75,6 +75,8 @@ callback.prototype = {
 // function used to clear out the target div
 function clearTarget() {
 	document.getElementById('target').innerHTML = 'clear';
+	document.getElementById('eventLog').innerHTML = 'clear';
+	document.getElementById('error').innerHTML = 'clear';
 }
 
 // register a custom error handler
@@ -90,19 +92,19 @@ HTML_AJAX.onError = function(e) {
 var onOpen = HTML_AJAX.onOpen;
 var onLoad = HTML_AJAX.onLoad;
 
-HTML_AJAX.onOpen = function(className,callName) {
+HTML_AJAX.onOpen = function(request) {
 	onOpen();
-	document.getElementById('eventLog').innerHTML += "Open: "+className+'::'+callName+"\n";
+	document.getElementById('eventLog').innerHTML += "Open: "+request.className+'::'+request.methodName+"\n";
 }
-HTML_AJAX.onSend = function(className,callName) {
-	document.getElementById('eventLog').innerHTML += "Send: "+className+'::'+callName+"\n";
+HTML_AJAX.onSend = function(request) {
+	document.getElementById('eventLog').innerHTML += "Send: "+request.className+'::'+request.methodName+"\n";
 }
-HTML_AJAX.onProgress = function(className,callName) {
-	document.getElementById('eventLog').innerHTML += "Progress: "+className+'::'+callName+"\n";
+HTML_AJAX.onProgress = function(request) {
+	document.getElementById('eventLog').innerHTML += "Progress: "+request.className+'::'+request.methodName+"\n";
 }
-HTML_AJAX.onLoad = function(className,callName) {
+HTML_AJAX.onLoad = function(request) {
 	onLoad();
-	document.getElementById('eventLog').innerHTML += "Load: "+className+'::'+callName+"\n";
+	document.getElementById('eventLog').innerHTML += "Load: "+request.className+'::'+request.methodName+"\n";
 }
 
 </script>

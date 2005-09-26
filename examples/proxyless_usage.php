@@ -21,7 +21,7 @@
  * @package    AJAX
  * @author     Joshua Eichorn <josh@bluga.net>
  * @copyright  2005 Joshua Eichorn
- * @license    http://www.php.net/license/3_0.txt  PHP License 3.0
+ * @license    http://www.opensource.org/licenses/lgpl-license.php  LGPL
  * @version    Release: @package_version@
  * @link       http://pear.php.net/package/HTML_AJAX
  */
@@ -82,9 +82,9 @@ function replaceFromMethod() {
 // You can use call in either Sync or Async mode depending on if you pass it a callback function
 
 function callSync() {
-	//HTML_AJAX.defaultEncoding = 'Null'; // set encoding to no encoding method
+	HTML_AJAX.defaultEncoding = 'JSON'; // set encoding to no encoding method
 	document.getElementById('target').innerHTML = HTML_AJAX.call('test','echo_string',false,'Im text that was echoed');
-	HTML_AJAX.defaultEncoding = 'JSON'; // return it to default which is JSON
+	HTML_AJAX.defaultEncoding = 'Null'; // return it to default which is Null
 }
 
 function callAsync() {

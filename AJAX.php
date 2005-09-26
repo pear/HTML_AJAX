@@ -13,7 +13,7 @@
  * @package    AJAX
  * @author     Joshua Eichorn <josh@bluga.net>
  * @copyright  2005 Joshua Eichorn
- * @license    http://www.php.net/license/3_0.txt  PHP License 3.0
+ * @license    http://www.opensource.org/licenses/lgpl-license.php  LGPL
  * @version    Release: @package_version@
  */
 
@@ -35,7 +35,6 @@ require_once "HTML/AJAX/Serializer/Error.php";
  * @version    Release: @package_version@
  * @link       http://pear.php.net/package/PackageName
  * @todo       Decide if its good thing to support get
- * @todo       pass server side warnings to the client as exceptions or something like that
  * @todo       Add some sort of debugging console
  */
 class HTML_AJAX {
@@ -52,6 +51,17 @@ class HTML_AJAX {
     var $_exportedInstances;
 
     /**
+     * To make integration with applications easier, you can
+     * register callbacks to serve header calls, clean/retrive server vars
+     * and clean/retrieve get vars
+     */
+    var $_callbacks = array(
+        'headers' => array('HTML_AJAX', '_sendHeaders'),
+        'get' => array('HTML_AJAX', '_getVar'),
+        'server' => array('HTML_AJAX', '_getVar'),
+        );
+
+    /**
      * Set the server url in the generated stubs to this value
      * If set to false, serverUrl will not be set
      * @var false|string
@@ -62,13 +72,13 @@ class HTML_AJAX {
      * What encoding your going to use for serializing data from php being sent to javascript
      * @var string  JSON|null
      */
-    var $serializer = "JSON";
+    var $serializer = 'JSON';
 
     /**
      * What encoding your going to use for unserializing data sent from javascript
      * @var string  JSON|null
      */
-    var $unserializer = "JSON";
+    var $unserializer = 'JSON';
 
     /**
      * Content-type map
@@ -112,10 +122,13 @@ class HTML_AJAX {
     /**
      * Get a list of methods in a class to export
      *
+     * This function uses get_class_methods to get a list of callable methods, so if your on PHP5 extending this class with a class you want to export should export its 
+     * protected methods, while normally only its public methods would be exported.  All methods starting with _ are removed from the export list.  This covers
+     * PHP4 style private by naming as well as magic methods in either PHP4 or PHP5
+     *
      * @param string    $className
      * @return array  all methods of the class that are public
      * @access private
-     * @todo    What does get_class_methods do in php5
      */    
     function _getMethodsToExport($className) 
     {
@@ -136,12 +149,42 @@ class HTML_AJAX {
      */
     function generateJavaScriptClient() 
     {
-        $client = "";
+        $client = '';
 
         foreach($this->_exportedInstances as $name => $data) {
             $client .= $this->generateClassStub($name);
         }
         return $client;
+    }
+
+    /**
+     * Registers callbacks for sending headers or retriving post/get vars
+     * for better application integration
+     */
+    function registerCallback($callback, $type = 'headers') 
+    {
+        if(is_callable($callback))
+        {
+            if($type == 'headers')
+            {
+                $this->_callbacks['headers'] = $callback;
+                return true;
+            }
+            elseif($type == 'get')
+            {
+                $this->_callbacks['get'] = $callback;
+                return true;
+            }
+            elseif($type == 'server')
+            {
+                $this->_callbacks['server'] = $callback;
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
     }
 
     /**
@@ -154,22 +197,20 @@ class HTML_AJAX {
     {
 
         if (!isset($this->_exportedInstances[$name])) {
-            return "";
+            return '';
         }
 
         $client = "// Client stub for the {$this->_exportedInstances[$name]['className']} PHP Class\n";
-        $client .= "function $name(callback) {\n";
+        $client .= "function {$name}(callback) {\n";
         $client .= "\tmode = 'sync';\n";
         $client .= "\tif (callback) { mode = 'async'; }\n";
-        $client .= "\tthis.serializer = '$this->serializer';\n";
-        $client .= "\tthis.unserializer = '$this->unserializer';\n";
-        $client .= "\tthis.className = '$name';\n";
+        $client .= "\tthis.className = '{$name}';\n";
         if ($this->serverUrl) {
-            $client .= "\tthis.dispatcher = new HTML_AJAX_Dispatcher(this.className,mode,callback,'{$this->serverUrl}');\n}\n";
+            $client .= "\tthis.dispatcher = new HTML_AJAX_Dispatcher(this.className,mode,callback,'{$this->serverUrl}','{$this->unserializer}');\n}\n";
         } else {
-            $client .= "\tthis.dispatcher = new HTML_AJAX_Dispatcher(this.className,mode,callback);\n}\n";
+            $client .= "\tthis.dispatcher = new HTML_AJAX_Dispatcher(this.className,mode,callback,false,'{$this->unserializer}');\n}\n";
         }
-        $client .= "$name.prototype  = {\n";
+        $client .= "{$name}.prototype  = {\n";
         foreach($this->_exportedInstances[$name]['exportedMethods'] as $method) {
             $client .= $this->_generateMethodStub($method);
         }
@@ -188,7 +229,7 @@ class HTML_AJAX {
      */    
     function _generateMethodStub($method) 
     {
-        $stub = "\t$method: function() { return this.dispatcher.doCall('$method',arguments); },\n";
+        $stub = "\t{$method}: function() { return this.dispatcher.doCall('{$method}',arguments); },\n";
         return $stub;
     }
 
@@ -197,32 +238,40 @@ class HTML_AJAX {
      *
      * The current check is if GET variables c (class) and m (method) are set, more options may be available in the future
      *
-     * @todo move the get _GET check someplace else so get variabled dispatch isn't the hardcoded method
      * @todo is it worth it to figure out howto use just 1 instance if the type is the same for serialize and unserialize
      *
      * @return  boolean true if an ajax call was handled, false otherwise
      */
     function handleRequest() 
     {
-        if (isset($_GET['c']) && isset($_GET['m'])) {
+        $class = call_user_func((array)$this->_callbacks['get'], 'c');
+        $method = call_user_func($this->_callbacks['get'], 'm');
+        if (!empty($class) && !empty($method)) {
             set_error_handler(array(&$this,'_errorHandler'));
-
-            $class  = $_GET['c'];
-            $method = $_GET['m'];
             
             if (!isset($this->_exportedInstances[$class])) {
                 // handle error
-                trigger_error("Unknown class: $class");
+                trigger_error('Unknown class: '.$class);
             }
             if (!in_array($method,$this->_exportedInstances[$class]['exportedMethods'])) {
                 // handle error
-                trigger_error("Unknown method: $method");
+                trigger_error('Unknown method: '.$method);
             }
 
-            $unserializer = $this->_getSerializer($this->unserializer);
-            
+            // auto-detect serializer to use from content-type
+            $type = $this->unserializer;
+            $key = array_search($this->_getClientPayloadContentType(),$this->contentTypeMap);
+            if ($key) {
+                $type = $key;
+            }
+            $unserializer = $this->_getSerializer($type);
+
             $args = $unserializer->unserialize($this->_getClientPayload());
+            if (!is_array($args)) {
+                $args = array($args);
+            }
             $ret = call_user_func_array(array(&$this->_exportedInstances[$class]['instance'],$method),$args);
+            
             
             
             restore_error_handler();
@@ -231,6 +280,16 @@ class HTML_AJAX {
             return true;
         }
         return false;
+    }
+
+    function _getClientPayloadContentType() {
+        $type = call_user_func($this->_callbacks['server'], 'CONTENT_TYPE');
+        if(!empty($type)) {
+            if (strstr($type,';')) {
+                $type = array_shift(explode(';',$type));
+            }
+            return strtolower($type);
+        }
     }
 
     /**
@@ -245,19 +304,36 @@ class HTML_AJAX {
     {
             $serializer = $this->_getSerializer($this->serializer);
             $output = $serializer->serialize($response);
-            header('Content-Length: '.strlen($output));
 
-            // headers to force things not to be cached: 
-            header('Expires: Mon, 26 Jul 1997 05:00:00 GMT'); 
-            header('Last-Modified: ' . gmdate( "D, d M Y H:i:s" ) . 'GMT'); 
-            header('Cache-Control: no-cache, must-revalidate'); 
-            header('Pragma: no-cache');
+            // headers to force things not to be cached:
+            $headers = array();
+            $headers['Content-Length'] = strlen($output);
+            $headers['Expires'] = 'Mon, 26 Jul 1997 05:00:00 GMT';
+            $headers['Last-Modified'] = gmdate( "D, d M Y H:i:s" ) . 'GMT';
+            $headers['Cache-Control'] = 'no-cache, must-revalidate';
+            $headers['Pragma'] = 'no-cache';
 
             if (isset($this->contentTypeMap[$this->serializer])) {
-                header('Content-type: '.$this->contentTypeMap[$this->serializer]);
+                //remember that IE is stupid and wants a capital T
+                $headers['Content-Type'] = $this->contentTypeMap[$this->serializer];
             }
 
+            call_user_func($this->_callbacks['headers'],$headers);
             echo $output;
+    }
+
+    /**
+     * Actually send a list of headers
+     *
+     * @param  array list of headers to send, default callback for headers
+     * @access private
+     */
+    function _sendHeaders($array) 
+    {
+            foreach($array as $header => $value)
+            {
+                header($header .': '.$value);
+            }
     }
 
     /**
@@ -267,11 +343,11 @@ class HTML_AJAX {
      */
     function _getSerializer($type) 
     {
-        $class = "HTML_AJAX_Serializer_$type";
+        $class = 'HTML_AJAX_Serializer_'.$type;
 
         if (!class_exists($class)) {
             // include the class only if it isn't defined
-            require_once "HTML/AJAX/Serializer/$type.php";
+            require_once "HTML/AJAX/Serializer/{$type}.php";
         }
 
         $instance = new $class();
@@ -285,8 +361,24 @@ class HTML_AJAX {
      * @return  string  raw post data
      */
     function _getClientPayload() {
-            global $HTTP_RAW_POST_DATA;
-            return $HTTP_RAW_POST_DATA;
+            return $GLOBALS['HTTP_RAW_POST_DATA'];
+    }
+
+    /**
+     * stub for getting get/server vars - applies strip tags
+     *
+     * @access  private
+     * @return  string  filtered _GET value
+     */
+    function _getVar($var) {
+        if(!isset($_GET[$var]))
+        {
+            return NULL;
+        }
+        else
+        {
+            return strip_tags($_GET[$var]);
+        }
     }
 
     /**

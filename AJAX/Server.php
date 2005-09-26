@@ -12,7 +12,7 @@
  * @package    AJAX
  * @author     Joshua Eichorn <josh@bluga.net>
  * @copyright  2005 Joshua Eichorn
- * @license    http://www.php.net/license/3_0.txt  PHP License 3.0
+ * @license    http://www.opensource.org/licenses/lgpl-license.php  LGPL
  * @version    Release: @package_version@
  */
 
@@ -176,6 +176,10 @@ class HTML_AJAX_Server
         }
 
         // do needed class init if were running an init server
+        if(!is_array($this->options['stub']))
+        {
+            $this->options['stub'] = array();
+        }
         $classList = $this->options['stub'];
         if ($this->initMethods) {
             if (isset($this->options['stub'][0]) && $this->options['stub'][0] === 'all') {
@@ -309,7 +313,7 @@ class HTML_AJAX_Server
         if (!$this->clientJsLocation) {
             return '@data-dir@'.DIRECTORY_SEPARATOR.'HTML_AJAX'.DIRECTORY_SEPARATOR.'js'.DIRECTORY_SEPARATOR;
         } else {
-            return $this->clientJsLocationRoot;
+            return $this->clientJsLocation;
         }
     }
 

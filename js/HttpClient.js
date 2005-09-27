@@ -4,7 +4,7 @@
  * @package    AJAX
  * @author     Joshua Eichorn <josh@bluga.net>
  * @copyright  2005 Joshua Eichorn
- * @license    http://www.gnu.org/licenses/lgpl.html lgpl 
+ * @license    http://www.opensource.org/licenses/lgpl-license.php  LGPL
  */
 function HTML_AJAX_HttpClient() { }
 HTML_AJAX_HttpClient.prototype = {
@@ -117,46 +117,50 @@ HTML_AJAX_HttpClient.prototype = {
 	// internal method used to handle ready state changes
 	_readyStateChangeCallback:function() 
     {
-		switch(this.xmlhttp.readyState) {
-			// XMLHTTPRequest.open() has just been called
-			case 1:
-				break;
-			// XMLHTTPRequest.send() has just been called
-			case 2:
-				if (this.request.onSend) {
-					this.request.onSend();
-				} else if (HTML_AJAX.onSend) {
-					HTML_AJAX.onSend(this.request);
-				}
-				break;
-			// Fetching response from server in progress
-			case 3:
-				if (this.request.onProgress) {
-					this.request.onProgress();
-				} else if (HTML_AJAX.onProgress ) {
-				    HTML_AJAX.onProgress(this.request);
-				}
-			break;
-			// Download complete
-			case 4:
-				window.clearTimeout(this._timeout_id);
+        try {
+            switch(this.xmlhttp.readyState) {
+                // XMLHTTPRequest.open() has just been called
+                case 1:
+                    break;
+                // XMLHTTPRequest.send() has just been called
+                case 2:
+                    if (this.request.onSend) {
+                        this.request.onSend();
+                    } else if (HTML_AJAX.onSend) {
+                        HTML_AJAX.onSend(this.request);
+                    }
+                    break;
+                // Fetching response from server in progress
+                case 3:
+                    if (this.request.onProgress) {
+                        this.request.onProgress();
+                    } else if (HTML_AJAX.onProgress ) {
+                        HTML_AJAX.onProgress(this.request);
+                    }
+                break;
+                // Download complete
+                case 4:
+                    window.clearTimeout(this._timeout_id);
 
-				if (this.xmlhttp.status == 200) {
-                    if (this.request.onLoad) {
-                        this.request.onLoad();
-                    } else if (HTML_AJAX.onLoad ) {
-                        HTML_AJAX.onLoad(this.request);
+                    if (this.xmlhttp.status == 200) {
+                        if (this.request.onLoad) {
+                            this.request.onLoad();
+                        } else if (HTML_AJAX.onLoad ) {
+                            HTML_AJAX.onLoad(this.request);
+                        }
+
+                        this.request.callback(this._decodeResponse());
                     }
 
-                    this.request.callback(this._decodeResponse());
-				}
-
-				else {
-					var e = new Error('HTTP Error Making Request: ['+this.xmlhttp.status+'] '+this.xmlhttp.statusText);
-                    this._handleError(e);
-				}
-			break;
-		}
+                    else {
+                        var e = new Error('HTTP Error Making Request: ['+this.xmlhttp.status+'] '+this.xmlhttp.statusText);
+                        this._handleError(e);
+                    }
+                break;
+            }
+        } catch (e) {
+                this._handleError(e);
+        }
 	},
 
     // decode response as needed
@@ -177,6 +181,7 @@ HTML_AJAX_HttpClient.prototype = {
             HTML_AJAX.onError(e,this.request);
         }
         else {
+            alert('throwing the exception');
             throw e;
         }
     }

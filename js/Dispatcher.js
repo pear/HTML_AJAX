@@ -5,7 +5,7 @@
  * @package    AJAX
  * @author     Joshua Eichorn <josh@bluga.net>
  * @copyright  2005 Joshua Eichorn
- * @license    lgpl
+ * @license    http://www.opensource.org/licenses/lgpl-license.php  LGPL
  */
 function HTML_AJAX_Dispatcher(className,mode,callback,serverUrl,serializerType) 
 {

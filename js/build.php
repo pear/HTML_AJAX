@@ -1,4 +1,8 @@
 <?php
+/**
+ * A simple script to build a single js file from the multiple sources
+ * @license    http://www.opensource.org/licenses/lgpl-license.php  LGPL
+ */
 // simple script contains a merged js file from multiple source files
 // can optionaly strip whitespace
 

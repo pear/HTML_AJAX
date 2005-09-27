@@ -19,19 +19,28 @@
  */
 require_once 'PEAR/PackageFileManager.php';
 
-$version = '0.1.4';
+$version = '0.2.0';
 $notes = <<<EOT
-PEAR CS fixes
-Support for generating multiple stubs in a single request stub=test,test2
-304 Http Cache support for Client and Stub generation, this is on by default, caching rules are configurable see docblocks for more info
+Reliense under the LGPL fixing concerns about GPL compability
+
+Full rewrite of all JavaScript code pulled in from JPSpan, this allows for relicence, as well as shrinking the code size while adding new features
+   Big new Features are: 
+   Request object non contains all information needed to make a request, HTML_AJAX.makeRequest added service a request object
+   HTML_AJAX_HttpClient instances now created as needed by a factory HTML_AJAX.httpClient(), this functionality will be replaced at some future point
+
+   These changes will allow for various queue and pool structures to be created in the future, but for now client in progress errors should not be possible
+   	when using proxy objects
+
+Serializer that mimics post added, filling _POST on an ajax request, helper code for AJAX forms still in progress
+
+Bugs Fixed:
+5087, 5284 	- jsClient Location fixes, allows it to be set manually
+5908 		- PHP 5 bug fix, auto loading of classes not working in php5 for an unknown reason, just load serializer as a normal include
+5029 		- init bug in auto_server
 EOT;
 
 $description =<<<EOT
 Provides PHP and JavaScript libraries for performing AJAX (Communication from JavaScript to your browser without reloading the page)
-
-Offers OO proxies in JavaScript of registered PHP or proxyless operation
-Serialization of data sent between PHP and JavaScript is provided by a driver model,
-currently JSON and Null encodings are provided
 EOT;
 
 $package = new PEAR_PackageFileManager;
@@ -42,7 +51,7 @@ $result = $package->setOptions(array(
    'description'       => $description,
    'version'           => $version,
    'state'             => 'alpha',
-   'license'           => 'PHP License',
+   'license'           => 'lgpl',
    'ignore'            => array('package.php', 'package.xml', '*.bak', '*src*', '*.tgz','test.bat','build.php'),
    'filelistgenerator' => 'file', // other option is 'file'
    'notes'             => $notes,

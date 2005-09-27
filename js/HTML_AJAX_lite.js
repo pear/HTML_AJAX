@@ -267,6 +267,7 @@ this._handleError(new Error('Request Timed Out'));
 },
 _readyStateChangeCallback:function()
 {
+try {
 switch(this.xmlhttp.readyState) {
 case 1:
 break;
@@ -300,6 +301,9 @@ this._handleError(e);
 }
 break;
 }
+} catch (e) {
+this._handleError(e);
+}
 },
 _decodeResponse: function() {
 var unserializer = HTML_AJAX.serializerForEncoding(this.xmlhttp.getResponseHeader('Content-Type'));
@@ -313,6 +317,7 @@ this.request.onError(e);
 HTML_AJAX.onError(e,this.request);
 }
 else {
+alert('throwing the exception');
 throw e;
 }
 }

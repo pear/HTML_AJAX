@@ -13,7 +13,7 @@
  * @package    AJAX
  * @author     Joshua Eichorn <josh@bluga.net>
  * @copyright  2005 Joshua Eichorn
- * @license    http://www.php.net/license/3_0.txt  PHP License 3.0
+ * @license    http://www.opensource.org/licenses/lgpl-license.php  LGPL
  * @version    Release: @package_version@
  */
 
@@ -56,9 +56,9 @@ class HTML_AJAX {
      * and clean/retrieve get vars
      */
     var $_callbacks = array(
-        'headers' => array('HTML_AJAX' => '_sendHeaders'),
-        'get' => array('HTML_AJAX' => '_getVar'),
-        'server' => array('HTML_AJAX' => '_getVar'),
+        'headers' => array('HTML_AJAX', '_sendHeaders'),
+        'get' => array('HTML_AJAX', '_getVar'),
+        'server' => array('HTML_AJAX', '_getVar'),
         );
 
     /**
@@ -122,10 +122,13 @@ class HTML_AJAX {
     /**
      * Get a list of methods in a class to export
      *
+     * This function uses get_class_methods to get a list of callable methods, so if your on PHP5 extending this class with a class you want to export should export its 
+     * protected methods, while normally only its public methods would be exported.  All methods starting with _ are removed from the export list.  This covers
+     * PHP4 style private by naming as well as magic methods in either PHP4 or PHP5
+     *
      * @param string    $className
      * @return array  all methods of the class that are public
      * @access private
-     * @todo    What does get_class_methods do in php5
      */    
     function _getMethodsToExport($className) 
     {
@@ -235,14 +238,13 @@ class HTML_AJAX {
      *
      * The current check is if GET variables c (class) and m (method) are set, more options may be available in the future
      *
-     * @todo move the get _GET check someplace else so get variabled dispatch isn't the hardcoded method
      * @todo is it worth it to figure out howto use just 1 instance if the type is the same for serialize and unserialize
      *
      * @return  boolean true if an ajax call was handled, false otherwise
      */
     function handleRequest() 
     {
-        $class = call_user_func($this->_callbacks['get'], 'c');
+        $class = call_user_func((array)$this->_callbacks['get'], 'c');
         $method = call_user_func($this->_callbacks['get'], 'm');
         if (!empty($class) && !empty($method)) {
             set_error_handler(array(&$this,'_errorHandler'));
@@ -316,7 +318,7 @@ class HTML_AJAX {
                 $headers['Content-Type'] = $this->contentTypeMap[$this->serializer];
             }
 
-            $this->_callbacks['headers']($headers);
+            call_user_func($this->_callbacks['headers'],$headers);
             echo $output;
     }
 
@@ -328,7 +330,7 @@ class HTML_AJAX {
      */
     function _sendHeaders($array) 
     {
-            foreach($array as $header -> $value)
+            foreach($array as $header => $value)
             {
                 header($header .': '.$value);
             }
@@ -366,7 +368,7 @@ class HTML_AJAX {
      * stub for getting get/server vars - applies strip tags
      *
      * @access  private
-     * @return  string  raw post data
+     * @return  string  filtered _GET value
      */
     function _getVar($var) {
         if(!isset($_GET[$var]))

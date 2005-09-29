@@ -20,30 +20,24 @@
   </maintainer>
   </maintainers>
  <release>
-  <version>0.2.0</version>
-  <date>2005-09-27</date>
+  <version>0.2.1</version>
+  <date>2005-09-30</date>
   <license>lgpl</license>
   <state>alpha</state>
-  <notes>Reliense under the LGPL fixing concerns about GPL compability
+  <notes>This release is mainly bug fixes.
+	Remove debug message when throwing an exception
+	Fix problems with async calls
+	Fix broken content-type detection
+	Stop trying to run an init method when the init flag isn&apos;t set
+	PHP required version moved to 4.1.0 which is what it should need
 
-Full rewrite of all JavaScript code pulled in from JPSpan, this allows for relicence, as well as shrinking the code size while adding new features
-   Big new Features are: 
-   Request object non contains all information needed to make a request, HTML_AJAX.makeRequest added service a request object
-   HTML_AJAX_HttpClient instances now created as needed by a factory HTML_AJAX.httpClient(), this functionality will be replaced at some future point
-
-   These changes will allow for various queue and pool structures to be created in the future, but for now client in progress errors should not be possible
-   	when using proxy objects
-
-Serializer that mimics post added, filling _POST on an ajax request, helper code for AJAX forms still in progress
-
-Bugs Fixed:
-5087, 5284 	- jsClient Location fixes, allows it to be set manually
-5908 		- PHP 5 bug fix, auto loading of classes not working in php5 for an unknown reason, just load serializer as a normal include
-5029 		- init bug in auto_server
+There is also a couple small features added
+	A basic debug class has been added, allowing you to write PHP errors to a file
+	HTML_AJAX.replace now works async
   </notes>
   <deps>
    <dep type="pkg" rel="ge" version="1.3.5" optional="no">PEAR</dep>
-   <dep type="php" rel="ge" version="4.3.0" optional="no"/>
+   <dep type="php" rel="ge" version="4.1.0" optional="no"/>
   </deps>
   <provides type="class" name="HTML_AJAX_Serializer_Error" extends="HTML_AJAX_Serializer_JSON" />
   <provides type="class" name="HTML_AJAX_Serializer_JSON" />
@@ -63,7 +57,7 @@ Bugs Fixed:
   <provides type="function" name="HTML_AJAX_Server::handleRequest" />
   <provides type="function" name="HTML_AJAX_Server::registerClass" />
   <provides type="function" name="HTML_AJAX_Server::generateClient" />
-  <provides type="class" name="HTML_AJAX" />
+  <provides type="class" name="HTML_AJAX" extends="HTML_AJAX_Debug" />
   <provides type="function" name="HTML_AJAX::registerClass" />
   <provides type="function" name="HTML_AJAX::generateJavaScriptClient" />
   <provides type="function" name="HTML_AJAX::registerCallback" />
@@ -72,7 +66,7 @@ Bugs Fixed:
    <file role="php" baseinstalldir="HTML" md5sum="db9fc794ecfd2253c4b83221a8f93bae" name="AJAX/Serializer/Error.php">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
-   <file role="php" baseinstalldir="HTML" md5sum="b77432877de68d233941f642055bd4fe" name="AJAX/Serializer/JSON.php">
+   <file role="php" baseinstalldir="HTML" md5sum="d84ff21f56cf51fe0579eee360b53fc1" name="AJAX/Serializer/JSON.php">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
    <file role="php" baseinstalldir="HTML" md5sum="0b9a9ccf611418d7538e92b0a9925c48" name="AJAX/Serializer/Null.php">
@@ -81,7 +75,7 @@ Bugs Fixed:
    <file role="php" baseinstalldir="HTML" md5sum="bc644af2ca57e5d5192be6229a764f23" name="AJAX/JSON.php">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
-   <file role="php" baseinstalldir="HTML" md5sum="aadd51345f58c0b5774c49e986ef2d04" name="AJAX/Server.php">
+   <file role="php" baseinstalldir="HTML" md5sum="c17aa42f7901f78a5d4fcd584c95d898" name="AJAX/Server.php">
     <replace type="pear-config" from="@data-dir@" to="data_dir"/>
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
@@ -106,7 +100,7 @@ Bugs Fixed:
    <file role="doc" baseinstalldir="HTML" md5sum="4119017a9d33bae81c49d8df95b6349e" name="examples/server.php">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
-   <file role="doc" baseinstalldir="HTML" md5sum="20d33f60666c0bbef748d2bfc0004561" name="examples/test.class.php">
+   <file role="doc" baseinstalldir="HTML" md5sum="daa303a5f6d1475c929034e8585ccaf0" name="examples/test.class.php">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
    <file role="doc" baseinstalldir="HTML" md5sum="3962ce52aa543b9df5422db825a56c1d" name="examples/test.html">
@@ -124,33 +118,53 @@ Bugs Fixed:
    <file role="data" baseinstalldir="HTML" md5sum="c260e94c53eca2a4c27de8e948664d2b" name="js/cssQuery-p.js">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
-   <file role="data" baseinstalldir="HTML" md5sum="2b963cd3e175f2bca71c5b8afc1fdc7c" name="js/Dispatcher.js">
+   <file role="data" baseinstalldir="HTML" md5sum="0086630d13ad65299c2decc99a234455" name="js/Dispatcher.js">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
-   <file role="data" baseinstalldir="HTML" md5sum="2005dd493d3cfb234bf5a180a7a50210" name="js/HTML_AJAX.js">
+   <file role="data" baseinstalldir="HTML" md5sum="f602c67ab8139bdb6f88f3a12de9c16d" name="js/HTML_AJAX.js">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
-   <file role="data" baseinstalldir="HTML" md5sum="5283b509b5ea86e070077169ac58500c" name="js/HTML_AJAX_lite.js">
+   <file role="data" baseinstalldir="HTML" md5sum="2d61dc0d8c33520a7f9295b7f3e3c341" name="js/HTML_AJAX_lite.js">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
-   <file role="data" baseinstalldir="HTML" md5sum="780f80223c4f73c7b55b7c29c352dbbc" name="js/HttpClient.js">
+   <file role="data" baseinstalldir="HTML" md5sum="58a63badb0e48f5b39d3d4dce7b892c1" name="js/HttpClient.js">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
    <file role="data" baseinstalldir="HTML" md5sum="2fb00b6914d628f710aca223b1610832" name="js/JSON.js">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
-   <file role="data" baseinstalldir="HTML" md5sum="64fe6c89afc1b49f6693efa1253fcbb1" name="js/Main.js">
+   <file role="data" baseinstalldir="HTML" md5sum="da8b47c73ce36c140f6b2e580b65aa4d" name="js/Main.js">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
    <file role="data" baseinstalldir="HTML" md5sum="22cc69057ffb436cf2f194fae67f3fb4" name="js/Request.js">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
-   <file role="php" baseinstalldir="HTML" md5sum="ec7fa0881ad74cd800e4d7c1f279add3" name="AJAX.php">
+   <file role="data" baseinstalldir="HTML" md5sum="2468031e6786a427f31a5691d28af60e" name="js/util.js">
+    <replace type="package-info" from="@package_version@" to="version"/>
+   </file>
+   <file role="php" baseinstalldir="HTML" md5sum="53a6035efbca32b0d2eaf2c54db595da" name="AJAX.php">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
   </filelist>
  </release>
  <changelog>
+   <release>
+    <version>0.2.1</version>
+    <date>2005-09-30</date>
+    <license>lgpl</license>
+    <state>alpha</state>
+    <notes>This release is mainly bug fixes.
+	Remove debug message when throwing an exception
+	Fix problems with async calls
+	Fix broken content-type detection
+	Stop trying to run an init method when the init flag isn&apos;t set
+	PHP required version moved to 4.1.0 which is what it should need
+
+There is also a couple small features added
+	A basic debug class has been added, allowing you to write PHP errors to a file
+	HTML_AJAX.replace now works async
+    </notes>
+   </release>
    <release>
     <version>0.2.0</version>
     <date>2005-09-26</date>

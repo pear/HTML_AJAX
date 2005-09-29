@@ -108,14 +108,16 @@ class HTML_AJAX_Server
      * @var array
      */
     var $javascriptLibraries = array(
-        'all'       =>  'HTML_AJAX.js',
-        'html_ajax' =>  'HTML_AJAX.js',
+        'all'           =>  'HTML_AJAX.js',
+        'html_ajax'     =>  'HTML_AJAX.js',
         'html_ajax_lite'=>  'HTML_AJAX_lite.js',
-        'json'      =>  'JSON.js',
-        'request'   =>  'Request.js',
-        'main'      =>  'Main.js',
-        'httpclient'=>  'HttpClient.js',
-        'dispatcher'=>  'Dispatcher.js'
+        'json'          =>  'JSON.js',
+        'request'       =>  'Request.js',
+        'main'          =>  'Main.js',
+        'httpclient'    =>  'HttpClient.js',
+        'dispatcher'    =>  'Dispatcher.js',
+        'util'          =>  'util.js',
+        'behavior'      =>  array('behavior.js','cssQuery-p.js')
     );
 
     /**
@@ -172,12 +174,17 @@ class HTML_AJAX_Server
         $library = strtolower($this->options['client']);
 
         if (isset($this->javascriptLibraries[$library])) {
-            $fileList[] = $this->clientJsLocation().$this->javascriptLibraries[$library];
+            if (is_array($this->javascriptLibraries[$library])) {
+                foreach($this->javascriptLibraries[$library] as $file) {
+                    $fileList[] = $this->clientJsLocation().$file;
+                }
+            } else {
+                $fileList[] = $this->clientJsLocation().$this->javascriptLibraries[$library];
+            }
         }
 
         // do needed class init if were running an init server
-        if(!is_array($this->options['stub']))
-        {
+        if(!is_array($this->options['stub'])) {
             $this->options['stub'] = array();
         }
         $classList = $this->options['stub'];
@@ -204,7 +211,9 @@ class HTML_AJAX_Server
         if ($classList != false && count($classList) > 0) {
 
             // were setup enough to make a stubETag if the input it wants is a class list
-            if ($this->cacheOptions['httpCacheStub'] && $this->cacheOptions['StubCacheExpects'] == 'classes') {
+            if ($this->cacheOptions['httpCacheStub'] && 
+                $this->cacheOptions['StubCacheExpects'] == 'classes') 
+            {
                 $stubETag = $this->_callCacheRule('Stub',$classList);
             }
 
@@ -222,7 +231,9 @@ class HTML_AJAX_Server
             }
 
             // if were cacheing and the rule expects content make a tag and check it, if the check is true were done
-            if ($this->cacheOptions['httpCacheStub'] && $this->cacheOptions['StubCacheExpects'] == 'content') {
+            if ($this->cacheOptions['httpCacheStub'] && 
+                $this->cacheOptions['StubCacheExpects'] == 'content') 
+            {
                 $stubETag = $this->_callCacheRule('Stub',ob_get_contents());
             }
 
@@ -237,7 +248,9 @@ class HTML_AJAX_Server
 
         if (count($fileList) > 0) {
             // if were caching and need a file list build our jsETag
-            if ($this->cacheOptions['httpCacheClient'] && $this->cacheOptions['ClientCacheExpects'] === 'files') {
+            if ($this->cacheOptions['httpCacheClient'] && 
+                $this->cacheOptions['ClientCacheExpects'] === 'files') 
+            {
                 $jsETag = $this->_callCacheRule('Client',$fileList);
 
             }
@@ -256,7 +269,9 @@ class HTML_AJAX_Server
             }
 
             // if were caching and need content build the etag
-            if ($this->cacheOptions['httpCacheClient'] && $this->cacheOptions['ClientCacheExpects'] === 'content') {
+            if ($this->cacheOptions['httpCacheClient'] && 
+                $this->cacheOptions['ClientCacheExpects'] === 'content') 
+            {
                 $jsETag = $this->_callCacheRule('Client',ob_get_contents());
             }
 
@@ -382,13 +397,16 @@ class HTML_AJAX_Server
      *
      * @param   string  $className
      * @access private
-     * @todo    error handling if the method doesn't exist
      */
     function _init($className) 
     {
-        $m = "init$className";
-        if (is_callable(array(&$this,$m))) {
-            $this->$m();
+        if ($this->initMethods) {
+            $m = "init$className";
+            if (is_callable(array(&$this,$m))) {
+                $this->$m();
+            } else {
+                trigger_error("Could not call the method: " . $m);
+            }
         }
     }
 

@@ -51,19 +51,22 @@ var HTML_AJAX = {
         return HTML_AJAX.makeRequest(request);
 	},
 	call: function(className,method,callback) {
-		var args = new Array();
-		for(var i = 3; i < arguments.length; i++) {
-			args.push(arguments[i]);
-		}
+        var args = new Array();
+        for(var i = 3; i < arguments.length; i++) {
+            args.push(arguments[i]);
+        }
 		return HTML_AJAX.fullcall(HTML_AJAX.defaultServerUrl,HTML_AJAX.defaultEncoding,className,method,callback,args);
 	},
 	grab: function(url,callback) {
 		return HTML_AJAX.fullcall(url,'Null',false,null,callback,{});
 	},
 	replace: function(id) {
+        var callback = function(result) {
+            document.getElementById(id).innerHTML = result;
+        }
 		if (arguments.length == 2) {
 			// grab replacement
-			document.getElementById(id).innerHTML = HTML_AJAX.grab(arguments[1]);
+            HTML_AJAX.grab(arguments[1],callback);
 		}
 		else {
 			// call replacement
@@ -71,10 +74,10 @@ var HTML_AJAX = {
 			for(var i = 3; i < arguments.length; i++) {
 				args.push(arguments[i]);
 			}
-			document.getElementById(id).innerHTML = HTML_AJAX.call(arguments[1],arguments[2],false,args);
+			HTML_AJAX.call(arguments[1],arguments[2],callback,args);
 		}
 	},
-    onOpen: function(className,methodName) {
+    onOpen: function(request) {
         var loading = document.getElementById('HTML_AJAX_LOADING');
         if (!loading) {
             loading = document.createElement('div');
@@ -91,14 +94,14 @@ var HTML_AJAX = {
         }
         loading.style.display = 'block';
     },
-    onLoad: function(className,methodName) {
+    onLoad: function(request) {
         var loading = document.getElementById('HTML_AJAX_LOADING');
         if (loading) {
             loading.style.display = 'none';
         }
     },
-    // A really basic error handler 
     /*
+    // A really basic error handler 
     onError: function(e) {
         msg = "";
         for(var i in e) {
@@ -241,12 +244,14 @@ HTML_AJAX_Dispatcher.prototype = {
 
 		if ( this.mode == "async" ) {
 		    request.isAsync = true;
+            if (this.callback[callName]) {
+                var self = this;
+                request.callback = function(result) { self.callback[callName](result); }
+            }
+
 		} else {
 		    request.isAsync = false;
 		}
-
-        var self = this;
-        request.callback = function(result) { self.callback[callName](result); }
 
         return HTML_AJAX.makeRequest(request);
 	}
@@ -319,6 +324,12 @@ HTML_AJAX_HttpClient.prototype = {
 		}
 
         try {
+            if (this.request.onOpen) {
+                this.request.onOpen();
+            }
+            else if (HTML_AJAX.onOpen) {
+                HTML_AJAX.onOpen(this.request);
+            }
 		    this.xmlhttp.open(this.request.requestType,this.request.completeUrl(),this.request.isAsync);
 
             // set onreadystatechange here since it will be reset after a completed call in Mozilla
@@ -404,7 +415,9 @@ HTML_AJAX_HttpClient.prototype = {
                             HTML_AJAX.onLoad(this.request);
                         }
 
-                        this.request.callback(this._decodeResponse());
+                        if (this.request.callback) {
+                            this.request.callback(this._decodeResponse());
+                        }
                     }
 
                     else {
@@ -436,7 +449,6 @@ HTML_AJAX_HttpClient.prototype = {
             HTML_AJAX.onError(e,this.request);
         }
         else {
-            alert('throwing the exception');
             throw e;
         }
     }

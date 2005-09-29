@@ -50,19 +50,22 @@ var HTML_AJAX = {
         return HTML_AJAX.makeRequest(request);
 	},
 	call: function(className,method,callback) {
-		var args = new Array();
-		for(var i = 3; i < arguments.length; i++) {
-			args.push(arguments[i]);
-		}
+        var args = new Array();
+        for(var i = 3; i < arguments.length; i++) {
+            args.push(arguments[i]);
+        }
 		return HTML_AJAX.fullcall(HTML_AJAX.defaultServerUrl,HTML_AJAX.defaultEncoding,className,method,callback,args);
 	},
 	grab: function(url,callback) {
 		return HTML_AJAX.fullcall(url,'Null',false,null,callback,{});
 	},
 	replace: function(id) {
+        var callback = function(result) {
+            document.getElementById(id).innerHTML = result;
+        }
 		if (arguments.length == 2) {
 			// grab replacement
-			document.getElementById(id).innerHTML = HTML_AJAX.grab(arguments[1]);
+            HTML_AJAX.grab(arguments[1],callback);
 		}
 		else {
 			// call replacement
@@ -70,10 +73,10 @@ var HTML_AJAX = {
 			for(var i = 3; i < arguments.length; i++) {
 				args.push(arguments[i]);
 			}
-			document.getElementById(id).innerHTML = HTML_AJAX.call(arguments[1],arguments[2],false,args);
+			HTML_AJAX.call(arguments[1],arguments[2],callback,args);
 		}
 	},
-    onOpen: function(className,methodName) {
+    onOpen: function(request) {
         var loading = document.getElementById('HTML_AJAX_LOADING');
         if (!loading) {
             loading = document.createElement('div');
@@ -90,14 +93,14 @@ var HTML_AJAX = {
         }
         loading.style.display = 'block';
     },
-    onLoad: function(className,methodName) {
+    onLoad: function(request) {
         var loading = document.getElementById('HTML_AJAX_LOADING');
         if (loading) {
             loading.style.display = 'none';
         }
     },
-    // A really basic error handler 
     /*
+    // A really basic error handler 
     onError: function(e) {
         msg = "";
         for(var i in e) {

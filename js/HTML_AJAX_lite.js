@@ -42,18 +42,21 @@ grab: function(url,callback) {
 return HTML_AJAX.fullcall(url,'Null',false,null,callback,{});
 },
 replace: function(id) {
+var callback = function(result) {
+document.getElementById(id).innerHTML = result;
+}
 if (arguments.length == 2) {
-document.getElementById(id).innerHTML = HTML_AJAX.grab(arguments[1]);
+HTML_AJAX.grab(arguments[1],callback);
 }
 else {
 var args = new Array();
 for(var i = 3; i < arguments.length; i++) {
 args.push(arguments[i]);
 }
-document.getElementById(id).innerHTML = HTML_AJAX.call(arguments[1],arguments[2],false,args);
+HTML_AJAX.call(arguments[1],arguments[2],callback,args);
 }
 },
-onOpen: function(className,methodName) {
+onOpen: function(request) {
 var loading = document.getElementById('HTML_AJAX_LOADING');
 if (!loading) {
 loading = document.createElement('div');
@@ -69,7 +72,7 @@ document.getElementsByTagName('body').item(0).appendChild(loading);
 }
 loading.style.display = 'block';
 },
-onLoad: function(className,methodName) {
+onLoad: function(request) {
 var loading = document.getElementById('HTML_AJAX_LOADING');
 if (loading) {
 loading.style.display = 'none';
@@ -170,11 +173,13 @@ request.addArg(i,args[i]);
 };
 if ( this.mode == "async" ) {
 request.isAsync = true;
+if (this.callback[callName]) {
+var self = this;
+request.callback = function(result) { self.callback[callName](result); }
+}
 } else {
 request.isAsync = false;
 }
-var self = this;
-request.callback = function(result) { self.callback[callName](result); }
 return HTML_AJAX.makeRequest(request);
 }
 };
@@ -225,6 +230,12 @@ if (!this.xmlhttp) {
 this.init();
 }
 try {
+if (this.request.onOpen) {
+this.request.onOpen();
+}
+else if (HTML_AJAX.onOpen) {
+HTML_AJAX.onOpen(this.request);
+}
 this.xmlhttp.open(this.request.requestType,this.request.completeUrl(),this.request.isAsync);
 var self = this;
 this.xmlhttp.onreadystatechange = function() { self._readyStateChangeCallback(); }
@@ -293,7 +304,9 @@ this.request.onLoad();
 } else if (HTML_AJAX.onLoad ) {
 HTML_AJAX.onLoad(this.request);
 }
+if (this.request.callback) {
 this.request.callback(this._decodeResponse());
+}
 }
 else {
 var e = new Error('HTTP Error Making Request: ['+this.xmlhttp.status+'] '+this.xmlhttp.statusText);
@@ -317,7 +330,6 @@ this.request.onError(e);
 HTML_AJAX.onError(e,this.request);
 }
 else {
-alert('throwing the exception');
 throw e;
 }
 }

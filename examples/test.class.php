@@ -17,11 +17,11 @@ class test {
 	function _private() {
 	}
 	function echo_string($string) {
-		return $string;
+		return "From PHP: ".$string;
 	}
 	function slow_echo_string($string) {
 		sleep(2);
-		return $string;
+		return "From PHP: ".$string;
 	}
 	function error_test($string) {
 		trigger_error($string);

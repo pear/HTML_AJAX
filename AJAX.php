@@ -37,7 +37,7 @@ require_once "HTML/AJAX/Serializer/Error.php";
  * @todo       Decide if its good thing to support get
  * @todo       Add some sort of debugging console
  */
-class HTML_AJAX {
+class HTML_AJAX extends HTML_AJAX_Debug {
     /**
      * An array holding the instances were exporting
      *
@@ -56,9 +56,9 @@ class HTML_AJAX {
      * and clean/retrieve get vars
      */
     var $_callbacks = array(
-        'headers' => array('HTML_AJAX', '_sendHeaders'),
-        'get' => array('HTML_AJAX', '_getVar'),
-        'server' => array('HTML_AJAX', '_getVar'),
+            'headers' => array('HTML_AJAX', '_sendHeaders'),
+            'get'     => array('HTML_AJAX', '_getVar'),
+            'server'  => array('HTML_AJAX', '_getVar'),
         );
 
     /**
@@ -163,25 +163,17 @@ class HTML_AJAX {
      */
     function registerCallback($callback, $type = 'headers') 
     {
-        if(is_callable($callback))
-        {
-            if($type == 'headers')
-            {
+        if(is_callable($callback)) {
+            if($type == 'headers') {
                 $this->_callbacks['headers'] = $callback;
                 return true;
-            }
-            elseif($type == 'get')
-            {
+            } elseif($type == 'get') {
                 $this->_callbacks['get'] = $callback;
                 return true;
-            }
-            elseif($type == 'server')
-            {
+            } elseif($type == 'server') {
                 $this->_callbacks['server'] = $callback;
                 return true;
-            }
-            else
-            {
+            } else {
                 return false;
             }
         }
@@ -273,7 +265,6 @@ class HTML_AJAX {
             $ret = call_user_func_array(array(&$this->_exportedInstances[$class]['instance'],$method),$args);
             
             
-            
             restore_error_handler();
             $this->_sendResponse($ret);
 
@@ -283,13 +274,14 @@ class HTML_AJAX {
     }
 
     function _getClientPayloadContentType() {
-        $type = call_user_func($this->_callbacks['server'], 'CONTENT_TYPE');
-        if(!empty($type)) {
+        if (isset($_SERVER['CONTENT_TYPE'])) {
+            $type = $_SERVER['CONTENT_TYPE'];
             if (strstr($type,';')) {
                 $type = array_shift(explode(';',$type));
             }
             return strtolower($type);
         }
+        return 'text/plain';
     }
 
     /**
@@ -330,8 +322,7 @@ class HTML_AJAX {
      */
     function _sendHeaders($array) 
     {
-            foreach($array as $header => $value)
-            {
+            foreach($array as $header => $value) {
                 header($header .': '.$value);
             }
     }
@@ -365,18 +356,15 @@ class HTML_AJAX {
     }
 
     /**
-     * stub for getting get/server vars - applies strip tags
+     * stub for getting get/server vars - applies strip_tags
      *
      * @access  private
      * @return  string  filtered _GET value
      */
     function _getVar($var) {
-        if(!isset($_GET[$var]))
-        {
+        if (!isset($_GET[$var])) {
             return NULL;
-        }
-        else
-        {
+        } else {
             return strip_tags($_GET[$var]);
         }
     }
@@ -401,5 +389,31 @@ class HTML_AJAX {
         }
     }
 }
+// {{{ HTML_AJAX_Debug
+define ("NEW_LINE", "\n");
+
+class HTML_AJAX_Debug
+{
+    
+    // {{{ showDebug
+    /**
+     * this function just displays the errors
+     *
+     * @param string $errno     The error number
+     * @param string $errstr    The error message
+     * @param string $errfile   The file containing the error
+     * @param string $errline   The line where the error occured
+     */
+    function showDebug($errno, $errstr, $errfile, $errline)
+    {
+        print $errno   . NEW_LINE;
+        print $errstr  . NEW_LINE;
+        print $errfile . NEW_LINE;
+        print $errline . NEW_LINE;
+        die();
+    }
+    // }}}
+}
+// }}}
 /* vim: set expandtab tabstop=4 shiftwidth=4 softtabstop=4: */
 ?>

@@ -50,12 +50,14 @@ HTML_AJAX_Dispatcher.prototype = {
 
 		if ( this.mode == "async" ) {
 		    request.isAsync = true;
+            if (this.callback[callName]) {
+                var self = this;
+                request.callback = function(result) { self.callback[callName](result); }
+            }
+
 		} else {
 		    request.isAsync = false;
 		}
-
-        var self = this;
-        request.callback = function(result) { self.callback[callName](result); }
 
         return HTML_AJAX.makeRequest(request);
 	}

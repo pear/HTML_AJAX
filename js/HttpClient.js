@@ -64,6 +64,12 @@ HTML_AJAX_HttpClient.prototype = {
 		}
 
         try {
+            if (this.request.onOpen) {
+                this.request.onOpen();
+            }
+            else if (HTML_AJAX.onOpen) {
+                HTML_AJAX.onOpen(this.request);
+            }
 		    this.xmlhttp.open(this.request.requestType,this.request.completeUrl(),this.request.isAsync);
 
             // set onreadystatechange here since it will be reset after a completed call in Mozilla
@@ -149,7 +155,9 @@ HTML_AJAX_HttpClient.prototype = {
                             HTML_AJAX.onLoad(this.request);
                         }
 
-                        this.request.callback(this._decodeResponse());
+                        if (this.request.callback) {
+                            this.request.callback(this._decodeResponse());
+                        }
                     }
 
                     else {
@@ -181,7 +189,6 @@ HTML_AJAX_HttpClient.prototype = {
             HTML_AJAX.onError(e,this.request);
         }
         else {
-            alert('throwing the exception');
             throw e;
         }
     }

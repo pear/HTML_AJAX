@@ -88,6 +88,7 @@ HTML_AJAX_HttpClient.prototype = {
 
 		if (!this.request.isAsync) {
             if ( this.xmlhttp.status == 200 ) {
+                HTML_AJAX.requestComplete(this.request);
                 if (this.request.onLoad) {
                     this.request.onLoad();
                 } else if (HTML_AJAX.onLoad) {
@@ -149,6 +150,7 @@ HTML_AJAX_HttpClient.prototype = {
                     window.clearTimeout(this._timeout_id);
 
                     if (this.xmlhttp.status == 200) {
+                        HTML_AJAX.requestComplete(this.request);
                         if (this.request.onLoad) {
                             this.request.onLoad();
                         } else if (HTML_AJAX.onLoad ) {
@@ -183,6 +185,7 @@ HTML_AJAX_HttpClient.prototype = {
     // handle sending an error where it needs to go
     _handleError: function(e) 
     {
+        HTML_AJAX.requestComplete(this.request,e);
         if (this.request.onError) {
             this.request.onError(e);
         } else if (HTML_AJAX.onError) {

@@ -24,6 +24,11 @@ function HTML_AJAX_Dispatcher(className,mode,callback,serverUrl,serializerType)
 
 HTML_AJAX_Dispatcher.prototype = {
     /**
+     * Queue to use when making a request
+     */
+    queue: 'default',
+
+    /**
      * Timeout for async calls
      */
 	timeout: 20000,
@@ -43,6 +48,7 @@ HTML_AJAX_Dispatcher.prototype = {
 		request.timeout = this.timeout;
         request.contentType = this.contentType;
         request.serializer = eval('new HTML_AJAX_Serialize_'+this.serializerType);
+        request.queue = this.queue;
         
 		for(var i=0; i < args.length; i++) {
 		    request.addArg(i,args[i]);

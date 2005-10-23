@@ -3,12 +3,6 @@
 /**
  * OO AJAX Implementation for PHP
  *
- * LICENSE: This source file is subject to version 3.0 of the PHP license
- * that is available through the world-wide-web at the following URI:
- * http://www.php.net/license/3_0.txt.  If you did not receive a copy of
- * the PHP License and are unable to obtain it through the web, please
- * send a note to license@php.net so we can mail you a copy immediately.
- *
  * @category   HTML
  * @package    AJAX
  * @author     Joshua Eichorn <josh@bluga.net>
@@ -23,6 +17,7 @@
 require_once "HTML/AJAX/Serializer/JSON.php";
 require_once "HTML/AJAX/Serializer/Null.php";
 require_once "HTML/AJAX/Serializer/Error.php";
+require_once 'HTML/AJAX/Debug.php';
     
 /**
  * OO AJAX Implementation for PHP
@@ -31,13 +26,13 @@ require_once "HTML/AJAX/Serializer/Error.php";
  * @package    AJAX
  * @author     Joshua Eichorn <josh@bluga.net>
  * @copyright  2005 Joshua Eichorn
- * @license    http://www.php.net/license/3_0.txt  PHP License 3.0
+ * @license    http://www.opensource.org/licenses/lgpl-license.php  LGPL
  * @version    Release: @package_version@
  * @link       http://pear.php.net/package/PackageName
  * @todo       Decide if its good thing to support get
  * @todo       Add some sort of debugging console
  */
-class HTML_AJAX extends HTML_AJAX_Debug {
+class HTML_AJAX {
     /**
      * An array holding the instances were exporting
      *
@@ -90,7 +85,29 @@ class HTML_AJAX extends HTML_AJAX_Debug {
             'Null'  => 'text/plain',
             'Error' => 'application/error',
         );
+    
+    /**
+     * This is the debug variable that we will be passing the 
+     * HTML_AJAX_Debug instance to.
+     *
+     * @param object HTML_AJAX_Debug
+     */
+    var $debug;
 
+    /**
+     * This is to tell if debug is enabled or not. If so, then
+     * debug is called, instantiated then saves the file and such.
+     */
+    var $debugEnabled = false;
+    
+    /**
+     * This puts the error into a session variable is set to true.
+     * set to false by default.
+     *
+     * @access public
+     */
+     var $debugSession = false;
+     
     /**
      * Set a class to handle requests
      *
@@ -240,6 +257,9 @@ class HTML_AJAX extends HTML_AJAX_Debug {
         $method = call_user_func($this->_callbacks['get'], 'm');
         if (!empty($class) && !empty($method)) {
             set_error_handler(array(&$this,'_errorHandler'));
+            if (function_exists('set_exception_handler')) {
+                set_exception_handler(array(&$this,'_exceptionHandler'));
+            }
             
             if (!isset($this->_exportedInstances[$class])) {
                 // handle error
@@ -277,7 +297,8 @@ class HTML_AJAX extends HTML_AJAX_Debug {
         if (isset($_SERVER['CONTENT_TYPE'])) {
             $type = $_SERVER['CONTENT_TYPE'];
             if (strstr($type,';')) {
-                $type = array_shift(explode(';',$type));
+                $types = explode(';',$type);
+                $type = array_shift($types);
             }
             return strtolower($type);
         }
@@ -370,13 +391,23 @@ class HTML_AJAX extends HTML_AJAX_Debug {
     }
 
     /**
+     * Exception handler, passes them to _errorHandler to do the actual work
+     *
+     * @access private
+     */
+    function _exceptionHandler($ex) {
+        $this->_errorHandler($ex->getCode(),$ex->getMessage(),$ex->getFile(),$ex->getLine());
+    }
+     
+
+    /**
      * Error handler that sends it errors to the client side
      *
      * @access private
      */
     function _errorHandler($errno, $errstr, $errfile, $errline) 
     {
-        if (error_reporting()) {
+        if ($errno < error_reporting()) {
             $e = new stdClass();
             $e->errNo   = $errno;
             $e->errStr  = $errstr;
@@ -384,36 +415,16 @@ class HTML_AJAX extends HTML_AJAX_Debug {
             $e->errLine = $errline;
             $this->serializer = 'Error';
             $this->_sendResponse($e);
-
+            if ($this->debugEnabled) {
+                $this->debug =& new HTML_AJAX_Debug($errstr, $errline, $errno, $errfile);
+                if ($this->debugSession) {
+                    $this->debug->sessionError();
+                }
+                $this->debug->_saveError();
+            }
             die();
         }
     }
 }
-// {{{ HTML_AJAX_Debug
-define ("NEW_LINE", "\n");
-
-class HTML_AJAX_Debug
-{
-    
-    // {{{ showDebug
-    /**
-     * this function just displays the errors
-     *
-     * @param string $errno     The error number
-     * @param string $errstr    The error message
-     * @param string $errfile   The file containing the error
-     * @param string $errline   The line where the error occured
-     */
-    function showDebug($errno, $errstr, $errfile, $errline)
-    {
-        print $errno   . NEW_LINE;
-        print $errstr  . NEW_LINE;
-        print $errfile . NEW_LINE;
-        print $errline . NEW_LINE;
-        die();
-    }
-    // }}}
-}
-// }}}
 /* vim: set expandtab tabstop=4 shiftwidth=4 softtabstop=4: */
 ?>

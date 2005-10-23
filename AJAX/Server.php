@@ -2,12 +2,6 @@
 /**
  * OO AJAX Implementation for PHP
  *
- * LICENSE: This source file is subject to version 3.0 of the PHP license
- * that is available through the world-wide-web at the following URI:
- * http://www.php.net/license/3_0.txt.  If you did not receive a copy of
- * the PHP License and are unable to obtain it through the web, please
- * send a note to license@php.net so we can mail you a copy immediately.
- *
  * @category   HTML
  * @package    AJAX
  * @author     Joshua Eichorn <josh@bluga.net>
@@ -37,10 +31,9 @@ require_once 'HTML/AJAX.php';
  * @package    AJAX
  * @author     Joshua Eichorn <josh@bluga.net>
  * @copyright  2005 Joshua Eichorn
- * @license    http://www.php.net/license/3_0.txt  PHP License 3.0
+ * @license    http://www.opensource.org/licenses/lgpl-license.php  LGPL
  * @version    Release: @package_version@
  * @link       http://pear.php.net/package/PackageName
- * @todo       extend options and generateClient fileList building to support , seperated lists of libs
  */
 class HTML_AJAX_Server 
 {
@@ -102,7 +95,7 @@ class HTML_AJAX_Server
     /**
      * Javascript library names and there path 
      *
-     * the return of $this->clientJsLocation(), is appended before running readfile on them
+     * the return of $this->clientJsLocation(), is prepended before running readfile on them
      *
      * @access  public
      * @var array
@@ -117,8 +110,27 @@ class HTML_AJAX_Server
         'httpclient'    =>  'HttpClient.js',
         'dispatcher'    =>  'Dispatcher.js',
         'util'          =>  'util.js',
+        'loading'       =>  'Loading.js',
+        'phpserializer' =>  'serialize.js',
         'behavior'      =>  array('behavior.js','cssQuery-p.js')
     );
+
+    /**
+     * Custom paths to use for javascript libraries, if not set {@link clientJsLocation} is used to find the system path
+     *
+     * @access public
+     * @var array
+     * @see registerJsLibrary
+     */
+    var $javascriptLibraryPaths = array();
+
+    /**
+     * Array of className => init methods to call, generated from constructor from initClassName methods
+     *
+     * @access protected
+     */
+    var $_initLookup = array();
+    
 
     /**
      * Constructor creates the HTML_AJAX instance
@@ -129,6 +141,13 @@ class HTML_AJAX_Server
     {
         $this->ajax =& new HTML_AJAX();
         $this->ajax->serverUrl = $_SERVER['PHP_SELF'];
+
+        $methods = get_class_methods($this);
+        foreach($methods as $method) {
+            if (preg_match('/^init([a-zA-Z0-0]+)$/',$method,$match)) {
+                $this->_initLookup[$match[1]] = $method;
+            }
+        }
     }
 
     /**
@@ -160,26 +179,59 @@ class HTML_AJAX_Server
     }
 
     /**
+     * Register a new js client library
+     *
+     * @param string          $libraryName name you'll reference the library as
+     * @param string|array    $fileName   actual filename with no path, for example customLib.js
+     * @param string|false    $path   Optional, if not set the result from jsClientLocation is used
+     */
+    function registerJSLibrary($libraryName,$fileName,$path = false) {
+        $libraryName = strtolower($libraryName);
+        $this->javascriptLibraries[$libraryName] = $fileName;
+
+        if ($path !== false) {
+            $this->javascriptLibraryPaths[$libraryName] = $path;
+        }
+    }
+
+    /**
+     * Register init methods from an external class
+     *
+     * @param object    $instance an external class with initClassName methods
+     */
+    function registerInitObject(&$instance) {
+        $methods = get_class_methods($instance);
+        foreach($methods as $method) {
+            if (preg_match('/^init([a-zA-Z0-9_]+)$/',$method,$match)) {
+                $this->_initLookup[$match[1]] = array(&$instance,$method);
+            }
+        }
+    }
+
+    /**
      * Generate client js
      *
      * @todo    this is going to need tests to cover all the options
      */
     function generateClient() 
     {
-        header('Content-Type: text/javascript');
+        $headers = array();
         ob_start();
 
         // create a list list of js files were going to need to output
         $fileList = array();
-        $library = strtolower($this->options['client']);
 
-        if (isset($this->javascriptLibraries[$library])) {
-            if (is_array($this->javascriptLibraries[$library])) {
-                foreach($this->javascriptLibraries[$library] as $file) {
-                    $fileList[] = $this->clientJsLocation().$file;
+        foreach($this->options['client'] as $library) {
+            if (isset($this->javascriptLibraries[$library])) {
+                $lib = (array)$this->javascriptLibraries[$library];
+                foreach($lib as $file) {
+                    if (isset($this->javascriptLibraryPaths[$library])) {
+                        $fileList[] = $this->javascriptLibraryPaths[$library].$file;
+                    }
+                    else {
+                        $fileList[] = $this->clientJsLocation().$file;
+                    }
                 }
-            } else {
-                $fileList[] = $this->clientJsLocation().$this->javascriptLibraries[$library];
             }
         }
 
@@ -295,8 +347,10 @@ class HTML_AJAX_Server
         // were outputting content, add our length header and send the output
         $length = ob_get_length();
         if ($length > 0) {
-            header('Content-Length: '.$length);
+            $headers['Content-Length'] = $length;
         }
+        $headers['Content-Type'] = 'text/javascript; charset=utf-8';
+        call_user_func($this->ajax->_callbacks['headers'],$headers);
         ob_end_flush();
     }
 
@@ -341,7 +395,26 @@ class HTML_AJAX_Server
     {
         $this->options = array('client'=>false,'stub'=>false);
         if (isset($_GET['client'])) {
-            $this->options['client'] = $this->_cleanIdentifier($_GET['client']);
+            $this->options['client'] = array();
+             if (strstr($_GET['client'],',')) {
+                $clients = explode(',',$_GET['client']);
+            } else {
+                $clients = array($_GET['client']);
+            }
+            
+            $client = array();
+            foreach($clients as $val) {
+                $cleanVal = $this->_cleanIdentifier($val);
+                if (!empty($cleanVal)) {
+                    $client[] = strtolower($cleanVal);
+                }
+            }
+
+            if (count($client) > 0) {
+                $this->options['client'] = $client;
+            } else {
+                $this->options['client'] = false;
+            }
         }
         if (isset($_GET['stub'])) {
             if (strstr($_GET['stub'],',')) {
@@ -383,11 +456,9 @@ class HTML_AJAX_Server
      */
     function _initAll() 
     {
-        $methods = get_class_methods(get_class($this));
-
-        foreach($methods as $method) {
-            if (substr($method,0,4) == 'init') {
-                $this->$method();
+        if ($this->initMethods) {
+            foreach($this->_initLookup as $class => $method) {
+                $this->_init($class);
             }
         }
     }
@@ -401,11 +472,16 @@ class HTML_AJAX_Server
     function _init($className) 
     {
         if ($this->initMethods) {
-            $m = "init$className";
-            if (is_callable(array(&$this,$m))) {
-                $this->$m();
+            if (isset($this->_initLookup[$className])) {
+                $method =& $this->_initLookup[$className];
+                if (is_array($method)) {
+                    call_user_func($method);
+                }
+                else {
+                    $this->$method();
+                }
             } else {
-                trigger_error("Could not call the method: " . $m);
+                trigger_error("Could find an init method for class: " . $className);
             }
         }
     }
@@ -463,7 +539,7 @@ class HTML_AJAX_Server
         header('Cache-Control: must-revalidate');
         header('ETag: '.$etag);
         if ($notModified) {
-            header('HTTP/1.0 304 Not Modified');
+            header('HTTP/1.0 304 Not Modified',false,304);
         }
     }
 

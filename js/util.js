@@ -30,6 +30,16 @@ var HTML_AJAX_Util = {
                 element["on" + event] = handler;
             }
         }
+    },
+    // simple non recursive variable dumper, don't rely on its output staying the same, its just for debugging and will get smarter at some point
+    varDump: function(input) {
+        var r = "";
+        for(var i in input) {
+            r += i+':'+input[i]+"\n";
+        }
+        return r;
     }
+
 }
 // }}}
+/* vim: set expandtab tabstop=4 shiftwidth=4 softtabstop=4: */

@@ -20,20 +20,16 @@
   </maintainer>
   </maintainers>
  <release>
-  <version>0.2.1</version>
-  <date>2005-09-30</date>
+  <version>0.2.3</version>
+  <date>2005-10-24</date>
   <license>lgpl</license>
   <state>alpha</state>
-  <notes>This release is mainly bug fixes.
-	Remove debug message when throwing an exception
-	Fix problems with async calls
-	Fix broken content-type detection
-	Stop trying to run an init method when the init flag isn&apos;t set
-	PHP required version moved to 4.1.0 which is what it should need
-
-There is also a couple small features added
-	A basic debug class has been added, allowing you to write PHP errors to a file
-	HTML_AJAX.replace now works async
+  <notes>Initial Helper API see examples/usage_helper.php for details
+	HTML_AJAX.append
+	BC Change, default loading implementation moved to its own file
+	client param takes a comma seperated list of args now ex: server.php?client=main,httpclient
+	ajax server has support for delivering custom libraries HTML_AJAX_Server::registerJSLibrary
+	Bug #5675 Reference bug in php 4.4 5.1 etc
   </notes>
   <deps>
    <dep type="pkg" rel="ge" version="1.3.5" optional="no">PEAR</dep>
@@ -46,6 +42,10 @@ There is also a couple small features added
   <provides type="class" name="HTML_AJAX_Serializer_Null" />
   <provides type="function" name="HTML_AJAX_Serializer_Null::serialize" />
   <provides type="function" name="HTML_AJAX_Serializer_Null::unserialize" />
+  <provides type="class" name="HTML_AJAX_Debug" />
+  <provides type="function" name="HTML_AJAX_Debug::xmlError" />
+  <provides type="class" name="HTML_AJAX_Helper" />
+  <provides type="function" name="HTML_AJAX_Helper::setupAJAX" />
   <provides type="class" name="HTML_AJAX_JSON" />
   <provides type="function" name="HTML_AJAX_JSON::encode" />
   <provides type="function" name="HTML_AJAX_JSON::enc" />
@@ -56,8 +56,10 @@ There is also a couple small features added
   <provides type="class" name="HTML_AJAX_Server" />
   <provides type="function" name="HTML_AJAX_Server::handleRequest" />
   <provides type="function" name="HTML_AJAX_Server::registerClass" />
+  <provides type="function" name="HTML_AJAX_Server::registerJSLibrary" />
+  <provides type="function" name="HTML_AJAX_Server::registerInitObject" />
   <provides type="function" name="HTML_AJAX_Server::generateClient" />
-  <provides type="class" name="HTML_AJAX" extends="HTML_AJAX_Debug" />
+  <provides type="class" name="HTML_AJAX" />
   <provides type="function" name="HTML_AJAX::registerClass" />
   <provides type="function" name="HTML_AJAX::generateJavaScriptClient" />
   <provides type="function" name="HTML_AJAX::registerCallback" />
@@ -72,35 +74,62 @@ There is also a couple small features added
    <file role="php" baseinstalldir="HTML" md5sum="0b9a9ccf611418d7538e92b0a9925c48" name="AJAX/Serializer/Null.php">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
+   <file role="php" baseinstalldir="HTML" md5sum="68f0ae15c17ec7e363592f7110f9a7e8" name="AJAX/Debug.php">
+    <replace type="package-info" from="@package_version@" to="version"/>
+   </file>
+   <file role="php" baseinstalldir="HTML" md5sum="98cd4123778b4f34f7ec1c59ec778260" name="AJAX/Helper.php">
+    <replace type="package-info" from="@package_version@" to="version"/>
+   </file>
    <file role="php" baseinstalldir="HTML" md5sum="bc644af2ca57e5d5192be6229a764f23" name="AJAX/JSON.php">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
-   <file role="php" baseinstalldir="HTML" md5sum="c17aa42f7901f78a5d4fcd584c95d898" name="AJAX/Server.php">
+   <file role="php" baseinstalldir="HTML" md5sum="5cc0aa396bc8bb3f4da9e21a106b8f39" name="AJAX/Server.php">
     <replace type="pear-config" from="@data-dir@" to="data_dir"/>
+    <replace type="package-info" from="@package_version@" to="version"/>
+   </file>
+   <file role="doc" baseinstalldir="HTML" md5sum="5dc68d6015d33aab239b3f4f53ad9f92" name="docs/examples/error_usage.php">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
    <file role="doc" baseinstalldir="HTML" md5sum="a9228917cfb8840ffd41a634b7964429" name="docs/todo">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
-   <file role="doc" baseinstalldir="HTML" md5sum="46adeab94c977c4e5f87f66ab9eb7072" name="examples/auto_server.php">
+   <file role="doc" baseinstalldir="HTML" md5sum="f422936113a5944ef6e362e1ef93909b" name="examples/auto_server.php">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
-   <file role="doc" baseinstalldir="HTML" md5sum="40fbb25604ea9879c4190e71087ce293" name="examples/proxyless_usage.php">
+   <file role="doc" baseinstalldir="HTML" md5sum="0e4268ee8ff8dbf638d8880a8d40ff53" name="examples/customLib.js">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
-   <file role="doc" baseinstalldir="HTML" md5sum="82752a54d3259a50cb9fcd2757db6611" name="examples/proxy_usage_inline_javascript.php">
+   <file role="doc" baseinstalldir="HTML" md5sum="8408959b53ad15ba00af37c322170402" name="examples/error_usage.php">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
-   <file role="doc" baseinstalldir="HTML" md5sum="9be42e2396fd5e46078151cc6b75326f" name="examples/proxy_usage_server.php">
+   <file role="doc" baseinstalldir="HTML" md5sum="f8af303e9baf5fa91d73c150f5a950bc" name="examples/helper_usage.php">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
-   <file role="doc" baseinstalldir="HTML" md5sum="8b8d614cd636e89154f212a5dca9e9a8" name="examples/README">
+   <file role="doc" baseinstalldir="HTML" md5sum="e38a24accd94e69396d79d72213e04ab" name="examples/index.php">
+    <replace type="package-info" from="@package_version@" to="version"/>
+   </file>
+   <file role="doc" baseinstalldir="HTML" md5sum="369fe6f979f7efb922220f3399b4ed26" name="examples/livesearch.class.php">
+    <replace type="package-info" from="@package_version@" to="version"/>
+   </file>
+   <file role="doc" baseinstalldir="HTML" md5sum="b8af4f9387853ecbe55648250a27b2a4" name="examples/proxyless_usage.php">
+    <replace type="package-info" from="@package_version@" to="version"/>
+   </file>
+   <file role="doc" baseinstalldir="HTML" md5sum="23b0f8afaeaa9f2ba326cd424440fecd" name="examples/proxy_usage_inline_javascript.php">
+    <replace type="package-info" from="@package_version@" to="version"/>
+   </file>
+   <file role="doc" baseinstalldir="HTML" md5sum="aebd47216156e1b8bfeaf8b4c9c07a9e" name="examples/proxy_usage_server.php">
+    <replace type="package-info" from="@package_version@" to="version"/>
+   </file>
+   <file role="doc" baseinstalldir="HTML" md5sum="5fcb08d57d177baa0b0f1e8e7cd7d73b" name="examples/queue_usage.php">
+    <replace type="package-info" from="@package_version@" to="version"/>
+   </file>
+   <file role="doc" baseinstalldir="HTML" md5sum="4710218f06f07c35486e3e169774e342" name="examples/README">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
    <file role="doc" baseinstalldir="HTML" md5sum="4119017a9d33bae81c49d8df95b6349e" name="examples/server.php">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
-   <file role="doc" baseinstalldir="HTML" md5sum="daa303a5f6d1475c929034e8585ccaf0" name="examples/test.class.php">
+   <file role="doc" baseinstalldir="HTML" md5sum="9aada3c4889787212c921334b8035d4e" name="examples/test.class.php">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
    <file role="doc" baseinstalldir="HTML" md5sum="3962ce52aa543b9df5422db825a56c1d" name="examples/test.html">
@@ -118,36 +147,63 @@ There is also a couple small features added
    <file role="data" baseinstalldir="HTML" md5sum="c260e94c53eca2a4c27de8e948664d2b" name="js/cssQuery-p.js">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
-   <file role="data" baseinstalldir="HTML" md5sum="0086630d13ad65299c2decc99a234455" name="js/Dispatcher.js">
+   <file role="data" baseinstalldir="HTML" md5sum="f9f2dcb977759cfb7109edfb0fe29980" name="js/Dispatcher.js">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
-   <file role="data" baseinstalldir="HTML" md5sum="f602c67ab8139bdb6f88f3a12de9c16d" name="js/HTML_AJAX.js">
+   <file role="data" baseinstalldir="HTML" md5sum="e8c80ab895ac889ba29bd4873f1e074e" name="js/HTML_AJAX.js">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
-   <file role="data" baseinstalldir="HTML" md5sum="2d61dc0d8c33520a7f9295b7f3e3c341" name="js/HTML_AJAX_lite.js">
+   <file role="data" baseinstalldir="HTML" md5sum="0f1a110581ffa5eb2413ebafd44c9513" name="js/HTML_AJAX_lite.js">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
-   <file role="data" baseinstalldir="HTML" md5sum="58a63badb0e48f5b39d3d4dce7b892c1" name="js/HttpClient.js">
+   <file role="data" baseinstalldir="HTML" md5sum="9ac57881ae705ff08d2008d3d244e0de" name="js/HttpClient.js">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
    <file role="data" baseinstalldir="HTML" md5sum="2fb00b6914d628f710aca223b1610832" name="js/JSON.js">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
-   <file role="data" baseinstalldir="HTML" md5sum="da8b47c73ce36c140f6b2e580b65aa4d" name="js/Main.js">
+   <file role="data" baseinstalldir="HTML" md5sum="c822d38f3e8a3f13257d79e3aafbf959" name="js/Loading.js">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
-   <file role="data" baseinstalldir="HTML" md5sum="22cc69057ffb436cf2f194fae67f3fb4" name="js/Request.js">
+   <file role="data" baseinstalldir="HTML" md5sum="3fa07f705b460579625f36d20c0e79f6" name="js/Main.js">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
-   <file role="data" baseinstalldir="HTML" md5sum="2468031e6786a427f31a5691d28af60e" name="js/util.js">
+   <file role="data" baseinstalldir="HTML" md5sum="1c50044d39741b40e1fddb20ec6f8bf9" name="js/Request.js">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
-   <file role="php" baseinstalldir="HTML" md5sum="53a6035efbca32b0d2eaf2c54db595da" name="AJAX.php">
+   <file role="data" baseinstalldir="HTML" md5sum="e391025f011591a93b3570671ffbb1db" name="js/serialize.js">
+    <replace type="package-info" from="@package_version@" to="version"/>
+   </file>
+   <file role="data" baseinstalldir="HTML" md5sum="526550c7205761554681fcb0fed24bfb" name="js/util.js">
+    <replace type="package-info" from="@package_version@" to="version"/>
+   </file>
+   <file role="php" baseinstalldir="HTML" md5sum="433d855ac133c1ead09d8cfe539a04c1" name="AJAX.php">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
   </filelist>
  </release>
  <changelog>
+   <release>
+    <version>0.2.3</version>
+    <date>2005-10-24</date>
+    <license>lgpl</license>
+    <state>alpha</state>
+    <notes>Initial Helper API see examples/usage_helper.php for details
+	HTML_AJAX.append
+	BC Change, default loading implementation moved to its own file
+	client param takes a comma seperated list of args now ex: server.php?client=main,httpclient
+	ajax server has support for delivering custom libraries HTML_AJAX_Server::registerJSLibrary
+	Bug #5675 Reference bug in php 4.4 5.1 etc
+    </notes>
+   </release>
+   <release>
+    <version>0.2.2</version>
+    <date>2005-09-30</date>
+    <license>lgpl</license>
+    <state>alpha</state>
+    <notes>AJAX request queues, see examples/queue_usage.php for usage
+    </notes>
+   </release>
    <release>
     <version>0.2.1</version>
     <date>2005-09-30</date>

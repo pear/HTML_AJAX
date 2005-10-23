@@ -36,6 +36,13 @@ function callback() {}
 callback.prototype = {
 	echo_string: function(result) {
 		document.getElementById('target').innerHTML = result;
+	},
+	cookies: function(result) {
+		var ret = "";
+		for(var i in result) {
+			ret += i+':'+result[i]+"\n";
+		}
+		document.getElementById('target').innerHTML = ret;
 	}
 }
 
@@ -61,13 +68,28 @@ function syncCall() {
 function asyncCall() {
 	asyncProxy.echo_string("I'm a async call");
 }
+
+function cookieTest() {
+	asyncProxy.cookies();
+}
 </script>
 <ul>
 	<li><a href="javascript:clearTarget()">Clear Target</a></li>
 	<li><a href="javascript:syncCall()">Run Sync Echo call</a></li>
 	<li><a href="javascript:asyncCall();">Run Async Echo call</a></li>
+	<li><a href="javascript:cookieTest();">View Cookies</a></li>
 </ul>
 
 <div style="white-space: pre; padding: 1em; margin: 1em; width: 600px; height: 300px; border: solid 2px black; overflow: auto;" id="target">Target</div>
+
+<div>
+Runing view Cookies should show you these same cookies being returned by the AJAX call
+<pre>
+<?php
+	var_dump($_COOKIE);
+?>
+</pre>
+</div>
+
 </body>
 </html>

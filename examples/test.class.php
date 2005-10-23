@@ -26,5 +26,20 @@ class test {
 	function error_test($string) {
 		trigger_error($string);
 	}
+	function multiarg() {
+		$args = func_get_args();
+		return "passed in ".count($args)." args ".implode('|',$args);
+	}
+	function cookies() {
+		return $_COOKIE;
+	}
+}
+
+if (isset($_GET['TEST_CLASS'])) {
+	$t = new test();
+	var_dump($t->echo_string('test string'));
+	var_dump($t->slow_echo_string('test string'));
+	var_dump($t->error_test('test string'));
+	var_dump($t->multiarg('arg1','arg2','arg3'));
 }
 ?>

@@ -1,13 +1,1 @@
-These examples cover basic AJAX usage
-
-3 front end examples are provided
-proxyless_usage.php			- Using HTML_AJAX in standalone mode, possible doesn't require PHP or any backend HTML_AJAX classes
-proxy_usage_inline_javascript.php 	- Single file proxy style usage
-proxy_usage_server.php 			- Multi-file proxy usage, either server file could be used with this example
-
-2 server examples are provided
-server.php	- Basic server operation, serving ajax calls and client lib requests
-auto_server.php	- Advanced server operation, only create php classes as needed
-
-Other Example files:
-test_speed.php		- A basic setup for measuring the speed of calls
+See Index.php for details

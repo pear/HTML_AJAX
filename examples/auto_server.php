@@ -31,16 +31,34 @@ class TestServer extends HTML_AJAX_Server {
 		$this->registerClass(new test());
 	}
 
-	// init method for the test class, includes needed files an registers it for ajax
-	function initTest2() {
-		include 'test2.class.php';
-		$this->registerClass(new test2());
+	// init method for the livesearch class, includes needed files an registers it for ajax
+	function initLivesearch() {
+		include 'livesearch.class.php';
+		$this->registerClass(new livesearch());
 	}
+	
 	
 }
 
 // create an instance of our test server
 $server = new TestServer();
+
+// init methods can also be added to the server by registering init objects, this is useful in cases where you want to dynamically add init methods
+class initObject {
+	// init method for the test class, includes needed files an registers it for ajax
+	function initTest2() {
+		include 'test2.class.php';
+		$this->server->registerClass(new test2());
+	}
+}
+$init = new initObject();
+$init->server =& $server;
+$server->registerInitObject($init);
+
+// you can use HTML_AJAX_Server to deliver your own custom javascript libs, when used with comma seperated client lists you can
+// use just one javascript include for all your library files 
+// example url: auto_server.php?client=auto_server.php?client=Util,Main,Request,HttpClient,Dispatcher,Behavior,customLib
+$server->registerJSLibrary('customLib','customLib.js','./');
 
 // handle requests as needed
 $server->handleRequest();

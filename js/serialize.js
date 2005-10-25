@@ -2,8 +2,6 @@
 
     These functions can be used to serialize and unserialize data in a
     format compatible with PHP's native serialization functions.
-    They haven't been tested extensively, please let me know if you
-    find bugs or make improvements.
     
     Copyright (C) 2005 Arpad Ray <arpad@rajeczy.com>
 
@@ -34,13 +32,16 @@
  *  @author
  *    Arpad Ray <arpad@rajeczy.com>
  *  @version
- *    2005/9/29
+ *    2005/10/12
  */
 function serialize(inp)
 {
     var type = gettype(inp);
     var val;
     switch (type) {
+        case "undefined":
+            val = "N";
+            break;
         case "boolean":
             val = "b:" + (inp ? "1" : "0");
             break;
@@ -58,20 +59,21 @@ function serialize(inp)
                 if (objname == undefined) {
                     return;
                 }
-                val = "O" + serialize(objname[1]).substring(1);
+                objname[1] = serialize(objname[1]);
+                val = "O" + objname[1].substring(1, objname[1].length - 1);
             }
             var count = 0;
             var vals = "";
+            var okey;
             for (key in inp) {
-                vals += serialize(key) + ";" + serialize(inp[key]);
-                if (vals.charAt(vals.length - 1) != "}") {
-                    vals += ";";
-                }
+                okey = (key.match(/^[0-9]+$/) ? parseInt(key) : key);
+                vals += serialize(okey) + serialize(inp[key]);
                 count++;
             }
             val += ":" + count + ":{" + vals + "}";
             break;
     }
+    if (type != "object" && type != "array") val += ";";
     return val;
 }
 
@@ -85,11 +87,12 @@ function serialize(inp)
  *  @author
  *    Arpad Ray <arpad@rajeczy.com>
  *  @version
- *    2005/9/29
+ *    2005/10/12
  */
 function unserialize(inp)
 {
-    if (!inp || inp.length < 3) {
+    if (inp == "" || inp.length < 2) {
+        unserializer.raiseError("input is too short");
         return;
     }
     var val, kret, vret, cval;
@@ -99,9 +102,20 @@ function unserialize(inp)
     var divpos = 0;
     var endcont = 0;
     var rest = "";
+    var next = "";
 
     switch (type) {
+        case "N": // null
+            if (inp.charAt(1) != ";") {
+                unserializer.raiseError("missing ; for null", cont);
+            }
+            // leave val undefined
+            rest = cont;
+            break;
         case "b": // boolean
+            if (!/[01];/.test(cont.substring(0,2))) {
+                unserializer.raiseError("value not 0 or 1, or missing ; for boolean", cont);
+            }
             val = (cont.charAt(0) == "1");
             rest = cont.substring(1);
             break;
@@ -109,78 +123,112 @@ function unserialize(inp)
             val = "";
             divpos = cont.indexOf(":");
             if (divpos == -1) {
-                return;
+                unserializer.raiseError("missing : for string", cont);
+                break;
             }
             size = parseInt(cont.substring(0, divpos));
             if (size == 0) {
+                if (cont.length - divpos < 4) {
+                    unserializer.raiseError("string is too short", cont);
+                    break;
+                }
                 rest = cont.substring(divpos + 4);
                 break;
+            }
+            if ((cont.length - divpos - size) < 4) {
+                unserializer.raiseError("string is too short", cont);
+                break;
+            }
+            if (cont.substring(divpos + 2 + size, divpos + 4 + size) != "\";") {
+                unserializer.raiseError("string is too long, or missing \";", cont);
             }
             val = cont.substring(divpos + 2, divpos + 2 + size);
             rest = cont.substring(divpos + 4 + size);
             break;
         case "i": // integer
         case "d": // float
-            endcont = cont.length;
+            var dotfound = 0;
             for (var i = 0; i < cont.length; i++) {
-                cval = (type == "i" ? parseInt(cont.charAt(i)) : parseFloat(cont.substring(0, i + 1)));
-                if (isNaN(cval)) {
+                cval = cont.charAt(i);
+                if (isNaN(parseInt(cval)) && !(type == "d" && cval == "." && !dotfound++)) {
                     endcont = i;
                     break;
                 }
             }
-            if (!endcont) {
-                return;
+            if (!endcont || cont.charAt(endcont) != ";") {
+                unserializer.raiseError("missing or invalid value, or missing ; for int/float", cont);
             }
             val = cont.substring(0, endcont);
             val = (type == "i" ? parseInt(val) : parseFloat(val));
             rest = cont.substring(endcont + 1);
             break;
         case "a": // array
-        if (cont.length < 4) {
+            if (cont.length < 4) {
+                unserializer.raiseError("array is too short", cont);
                 return;
             }
             divpos = cont.indexOf(":", 1);
-        if (divpos == -1) {
+            if (divpos == -1) {
+                unserializer.raiseError("missing : for array", cont);
                 return;
             }
             size = parseInt(cont.substring(1, divpos - 1));
             cont = cont.substring(divpos + 2);
             val = new Array();
             if (cont.length < 1) {
-                break;
+                unserializer.raiseError("array is too short", cont);
+                return;
             }
-            for (var i = 0; i + 1 < size * 2; i += 2) {
+            for (var i = 0; i + 1 < size * 2 && !unserializer.error; i += 2) {
                 kret = unserialize(cont, 1);
-        if (kret == undefined || kret[0] == undefined || kret[1] == "") {
+                if (unserializer.error || kret[0] == undefined || kret[1] == "") {
+                    unserializer.raiseError("missing or invalid key, or missing value for array", cont);
                     break;
                 }
                 vret = unserialize(kret[1], 1);
-        if (vret == undefined || vret[0] == undefined) {
+                if (unserializer.error) {
+                    unserializer.raiseError("invalid value for array", cont);
                     break;
                 }
                 val[kret[0]] = vret[0];
                 cont = vret[1];
             }
-            rest = (vret ? vret[1].substring(1) : "");
+            if (unserializer.error) {
+                return;
+            }
+            if (cont.charAt(0) != "}") {
+                unserializer.raiseError("missing ending }, or too many values for array", cont);
+                return; 
+            }
+            rest = cont.substring(1);
             break;
         case "O": // object
             divpos = cont.indexOf(":");
             if (divpos == -1) {
+                unserializer.raiseError("missing : for object", cont);
                 return;
             }
             size = parseInt(cont.substring(0, divpos));
             var objname = cont.substring(divpos + 2, divpos + 2 + size);
-            var objprops = unserialize("a:" + cont.substring(divpos + 4 + size));
-            if (objprops == undefined) {
+            if (cont.substring(divpos + 2 + size, divpos + 4 + size) != "\":") {
+                unserializer.raiseError("object name is too long, or missing \":", cont);
                 return;
             }
+            var objprops = unserialize("a:" + cont.substring(divpos + 4 + size), 1);
+            if (unserializer.error) {
+                unserializer.raiseError("invalid object properties", cont);
+                return;
+            }
+            rest = objprops[1];
             var objout = "function " + objname + "(){";
-            for (key in objprops) {
-                objout += "this." + key + "=objprops[key];";
+            for (key in objprops[0]) {
+                objout += "this." + key + "=objprops[0]['" + key + "'];";
             }
             objout += "}val=new " + objname + "();";
-            eval(objout);  
+            eval(objout);
+            break;
+        default:
+            unserializer.raiseError("invalid input type", cont);
     }
     return (arguments.length == 1 ? val : [val, rest]);
 }
@@ -212,3 +260,29 @@ function gettype(inp)
     }
     return type;
 }
+
+function Unserializer()
+{
+    this.error = 0;
+    this.message = "";
+    this.cont = "";
+}
+
+Unserializer.prototype.unserialize = function(inp)
+{
+    this.error = 0;
+    return unserialize(inp);
+}
+
+Unserializer.prototype.getError = function()
+{
+    return this.message + "\n" + this.cont;
+}
+
+Unserializer.prototype.raiseError = function(message, cont)
+{
+    this.error = 1;
+    this.message = message;
+    this.cont = cont;
+}
+

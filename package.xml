@@ -20,16 +20,12 @@
   </maintainer>
   </maintainers>
  <release>
-  <version>0.2.3</version>
-  <date>2005-10-24</date>
+  <version>0.2.4</version>
+  <date>2005-10-26</date>
   <license>lgpl</license>
   <state>alpha</state>
-  <notes>Initial Helper API see examples/usage_helper.php for details
-	HTML_AJAX.append
-	BC Change, default loading implementation moved to its own file
-	client param takes a comma seperated list of args now ex: server.php?client=main,httpclient
-	ajax server has support for delivering custom libraries HTML_AJAX_Server::registerJSLibrary
-	Bug #5675 Reference bug in php 4.4 5.1 etc
+  <notes>#5788  	New bug in Ajax Server , cant create JS stub
+	New login example
   </notes>
   <deps>
    <dep type="pkg" rel="ge" version="1.3.5" optional="no">PEAR</dep>
@@ -83,7 +79,7 @@
    <file role="php" baseinstalldir="HTML" md5sum="bc644af2ca57e5d5192be6229a764f23" name="AJAX/JSON.php">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
-   <file role="php" baseinstalldir="HTML" md5sum="5cc0aa396bc8bb3f4da9e21a106b8f39" name="AJAX/Server.php">
+   <file role="php" baseinstalldir="HTML" md5sum="9fced4d12b8a374da1a805168fe18a83" name="AJAX/Server.php">
     <replace type="pear-config" from="@data-dir@" to="data_dir"/>
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
@@ -91,6 +87,21 @@
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
    <file role="doc" baseinstalldir="HTML" md5sum="a9228917cfb8840ffd41a634b7964429" name="docs/todo">
+    <replace type="package-info" from="@package_version@" to="version"/>
+   </file>
+   <file role="doc" baseinstalldir="HTML" md5sum="790920b80302c522044d5b93b86d57ad" name="examples/login/inc/login.css">
+    <replace type="package-info" from="@package_version@" to="version"/>
+   </file>
+   <file role="doc" baseinstalldir="HTML" md5sum="6be3a95e374616a5450e1cd7ccaa25f2" name="examples/login/inc/login.js">
+    <replace type="package-info" from="@package_version@" to="version"/>
+   </file>
+   <file role="doc" baseinstalldir="HTML" md5sum="1b666144dfd79d1ea97045ab3a1da1e6" name="examples/login/php/auto_server.php">
+    <replace type="package-info" from="@package_version@" to="version"/>
+   </file>
+   <file role="doc" baseinstalldir="HTML" md5sum="8d8046e5d92cc07c8816856791643a7d" name="examples/login/php/login.class.php">
+    <replace type="package-info" from="@package_version@" to="version"/>
+   </file>
+   <file role="doc" baseinstalldir="HTML" md5sum="72ab1aa77852248d693f7be73b2e2598" name="examples/login/index.php">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
    <file role="doc" baseinstalldir="HTML" md5sum="f422936113a5944ef6e362e1ef93909b" name="examples/auto_server.php">
@@ -105,7 +116,7 @@
    <file role="doc" baseinstalldir="HTML" md5sum="f8af303e9baf5fa91d73c150f5a950bc" name="examples/helper_usage.php">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
-   <file role="doc" baseinstalldir="HTML" md5sum="e38a24accd94e69396d79d72213e04ab" name="examples/index.php">
+   <file role="doc" baseinstalldir="HTML" md5sum="de5781681336fbda1a903d93f5924154" name="examples/index.php">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
    <file role="doc" baseinstalldir="HTML" md5sum="369fe6f979f7efb922220f3399b4ed26" name="examples/livesearch.class.php">
@@ -147,13 +158,13 @@
    <file role="data" baseinstalldir="HTML" md5sum="c260e94c53eca2a4c27de8e948664d2b" name="js/cssQuery-p.js">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
-   <file role="data" baseinstalldir="HTML" md5sum="f9f2dcb977759cfb7109edfb0fe29980" name="js/Dispatcher.js">
+   <file role="data" baseinstalldir="HTML" md5sum="77fb3ca89eb8d9d731eb463bc9920f25" name="js/Dispatcher.js">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
-   <file role="data" baseinstalldir="HTML" md5sum="e8c80ab895ac889ba29bd4873f1e074e" name="js/HTML_AJAX.js">
+   <file role="data" baseinstalldir="HTML" md5sum="752e26e5473d3fff3db1ee995460e940" name="js/HTML_AJAX.js">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
-   <file role="data" baseinstalldir="HTML" md5sum="0f1a110581ffa5eb2413ebafd44c9513" name="js/HTML_AJAX_lite.js">
+   <file role="data" baseinstalldir="HTML" md5sum="f3f8bc25377ef3e3c5a6d36e5f3d89f7" name="js/HTML_AJAX_lite.js">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
    <file role="data" baseinstalldir="HTML" md5sum="9ac57881ae705ff08d2008d3d244e0de" name="js/HttpClient.js">
@@ -171,18 +182,27 @@
    <file role="data" baseinstalldir="HTML" md5sum="1c50044d39741b40e1fddb20ec6f8bf9" name="js/Request.js">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
-   <file role="data" baseinstalldir="HTML" md5sum="e391025f011591a93b3570671ffbb1db" name="js/serialize.js">
+   <file role="data" baseinstalldir="HTML" md5sum="5cbc49075fd2c2473596a53b85e1627c" name="js/serialize.js">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
    <file role="data" baseinstalldir="HTML" md5sum="526550c7205761554681fcb0fed24bfb" name="js/util.js">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
-   <file role="php" baseinstalldir="HTML" md5sum="433d855ac133c1ead09d8cfe539a04c1" name="AJAX.php">
+   <file role="php" baseinstalldir="HTML" md5sum="2c3d481654b0d2318a7710190fba50f4" name="AJAX.php">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
   </filelist>
  </release>
  <changelog>
+   <release>
+    <version>0.2.4</version>
+    <date>2005-10-26</date>
+    <license>lgpl</license>
+    <state>alpha</state>
+    <notes>#5788  	New bug in Ajax Server , cant create JS stub
+	New login example
+    </notes>
+   </release>
    <release>
     <version>0.2.3</version>
     <date>2005-10-24</date>

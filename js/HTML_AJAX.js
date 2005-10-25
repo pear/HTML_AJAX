@@ -67,6 +67,18 @@ var HTML_AJAX = {
 
         return HTML_AJAX.makeRequest(request);
 	},
+    Sync: function() {
+        this.mode = 'sync';
+    },
+    /**
+     * Should I somehow serialize this.... we'll see.
+     */
+    Async: function(callback) {
+        this.mode = 'async';
+        if (callback) {
+            this.callback = callback;
+        }
+    },
 	call: function(className,method,callback) {
         var args = new Array();
         for(var i = 3; i < arguments.length; i++) {
@@ -120,6 +132,7 @@ var HTML_AJAX = {
         }
         alert(msg);
     },
+    
     */
     // Class postfix to content-type map
     contentTypeMap: {'JSON':'application/json','Null':'text/plain','Error':'application/error'},

@@ -242,7 +242,17 @@ request.callback = function(result) { self.callback[callName](result); }
 request.isAsync = false;
 }
 return HTML_AJAX.makeRequest(request);
-}
+},
+    Sync: function() {
+        this.mode = 'sync';
+    },
+
+    Async: function(callback) {
+        this.mode = 'async';
+        if (callback) {
+            this.callback = callback;
+        }
+    }
 };
 // HttpClient.js
 function HTML_AJAX_HttpClient() { }

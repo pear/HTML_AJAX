@@ -1,0 +1,72 @@
+/* --------------------------------------------------------------------------------------------------
+	General styles
+------------------------------------------------------------------------------------------------- */
+body, table {
+	color: #000000;
+	font-size: 70%;
+	font-family: Tahoma, Verdana, Arial, Helvetica, sans-serif;
+}
+
+table, fieldset {
+	font-size: 1em;
+}
+
+body, td, th {
+	line-height: 140%;
+}
+
+td, th {
+	vertical-align: top;
+}
+
+form, ul {
+	margin: 0;
+	padding: 0;
+}
+
+legend {
+	color: #0046D5;
+	font-weight: bold;
+	padding-right: 8px;
+	margin-bottom: 5px;
+}
+
+ol, ul {
+	margin-left: 6px;
+	padding-left: 15px;
+}
+
+/* --------------------------------------------------------------------------------------------------
+	Custom styles
+------------------------------------------------------------------------------------------------- */
+label.normal {
+	color: #006fcc;
+	font-weight: normal;
+}
+
+label.error {
+	color: #ff0000;
+	font-weight: bold;
+}
+
+input.normal, input.error {
+	padding: 1px 3px 1px 3px;
+	border: 1px solid #B3B3B3;
+
+	color: #000000;
+	background-color: #ffffff;
+}
+
+input.error {
+	color: #000000;
+	background-color: #ffcccc;
+}
+
+.errorbox {
+	border: 1px solid #ff0000;
+	display: none;
+
+	padding: 8px;
+	margin-top: 1em;
+	margin-bottom: 1em;
+}

@@ -144,8 +144,8 @@ class HTML_AJAX_Server
 
         $methods = get_class_methods($this);
         foreach($methods as $method) {
-            if (preg_match('/^init([a-zA-Z0-0]+)$/',$method,$match)) {
-                $this->_initLookup[$match[1]] = $method;
+            if (preg_match('/^init([a-zA-Z0-9_]+)$/',$method,$match)) {
+                $this->_initLookup[strtolower($match[1])] = $method;
             }
         }
     }
@@ -221,6 +221,9 @@ class HTML_AJAX_Server
         // create a list list of js files were going to need to output
         $fileList = array();
 
+        if(!is_array($this->options['client'])) {
+            $this->options['client'] = array();
+        }
         foreach($this->options['client'] as $library) {
             if (isset($this->javascriptLibraries[$library])) {
                 $lib = (array)$this->javascriptLibraries[$library];
@@ -393,7 +396,7 @@ class HTML_AJAX_Server
      */
     function _loadOptions() 
     {
-        $this->options = array('client'=>false,'stub'=>false);
+        $this->options = array('client'=>array(),'stub'=>array());
         if (isset($_GET['client'])) {
             $this->options['client'] = array();
              if (strstr($_GET['client'],',')) {
@@ -412,8 +415,6 @@ class HTML_AJAX_Server
 
             if (count($client) > 0) {
                 $this->options['client'] = $client;
-            } else {
-                $this->options['client'] = false;
             }
         }
         if (isset($_GET['stub'])) {
@@ -426,14 +427,12 @@ class HTML_AJAX_Server
             foreach($stubs as $val) {
                 $cleanVal = $this->_cleanIdentifier($val);
                 if (!empty($cleanVal)) {
-                    $stub[] = $cleanVal;
+                    $stub[] = strtolower($cleanVal);
                 }
             }
 
             if (count($stub) > 0) {
                 $this->options['stub'] = $stub;
-            } else {
-                $this->options['stub'] = false;
             }
         }
     }

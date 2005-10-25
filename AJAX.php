@@ -220,6 +220,8 @@ class HTML_AJAX {
             $client .= "\tthis.dispatcher = new HTML_AJAX_Dispatcher(this.className,mode,callback,false,'{$this->unserializer}');\n}\n";
         }
         $client .= "{$name}.prototype  = {\n";
+        $client .= "\tSync: function() { this.dispatcher.Sync(); }, \n";
+        $client .= "\tAsync: function(callback) { this.dispatcher.Async(callback); },\n"; 
         foreach($this->_exportedInstances[$name]['exportedMethods'] as $method) {
             $client .= $this->_generateMethodStub($method);
         }
@@ -407,7 +409,7 @@ class HTML_AJAX {
      */
     function _errorHandler($errno, $errstr, $errfile, $errline) 
     {
-        if ($errno < error_reporting()) {
+        if ($errno & error_reporting()) {
             $e = new stdClass();
             $e->errNo   = $errno;
             $e->errStr  = $errstr;

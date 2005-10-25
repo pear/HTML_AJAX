@@ -47,6 +47,9 @@ HTML_AJAX_Request.prototype = {
     // async callback method
     callback: null,
 
+    // Queue to push this request too
+    queue: 'default',
+
     /**
      * Add an argument for the remote method
      * @param string argument name

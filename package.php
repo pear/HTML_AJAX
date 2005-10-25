@@ -19,24 +19,14 @@
  */
 require_once 'PEAR/PackageFileManager.php';
 
-$version = '0.2.0';
+$version = '0.2.3';
 $notes = <<<EOT
-Reliense under the LGPL fixing concerns about GPL compability
-
-Full rewrite of all JavaScript code pulled in from JPSpan, this allows for relicence, as well as shrinking the code size while adding new features
-   Big new Features are: 
-   Request object non contains all information needed to make a request, HTML_AJAX.makeRequest added service a request object
-   HTML_AJAX_HttpClient instances now created as needed by a factory HTML_AJAX.httpClient(), this functionality will be replaced at some future point
-
-   These changes will allow for various queue and pool structures to be created in the future, but for now client in progress errors should not be possible
-   	when using proxy objects
-
-Serializer that mimics post added, filling _POST on an ajax request, helper code for AJAX forms still in progress
-
-Bugs Fixed:
-5087, 5284 	- jsClient Location fixes, allows it to be set manually
-5908 		- PHP 5 bug fix, auto loading of classes not working in php5 for an unknown reason, just load serializer as a normal include
-5029 		- init bug in auto_server
+	Initial Helper API see examples/usage_helper.php for details
+	HTML_AJAX.append
+	BC Change, default loading implementation moved to its own file
+	client param takes a comma seperated list of args now ex: server.php?client=main,httpclient
+	ajax server has support for delivering custom libraries HTML_AJAX_Server::registerJSLibrary
+	Bug #5675 Reference bug in php 4.4 5.1 etc
 EOT;
 
 $description =<<<EOT
@@ -52,7 +42,7 @@ $result = $package->setOptions(array(
    'version'           => $version,
    'state'             => 'alpha',
    'license'           => 'lgpl',
-   'ignore'            => array('package.php', 'package.xml', '*.bak', '*src*', '*.tgz','test.bat','build.php'),
+   'ignore'            => array('package.php', 'package.xml', '*.bak', '*src*', '*.tgz','test.bat','build.php','DeveloperNotes.txt'),
    'filelistgenerator' => 'file', // other option is 'file'
    'notes'             => $notes,
    'changelogoldtonew' => false,
@@ -74,7 +64,7 @@ $package->addMaintainer('davidc','lead','David Coallier','davidc@php.net');
 
 // dependencies can be added at will here
 $package->addDependency('PEAR', '1.3.5', 'ge', 'pkg', false);
-$package->addDependency('php', '4.3.0', 'ge', 'php', false);
+$package->addDependency('php', '4.1.0', 'ge', 'php', false);
 
 if (isset($_SERVER['argv'][1]) && $_SERVER['argv'][1] == 'commit') {
    $result = $package->writePackageFile();

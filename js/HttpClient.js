@@ -64,6 +64,12 @@ HTML_AJAX_HttpClient.prototype = {
 		}
 
         try {
+            if (this.request.onOpen) {
+                this.request.onOpen();
+            }
+            else if (HTML_AJAX.onOpen) {
+                HTML_AJAX.onOpen(this.request);
+            }
 		    this.xmlhttp.open(this.request.requestType,this.request.completeUrl(),this.request.isAsync);
 
             // set onreadystatechange here since it will be reset after a completed call in Mozilla
@@ -82,6 +88,7 @@ HTML_AJAX_HttpClient.prototype = {
 
 		if (!this.request.isAsync) {
             if ( this.xmlhttp.status == 200 ) {
+                HTML_AJAX.requestComplete(this.request);
                 if (this.request.onLoad) {
                     this.request.onLoad();
                 } else if (HTML_AJAX.onLoad) {
@@ -143,13 +150,16 @@ HTML_AJAX_HttpClient.prototype = {
                     window.clearTimeout(this._timeout_id);
 
                     if (this.xmlhttp.status == 200) {
+                        HTML_AJAX.requestComplete(this.request);
                         if (this.request.onLoad) {
                             this.request.onLoad();
                         } else if (HTML_AJAX.onLoad ) {
                             HTML_AJAX.onLoad(this.request);
                         }
 
-                        this.request.callback(this._decodeResponse());
+                        if (this.request.callback) {
+                            this.request.callback(this._decodeResponse());
+                        }
                     }
 
                     else {
@@ -175,13 +185,13 @@ HTML_AJAX_HttpClient.prototype = {
     // handle sending an error where it needs to go
     _handleError: function(e) 
     {
+        HTML_AJAX.requestComplete(this.request,e);
         if (this.request.onError) {
             this.request.onError(e);
         } else if (HTML_AJAX.onError) {
             HTML_AJAX.onError(e,this.request);
         }
         else {
-            alert('throwing the exception');
             throw e;
         }
     }

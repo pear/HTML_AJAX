@@ -15,7 +15,7 @@ if (isset($argv[2]) && $argv[2] == 'strip') {
 	$strip = true;
 }
 
-$source = array('Main.js','Dispatcher.js','HttpClient.js','Request.js','JSON.js');
+$source = array('Main.js','Dispatcher.js','HttpClient.js','Request.js','JSON.js','Loading.js','util.js','behavior.js','cssQuery-p.js');
 
 $stripPregs = array(
 	'/^\s+$/',

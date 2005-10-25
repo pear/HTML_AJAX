@@ -20,30 +20,20 @@
   </maintainer>
   </maintainers>
  <release>
-  <version>0.2.0</version>
-  <date>2005-09-27</date>
+  <version>0.2.3</version>
+  <date>2005-10-24</date>
   <license>lgpl</license>
   <state>alpha</state>
-  <notes>Reliense under the LGPL fixing concerns about GPL compability
-
-Full rewrite of all JavaScript code pulled in from JPSpan, this allows for relicence, as well as shrinking the code size while adding new features
-   Big new Features are: 
-   Request object non contains all information needed to make a request, HTML_AJAX.makeRequest added service a request object
-   HTML_AJAX_HttpClient instances now created as needed by a factory HTML_AJAX.httpClient(), this functionality will be replaced at some future point
-
-   These changes will allow for various queue and pool structures to be created in the future, but for now client in progress errors should not be possible
-   	when using proxy objects
-
-Serializer that mimics post added, filling _POST on an ajax request, helper code for AJAX forms still in progress
-
-Bugs Fixed:
-5087, 5284 	- jsClient Location fixes, allows it to be set manually
-5908 		- PHP 5 bug fix, auto loading of classes not working in php5 for an unknown reason, just load serializer as a normal include
-5029 		- init bug in auto_server
+  <notes>Initial Helper API see examples/usage_helper.php for details
+	HTML_AJAX.append
+	BC Change, default loading implementation moved to its own file
+	client param takes a comma seperated list of args now ex: server.php?client=main,httpclient
+	ajax server has support for delivering custom libraries HTML_AJAX_Server::registerJSLibrary
+	Bug #5675 Reference bug in php 4.4 5.1 etc
   </notes>
   <deps>
    <dep type="pkg" rel="ge" version="1.3.5" optional="no">PEAR</dep>
-   <dep type="php" rel="ge" version="4.3.0" optional="no"/>
+   <dep type="php" rel="ge" version="4.1.0" optional="no"/>
   </deps>
   <filelist>
    <dir name="/" baseinstalldir="HTML">
@@ -59,6 +49,12 @@ Bugs Fixed:
        <replace type="package-info" from="@package_version@" to="version"/>
       </file>
      </dir> <!-- /AJAX/Serializer -->
+     <file role="php" name="Debug.php">
+      <replace type="package-info" from="@package_version@" to="version"/>
+     </file>
+     <file role="php" name="Helper.php">
+      <replace type="package-info" from="@package_version@" to="version"/>
+     </file>
      <file role="php" name="JSON.php">
       <replace type="package-info" from="@package_version@" to="version"/>
      </file>
@@ -68,12 +64,32 @@ Bugs Fixed:
      </file>
     </dir> <!-- /AJAX -->
     <dir name="docs">
+     <dir name="examples">
+      <file role="doc" name="error_usage.php">
+       <replace type="package-info" from="@package_version@" to="version"/>
+      </file>
+     </dir> <!-- /docs/examples -->
      <file role="doc" name="todo">
       <replace type="package-info" from="@package_version@" to="version"/>
      </file>
     </dir> <!-- /docs -->
     <dir name="examples">
      <file role="doc" name="auto_server.php">
+      <replace type="package-info" from="@package_version@" to="version"/>
+     </file>
+     <file role="doc" name="customLib.js">
+      <replace type="package-info" from="@package_version@" to="version"/>
+     </file>
+     <file role="doc" name="error_usage.php">
+      <replace type="package-info" from="@package_version@" to="version"/>
+     </file>
+     <file role="doc" name="helper_usage.php">
+      <replace type="package-info" from="@package_version@" to="version"/>
+     </file>
+     <file role="doc" name="index.php">
+      <replace type="package-info" from="@package_version@" to="version"/>
+     </file>
+     <file role="doc" name="livesearch.class.php">
       <replace type="package-info" from="@package_version@" to="version"/>
      </file>
      <file role="doc" name="proxyless_usage.php">
@@ -83,6 +99,9 @@ Bugs Fixed:
       <replace type="package-info" from="@package_version@" to="version"/>
      </file>
      <file role="doc" name="proxy_usage_server.php">
+      <replace type="package-info" from="@package_version@" to="version"/>
+     </file>
+     <file role="doc" name="queue_usage.php">
       <replace type="package-info" from="@package_version@" to="version"/>
      </file>
      <file role="doc" name="README">
@@ -126,10 +145,19 @@ Bugs Fixed:
      <file role="data" name="JSON.js">
       <replace type="package-info" from="@package_version@" to="version"/>
      </file>
+     <file role="data" name="Loading.js">
+      <replace type="package-info" from="@package_version@" to="version"/>
+     </file>
      <file role="data" name="Main.js">
       <replace type="package-info" from="@package_version@" to="version"/>
      </file>
      <file role="data" name="Request.js">
+      <replace type="package-info" from="@package_version@" to="version"/>
+     </file>
+     <file role="data" name="serialize.js">
+      <replace type="package-info" from="@package_version@" to="version"/>
+     </file>
+     <file role="data" name="util.js">
       <replace type="package-info" from="@package_version@" to="version"/>
      </file>
     </dir> <!-- /js -->
@@ -140,6 +168,44 @@ Bugs Fixed:
   </filelist>
  </release>
  <changelog>
+   <release>
+    <version>0.2.3</version>
+    <date>2005-10-24</date>
+    <license>lgpl</license>
+    <state>alpha</state>
+    <notes>Initial Helper API see examples/usage_helper.php for details
+	HTML_AJAX.append
+	BC Change, default loading implementation moved to its own file
+	client param takes a comma seperated list of args now ex: server.php?client=main,httpclient
+	ajax server has support for delivering custom libraries HTML_AJAX_Server::registerJSLibrary
+	Bug #5675 Reference bug in php 4.4 5.1 etc
+    </notes>
+   </release>
+   <release>
+    <version>0.2.2</version>
+    <date>2005-09-30</date>
+    <license>lgpl</license>
+    <state>alpha</state>
+    <notes>AJAX request queues, see examples/queue_usage.php for usage
+    </notes>
+   </release>
+   <release>
+    <version>0.2.1</version>
+    <date>2005-09-30</date>
+    <license>lgpl</license>
+    <state>alpha</state>
+    <notes>This release is mainly bug fixes.
+	Remove debug message when throwing an exception
+	Fix problems with async calls
+	Fix broken content-type detection
+	Stop trying to run an init method when the init flag isn&apos;t set
+	PHP required version moved to 4.1.0 which is what it should need
+
+There is also a couple small features added
+	A basic debug class has been added, allowing you to write PHP errors to a file
+	HTML_AJAX.replace now works async
+    </notes>
+   </release>
    <release>
     <version>0.2.0</version>
     <date>2005-09-26</date>

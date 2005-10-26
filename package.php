@@ -19,14 +19,10 @@
  */
 require_once 'PEAR/PackageFileManager.php';
 
-$version = '0.2.3';
+$version = '0.2.4';
 $notes = <<<EOT
-	Initial Helper API see examples/usage_helper.php for details
-	HTML_AJAX.append
-	BC Change, default loading implementation moved to its own file
-	client param takes a comma seperated list of args now ex: server.php?client=main,httpclient
-	ajax server has support for delivering custom libraries HTML_AJAX_Server::registerJSLibrary
-	Bug #5675 Reference bug in php 4.4 5.1 etc
+	#5788  	New bug in Ajax Server , cant create JS stub
+	New login example
 EOT;
 
 $description =<<<EOT

@@ -26,6 +26,11 @@ Front end files for examples, you can actually run these and see some example ou
 <li><a href='helper_usage.php'>helper_usage.php</a> - An example showing the basics of the helper api</li>
 </ul>
 
+<p>Real Life Examples</p>
+<ul>
+<li><a href='login/index.php'>login/index.php</a> - An example creating an AJAX driven login</a></li>
+</ul>
+
 <p>
 2 server examples are provided
 </p>

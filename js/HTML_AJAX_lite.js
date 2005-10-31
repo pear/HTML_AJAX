@@ -243,16 +243,17 @@ request.isAsync = false;
 }
 return HTML_AJAX.makeRequest(request);
 },
-    Sync: function() {
-        this.mode = 'sync';
-    },
-
-    Async: function(callback) {
-        this.mode = 'async';
-        if (callback) {
-            this.callback = callback;
-        }
-    }
+Sync: function()
+{
+this.mode = 'sync';
+},
+Async: function(callback)
+{
+this.mode = 'async';
+if (callback) {
+this.callback = callback;
+}
+}
 };
 // HttpClient.js
 function HTML_AJAX_HttpClient() { }
@@ -441,9 +442,13 @@ getContentType: function() {
 return this.serializer.contentType;
 },
 completeUrl: function() {
-var url = this.requestUrl;
+var url = new String(this.requestUrl);
+var delimiter = '?';
+if (url.indexOf('?') >= 0) {
+delimiter = '&';
+}
 if (this.className || this.methodName) {
-url += '?c='+escape(this.className)+'&m='+escape(this.methodName);
+url += delimiter+'c='+escape(this.className)+'&m='+escape(this.methodName);
 }
 return url;
 }

@@ -160,7 +160,7 @@ class HTML_AJAX_Server
         if ($this->options == true) {
             $this->_loadOptions();
         }
-        if (!isset($_GET['c'])) {
+        if (!isset($_GET['c']) && (count($this->options['client']) > 0 || count($this->options['stub']) > 0) ) {
             return $this->generateClient();
         } else {
             $this->_init($this->_cleanIdentifier($_GET['c']));

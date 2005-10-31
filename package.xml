@@ -20,12 +20,14 @@
   </maintainer>
   </maintainers>
  <release>
-  <version>0.2.4</version>
-  <date>2005-10-26</date>
+  <version>0.2.5</version>
+  <date>2005-11-01</date>
   <license>lgpl</license>
   <state>alpha</state>
-  <notes>#5788  	New bug in Ajax Server , cant create JS stub
-	New login example
+  <notes>Small optimizations and cleanup of HTML_AJAX and HTML_AJAX_Server
+	Case fixes for specifing case while exporting a class
+	Fix url creation in javascript allowing server urls to contain parameters
+	Added a flag to turn off sending a Content-Length header
   </notes>
   <deps>
    <dep type="pkg" rel="ge" version="1.3.5" optional="no">PEAR</dep>
@@ -79,11 +81,14 @@
    <file role="php" baseinstalldir="HTML" md5sum="bc644af2ca57e5d5192be6229a764f23" name="AJAX/JSON.php">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
-   <file role="php" baseinstalldir="HTML" md5sum="9fced4d12b8a374da1a805168fe18a83" name="AJAX/Server.php">
+   <file role="php" baseinstalldir="HTML" md5sum="655bd312d7792cede2b95b6d992c006e" name="AJAX/Server.php">
     <replace type="pear-config" from="@data-dir@" to="data_dir"/>
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
    <file role="doc" baseinstalldir="HTML" md5sum="5dc68d6015d33aab239b3f4f53ad9f92" name="docs/examples/error_usage.php">
+    <replace type="package-info" from="@package_version@" to="version"/>
+   </file>
+   <file role="doc" baseinstalldir="HTML" md5sum="383e7135ef90c6b38f3a0c269ca97713" name="docs/authors">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
    <file role="doc" baseinstalldir="HTML" md5sum="a9228917cfb8840ffd41a634b7964429" name="docs/todo">
@@ -116,7 +121,7 @@
    <file role="doc" baseinstalldir="HTML" md5sum="f8af303e9baf5fa91d73c150f5a950bc" name="examples/helper_usage.php">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
-   <file role="doc" baseinstalldir="HTML" md5sum="de5781681336fbda1a903d93f5924154" name="examples/index.php">
+   <file role="doc" baseinstalldir="HTML" md5sum="32a40db8a5148aeac1640a10e81329cc" name="examples/index.php">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
    <file role="doc" baseinstalldir="HTML" md5sum="369fe6f979f7efb922220f3399b4ed26" name="examples/livesearch.class.php">
@@ -135,6 +140,12 @@
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
    <file role="doc" baseinstalldir="HTML" md5sum="4710218f06f07c35486e3e169774e342" name="examples/README">
+    <replace type="package-info" from="@package_version@" to="version"/>
+   </file>
+   <file role="doc" baseinstalldir="HTML" md5sum="408f57237385b20750fae1784c2dbb00" name="examples/serialize.examples.htm">
+    <replace type="package-info" from="@package_version@" to="version"/>
+   </file>
+   <file role="doc" baseinstalldir="HTML" md5sum="ef18844055e9de283e3426688312203f" name="examples/serialize.examples.php">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
    <file role="doc" baseinstalldir="HTML" md5sum="4119017a9d33bae81c49d8df95b6349e" name="examples/server.php">
@@ -161,10 +172,10 @@
    <file role="data" baseinstalldir="HTML" md5sum="77fb3ca89eb8d9d731eb463bc9920f25" name="js/Dispatcher.js">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
-   <file role="data" baseinstalldir="HTML" md5sum="752e26e5473d3fff3db1ee995460e940" name="js/HTML_AJAX.js">
+   <file role="data" baseinstalldir="HTML" md5sum="0c2667be3c1385b5355a28a515f9d83b" name="js/HTML_AJAX.js">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
-   <file role="data" baseinstalldir="HTML" md5sum="f3f8bc25377ef3e3c5a6d36e5f3d89f7" name="js/HTML_AJAX_lite.js">
+   <file role="data" baseinstalldir="HTML" md5sum="7a00b23751c2838a2e4fe579ac110fc9" name="js/HTML_AJAX_lite.js">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
    <file role="data" baseinstalldir="HTML" md5sum="9ac57881ae705ff08d2008d3d244e0de" name="js/HttpClient.js">
@@ -179,7 +190,10 @@
    <file role="data" baseinstalldir="HTML" md5sum="3fa07f705b460579625f36d20c0e79f6" name="js/Main.js">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
-   <file role="data" baseinstalldir="HTML" md5sum="1c50044d39741b40e1fddb20ec6f8bf9" name="js/Request.js">
+   <file role="data" baseinstalldir="HTML" md5sum="9cd8395eccddab387e96b62fab58c944" name="js/phpSerializer.js">
+    <replace type="package-info" from="@package_version@" to="version"/>
+   </file>
+   <file role="data" baseinstalldir="HTML" md5sum="b16e4ca4f86e0ec779b1338583964d2a" name="js/Request.js">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
    <file role="data" baseinstalldir="HTML" md5sum="5cbc49075fd2c2473596a53b85e1627c" name="js/serialize.js">
@@ -188,12 +202,23 @@
    <file role="data" baseinstalldir="HTML" md5sum="526550c7205761554681fcb0fed24bfb" name="js/util.js">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
-   <file role="php" baseinstalldir="HTML" md5sum="2c3d481654b0d2318a7710190fba50f4" name="AJAX.php">
+   <file role="php" baseinstalldir="HTML" md5sum="934650a2d111ac2e99d258d8c6360433" name="AJAX.php">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
   </filelist>
  </release>
  <changelog>
+   <release>
+    <version>0.2.5</version>
+    <date>2005-11-01</date>
+    <license>lgpl</license>
+    <state>alpha</state>
+    <notes>Small optimizations and cleanup of HTML_AJAX and HTML_AJAX_Server
+	Case fixes for specifing case while exporting a class
+	Fix url creation in javascript allowing server urls to contain parameters
+	Added a flag to turn off sending a Content-Length header
+    </notes>
+   </release>
    <release>
     <version>0.2.4</version>
     <date>2005-10-26</date>

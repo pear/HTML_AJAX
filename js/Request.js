@@ -87,9 +87,13 @@ HTML_AJAX_Request.prototype = {
      * Get the complete url, adding in any needed get params for rpc
      */
     completeUrl: function() {
-        var url = this.requestUrl;
+        var url = new String(this.requestUrl);
+        var delimiter = '?';
+        if (url.indexOf('?') >= 0) {
+            delimiter = '&';
+        }
         if (this.className || this.methodName) {
-            url += '?c='+escape(this.className)+'&m='+escape(this.methodName);
+            url += delimiter+'c='+escape(this.className)+'&m='+escape(this.methodName);
         }
         return url;
     }

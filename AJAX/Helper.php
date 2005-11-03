@@ -33,7 +33,7 @@ class HTML_AJAX_Helper
 	 *
 	 * @var	array
 	 */
-	var $jsLibraries = array('Util','Main','Request','HttpClient','Dispatcher','Behavior','Loading');
+	var $jsLibraries = array('Util','Main','Request','HttpClient','Dispatcher','Behavior','Loading','JSON');
 
 	/**
 	 * Include all needed libraries, stubs, and set defaultServer

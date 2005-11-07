@@ -19,10 +19,12 @@
  */
 require_once 'PEAR/PackageFileManager.php';
 
-$version = '0.2.4';
+$version = '0.2.5';
 $notes = <<<EOT
-	#5788  	New bug in Ajax Server , cant create JS stub
-	New login example
+	Small optimizations and cleanup of HTML_AJAX and HTML_AJAX_Server
+	Case fixes for specifing case while exporting a class
+	Fix url creation in javascript allowing server urls to contain parameters
+	Added a flag to turn off sending a Content-Length header
 EOT;
 
 $description =<<<EOT

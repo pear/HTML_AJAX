@@ -43,7 +43,8 @@ Front end files for examples, you can actually run these and see some example ou
 Other Example files:
 </p>
 <ul>
-<li><a href='test_speed.php'>test_speed.php</p>	- A basic setup for measuring the speed of calls</li>
+<li><a href='test_speed.php'>test_speed.php</a>	- A basic setup for measuring the speed of calls</li>
+<li><a href='serialize.examples.htm'>serialize.examples.htm/a>	- Internal tests for the php serialize format serializer</li>
 </ul>
 
 </body>

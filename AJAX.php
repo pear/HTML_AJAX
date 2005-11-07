@@ -107,6 +107,14 @@ class HTML_AJAX {
      * @access public
      */
      var $debugSession = false;
+
+    /**
+     * If the Content-Length header should be sent, if your using a gzip handler on an output buffer, or run into any compatability problems, try disabling this.
+     *
+     * @access public
+     * @var boolean
+     */
+    var $sendContentLength = true;
      
     /**
      * Set a class to handle requests
@@ -129,11 +137,12 @@ class HTML_AJAX {
         }
 
 
-        $this->_exportedInstances[$exportedName] = array();
-        $this->_exportedInstances[$exportedName]['className'] = $className;
-        $this->_exportedInstances[$exportedName]['exportedName'] = $className;
-        $this->_exportedInstances[$exportedName]['instance'] =& $instance;
-        $this->_exportedInstances[$exportedName]['exportedMethods'] = $exportedMethods;
+        $index = strtolower($exportedName);
+        $this->_exportedInstances[$index] = array();
+        $this->_exportedInstances[$index]['className'] = $className;
+        $this->_exportedInstances[$index]['exportedName'] = $exportedName;
+        $this->_exportedInstances[$index]['instance'] =& $instance;
+        $this->_exportedInstances[$index]['exportedMethods'] = $exportedMethods;
     }
 
     /**
@@ -152,7 +161,7 @@ class HTML_AJAX {
         $funcs = get_class_methods($className);
 
         foreach ($funcs as $key => $func) {
-            if ($func === $className || substr($func,0,1) === '_') {
+            if (strtolower($func) === $className || substr($func,0,1) === '_') {
                 unset($funcs[$key]);
             }
         }
@@ -168,7 +177,8 @@ class HTML_AJAX {
     {
         $client = '';
 
-        foreach($this->_exportedInstances as $name => $data) {
+        $names = array_keys($this->_exportedInstances);
+        foreach($names as $name) {
             $client .= $this->generateClassStub($name);
         }
         return $client;
@@ -204,13 +214,12 @@ class HTML_AJAX {
      */
     function generateClassStub($name) 
     {
-
         if (!isset($this->_exportedInstances[$name])) {
             return '';
         }
 
         $client = "// Client stub for the {$this->_exportedInstances[$name]['className']} PHP Class\n";
-        $client .= "function {$name}(callback) {\n";
+        $client .= "function {$this->_exportedInstances[$name]['exportedName']}(callback) {\n";
         $client .= "\tmode = 'sync';\n";
         $client .= "\tif (callback) { mode = 'async'; }\n";
         $client .= "\tthis.className = '{$name}';\n";
@@ -219,7 +228,9 @@ class HTML_AJAX {
         } else {
             $client .= "\tthis.dispatcher = new HTML_AJAX_Dispatcher(this.className,mode,callback,false,'{$this->unserializer}');\n}\n";
         }
-        $client .= "{$name}.prototype  = {\n";
+        $client .= "{$this->_exportedInstances[$name]['exportedName']}.prototype  = {\n";
+        $client .= "\tSync: function() { this.dispatcher.Sync(); }, \n";
+        $client .= "\tAsync: function(callback) { this.dispatcher.Async(callback); },\n"; 
         foreach($this->_exportedInstances[$name]['exportedMethods'] as $method) {
             $client .= $this->_generateMethodStub($method);
         }
@@ -320,7 +331,9 @@ class HTML_AJAX {
 
             // headers to force things not to be cached:
             $headers = array();
-            $headers['Content-Length'] = strlen($output);
+            if ($this->sendContentLength) {
+                $headers['Content-Length'] = strlen($output);
+            }
             $headers['Expires'] = 'Mon, 26 Jul 1997 05:00:00 GMT';
             $headers['Last-Modified'] = gmdate( "D, d M Y H:i:s" ) . 'GMT';
             $headers['Cache-Control'] = 'no-cache, must-revalidate';
@@ -407,7 +420,7 @@ class HTML_AJAX {
      */
     function _errorHandler($errno, $errstr, $errfile, $errline) 
     {
-        if ($errno < error_reporting()) {
+        if ($errno & error_reporting()) {
             $e = new stdClass();
             $e->errNo   = $errno;
             $e->errStr  = $errstr;

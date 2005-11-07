@@ -13,8 +13,8 @@
  */
 var HTML_AJAX_Util = {
     // Set the element event
-    setElementEvent: function(id, event, handler) {
-        var element = document.getElementById(id);
+    registerEvent: function(element, event, handler) {
+        //var element = document.getElementById(id);
         if (typeof element.addEventListener != "undefined") {   //Dom2
            element.addEventListener(event, handler, false);
         } else if (typeof element.attachEvent != "undefined") { //IE 5+
@@ -38,8 +38,12 @@ var HTML_AJAX_Util = {
             r += i+':'+input[i]+"\n";
         }
         return r;
+    },
+    getElementsByClassName: function(className, parentElement) {
+        var children = ($(parentElement) || document.body).getElementsByTagName('*');
+        for(var i =0; i < children.length; i++) {
+        }
     }
-
 }
 // }}}
 /* vim: set expandtab tabstop=4 shiftwidth=4 softtabstop=4: */

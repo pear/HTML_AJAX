@@ -66,6 +66,20 @@ HTML_AJAX_Dispatcher.prototype = {
 		}
 
         return HTML_AJAX.makeRequest(request);
-	}
+	},
+
+    Sync: function() 
+    {
+        this.mode = 'sync';
+    },
+
+    Async: function(callback)
+    {
+        this.mode = 'async';
+        if (callback) {
+            this.callback = callback;
+        }
+    }
+    
 };
 /* vim: set expandtab tabstop=4 shiftwidth=4 softtabstop=4: */

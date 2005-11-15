@@ -65,13 +65,13 @@ class HTML_AJAX {
 
     /**
      * What encoding your going to use for serializing data from php being sent to javascript
-     * @var string  JSON|null
+     * @var string  JSON|PHP|Null
      */
     var $serializer = 'JSON';
 
     /**
      * What encoding your going to use for unserializing data sent from javascript
-     * @var string  JSON|null
+     * @var string  JSON|PHP|Null
      */
     var $unserializer = 'JSON';
 
@@ -84,6 +84,8 @@ class HTML_AJAX {
             'JSON'  => 'application/json',
             'Null'  => 'text/plain',
             'Error' => 'application/error',
+            'PHP'   => 'application/php-serialized',
+            'Urlencoded' => 'application/x-www-form-urlencoded'
         );
     
     /**
@@ -190,20 +192,12 @@ class HTML_AJAX {
      */
     function registerCallback($callback, $type = 'headers') 
     {
-        if(is_callable($callback)) {
-            if($type == 'headers') {
-                $this->_callbacks['headers'] = $callback;
-                return true;
-            } elseif($type == 'get') {
-                $this->_callbacks['get'] = $callback;
-                return true;
-            } elseif($type == 'server') {
-                $this->_callbacks['server'] = $callback;
-                return true;
-            } else {
-                return false;
-            }
+        $types = array('headers', 'get', 'server');
+        if(is_callable($callback) && in_array($type, $types)) {
+            $this->_callbacks[$type] = $callback;
+            return true;
         }
+        return false;
     }
 
     /**
@@ -304,14 +298,11 @@ class HTML_AJAX {
         return false;
     }
 
-    function _getClientPayloadContentType() {
+    function _getClientPayloadContentType()
+    {
         if (isset($_SERVER['CONTENT_TYPE'])) {
-            $type = $_SERVER['CONTENT_TYPE'];
-            if (strstr($type,';')) {
-                $types = explode(';',$type);
-                $type = array_shift($types);
-            }
-            return strtolower($type);
+            $pos = strpos($_SERVER['CONTENT_TYPE'], ';');
+            return strtolower($pos ? substr($_SERVER['CONTENT_TYPE'], 0, $pos) : $_SERVER['CONTENT_TYPE']);
         }
         return 'text/plain';
     }
@@ -326,26 +317,30 @@ class HTML_AJAX {
      */
     function _sendResponse($response) 
     {
+        if(is_object($response) && is_a($response, 'HTML_AJAX_Response')) {
+            $output = $response->getPayload();
+            $content = $response->getContentType();
+        } else {
             $serializer = $this->_getSerializer($this->serializer);
             $output = $serializer->serialize($response);
-
-            // headers to force things not to be cached:
-            $headers = array();
-            if ($this->sendContentLength) {
-                $headers['Content-Length'] = strlen($output);
-            }
-            $headers['Expires'] = 'Mon, 26 Jul 1997 05:00:00 GMT';
-            $headers['Last-Modified'] = gmdate( "D, d M Y H:i:s" ) . 'GMT';
-            $headers['Cache-Control'] = 'no-cache, must-revalidate';
-            $headers['Pragma'] = 'no-cache';
-
             if (isset($this->contentTypeMap[$this->serializer])) {
                 //remember that IE is stupid and wants a capital T
-                $headers['Content-Type'] = $this->contentTypeMap[$this->serializer];
+                 $content = $this->contentTypeMap[$this->serializer];
             }
+        }
+        // headers to force things not to be cached:
+        $headers = array();
+        if ($this->sendContentLength) {
+            $headers['Content-Length'] = strlen($output);
+        }
+        $headers['Expires'] = 'Mon, 26 Jul 1997 05:00:00 GMT';
+        $headers['Last-Modified'] = gmdate( "D, d M Y H:i:s" ) . 'GMT';
+        $headers['Cache-Control'] = 'no-cache, must-revalidate';
+        $headers['Pragma'] = 'no-cache';
+        $headers['Content-Type'] = $content;
 
-            call_user_func($this->_callbacks['headers'],$headers);
-            echo $output;
+        call_user_func($this->_callbacks['headers'], $headers);
+        echo $output;
     }
 
     /**
@@ -385,8 +380,9 @@ class HTML_AJAX {
      * @access  private
      * @return  string  raw post data
      */
-    function _getClientPayload() {
-            return $GLOBALS['HTTP_RAW_POST_DATA'];
+    function _getClientPayload()
+    {
+        return $GLOBALS['HTTP_RAW_POST_DATA'];
     }
 
     /**
@@ -395,7 +391,8 @@ class HTML_AJAX {
      * @access  private
      * @return  string  filtered _GET value
      */
-    function _getVar($var) {
+    function _getVar($var)
+    {
         if (!isset($_GET[$var])) {
             return NULL;
         } else {
@@ -408,7 +405,8 @@ class HTML_AJAX {
      *
      * @access private
      */
-    function _exceptionHandler($ex) {
+    function _exceptionHandler($ex)
+    {
         $this->_errorHandler($ex->getCode(),$ex->getMessage(),$ex->getFile(),$ex->getLine());
     }
      

@@ -3,12 +3,11 @@
  *
  * @category   HTML
  * @package    Ajax
- * @author     Joshua Eichorn <josh@bluga.net>
- * @copyright  2005 Joshua Eichorn
  * @license    http://www.opensource.org/licenses/lgpl-license.php  LGPL
+ * @copyright  2005 Joshua Eichorn
+ * see Main.js for license Author details
  */
-
-HTML_AJAX.onOpen = function(request) {
+HTML_AJAX.Open = function(request) {
     var loading = document.getElementById('HTML_AJAX_LOADING');
     if (!loading) {
         loading = document.createElement('div');
@@ -23,9 +22,14 @@ HTML_AJAX.onOpen = function(request) {
     
         document.body.insertBefore(loading,document.body.firstChild);
     }
-    HTML_AJAX.onOpen_Timeout = window.setTimeout(function() { loading.style.display = 'block'; },500);
+    if (request.isAsync) {
+        HTML_AJAX.onOpen_Timeout = window.setTimeout(function() { loading.style.display = 'block'; },500);
+    }
+    else {
+        loading.style.display = 'block';
+    }
 }
-HTML_AJAX.onLoad = function(request) {
+HTML_AJAX.Load = function(request) {
     if (HTML_AJAX.onOpen_Timeout) {
         window.clearTimeout(HTML_AJAX.onOpen_Timeout);
         HTML_AJAX.onOpen_Timeout = false;

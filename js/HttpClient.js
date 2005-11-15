@@ -64,48 +64,54 @@ HTML_AJAX_HttpClient.prototype = {
 		}
 
         try {
-            if (this.request.onOpen) {
-                this.request.onOpen();
+            if (this.request.Open) {
+                this.request.Open();
             }
-            else if (HTML_AJAX.onOpen) {
-                HTML_AJAX.onOpen(this.request);
+            else if (HTML_AJAX.Open) {
+                HTML_AJAX.Open(this.request);
             }
-		    this.xmlhttp.open(this.request.requestType,this.request.completeUrl(),this.request.isAsync);
 
             // set onreadystatechange here since it will be reset after a completed call in Mozilla
             var self = this;
             this.xmlhttp.onreadystatechange = function() { self._readyStateChangeCallback(); }
-
-            this.xmlhttp.setRequestHeader('Content-Type',this.request.getContentType());
+            this.xmlhttp.open(this.request.requestType,this.request.completeUrl(),this.request.isAsync);
+            if (this.request.customHeaders) {
+                for (i in this.request.customHeaders) {
+                    this.xmlhttp.setRequestHeader(i, this.request.customHeaders[i]);
+                }
+            }
+            if (this.request.customHeaders && !this.request.customHeaders['Content-Type']) {
+                this.xmlhttp.setRequestHeader('Content-Type',this.request.getContentType());
+            }
             var payload = this.request.getSerializedPayload();
             if (payload) {
                 this.xmlhttp.setRequestHeader('Content-Length', payload.length);
             }
             this.xmlhttp.send(payload);
+
+            if (!this.request.isAsync) {
+                if ( this.xmlhttp.status == 200 ) {
+                    HTML_AJAX.requestComplete(this.request);
+                    if (this.request.Load) {
+                        this.request.Load();
+                    } else if (HTML_AJAX.Load) {
+                        HTML_AJAX.Load(this.request);
+                    }
+                        
+                    return this._decodeResponse();
+                } else {
+                    var e = new Error('['+this.xmlhttp.status +'] '+this.xmlhttp.statusText);
+                    e.headers = this.xmlhttp.getAllResponseHeaders();
+                    this._handleError(e);
+                }
+            }
+            else {
+                // setup timeout
+                var self = this;
+                this._timeoutId = window.setTimeout(function() { self.abort(true); },this.request.timeout);
+            }
         } catch (e) {
             this._handleError(e);
-        }
-
-		if (!this.request.isAsync) {
-            if ( this.xmlhttp.status == 200 ) {
-                HTML_AJAX.requestComplete(this.request);
-                if (this.request.onLoad) {
-                    this.request.onLoad();
-                } else if (HTML_AJAX.onLoad) {
-                    HTML_AJAX.onLoad(this.request);
-                }
-                    
-                return this._decodeResponse();
-            } else {
-                var e = new Error('['+this.xmlhttp.status +'] '+this.xmlhttp.statusText);
-                e.headers = this.xmlhttp.getAllResponseHeaders();
-                this._handleError(e);
-            }
-		}
-        else {
-            // setup timeout
-            var self = this;
-            this._timeoutId = window.setTimeout(function() { self.abort(true); },this.request.timeout);
         }
 	},
 	
@@ -131,18 +137,18 @@ HTML_AJAX_HttpClient.prototype = {
                     break;
                 // XMLHTTPRequest.send() has just been called
                 case 2:
-                    if (this.request.onSend) {
-                        this.request.onSend();
-                    } else if (HTML_AJAX.onSend) {
-                        HTML_AJAX.onSend(this.request);
+                    if (this.request.Send) {
+                        this.request.Send();
+                    } else if (HTML_AJAX.Send) {
+                        HTML_AJAX.Send(this.request);
                     }
                     break;
                 // Fetching response from server in progress
                 case 3:
-                    if (this.request.onProgress) {
-                        this.request.onProgress();
-                    } else if (HTML_AJAX.onProgress ) {
-                        HTML_AJAX.onProgress(this.request);
+                    if (this.request.Progress) {
+                        this.request.Progress();
+                    } else if (HTML_AJAX.Progress ) {
+                        HTML_AJAX.Progress(this.request);
                     }
                 break;
                 // Download complete
@@ -151,10 +157,10 @@ HTML_AJAX_HttpClient.prototype = {
 
                     if (this.xmlhttp.status == 200) {
                         HTML_AJAX.requestComplete(this.request);
-                        if (this.request.onLoad) {
-                            this.request.onLoad();
-                        } else if (HTML_AJAX.onLoad ) {
-                            HTML_AJAX.onLoad(this.request);
+                        if (this.request.Load) {
+                            this.request.Load();
+                        } else if (HTML_AJAX.Load ) {
+                            HTML_AJAX.Load(this.request);
                         }
 
                         if (this.request.callback) {

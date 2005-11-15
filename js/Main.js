@@ -1,10 +1,28 @@
 /**
  * JavaScript library for use with HTML_AJAX
  *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to:
+ * Free Software Foundation, Inc.,
+ * 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+ *
  * @category   HTML
  * @package    Ajax
  * @author     Joshua Eichorn <josh@bluga.net>
- * @copyright  2005 Joshua Eichorn
+ * @author     Arpad Ray <arpad@rajeczy.com>
+ * @author     David Coallier <davidc@php.net>
+ * @author     Elizabeth Smith <auroraeosrose@gmail.com>
+ * @copyright  2005 Joshua Eichorn, Arpad Ray, David Coallier, Elizabeth Smith
  * @license    http://www.opensource.org/licenses/lgpl-license.php  LGPL
  */
 
@@ -16,9 +34,15 @@ var HTML_AJAX = {
 	defaultServerUrl: false,
 	defaultEncoding: 'Null',
     queues: false,
-    // get an HttpClient, at some point this might be actually smart
-    httpClient: function() {
-        return new HTML_AJAX_HttpClient();
+    clientPools: {},
+    // get an HttpClient, supply a name to use the pool of that name or the default if it isn't found
+    httpClient: function(name) {
+        if (name) {
+            if (this.clientPools[name]) {
+                return this.clientPools[name].getClient();
+            }
+        }
+        return this.clientPools['default'].getClient();
     },
     // Pushing the given request to queue specified by it, in default operation this will immediately make a request
     // request might be delayed or never happen depending on the queue setup
@@ -51,7 +75,7 @@ var HTML_AJAX = {
         }
         return new HTML_AJAX_Serialize_Null();
     },
-	fullcall: function(url,encoding,className,method,callback,args) {
+	fullcall: function(url,encoding,className,method,callback,args, customHeaders) {
         var serializer = HTML_AJAX.serializerForEncoding(encoding);
 
         var request = new HTML_AJAX_Request(serializer);
@@ -63,6 +87,9 @@ var HTML_AJAX = {
         request.methodName = method;
         request.callback = callback;
         request.args = args;
+        if (customHeaders) {
+            request.customHeaders = customHeaders;
+        }
 
         return HTML_AJAX.makeRequest(request);
 	},
@@ -110,6 +137,12 @@ var HTML_AJAX = {
             HTML_AJAX.fullcall(HTML_AJAX.defaultServerUrl,HTML_AJAX.defaultEncoding,arguments[1],arguments[2],callback,args);
         }
     }, 
+    // override to add top level loading notification (start)
+    Open: function(request) {
+    },
+    // override to add top level loading notification (finish)
+    Load: function(request) {
+    },
     /*
     // A really basic error handler 
     onError: function(e) {
@@ -121,8 +154,14 @@ var HTML_AJAX = {
     },
     */
     // Class postfix to content-type map
-    contentTypeMap: {'JSON':'application/json','Null':'text/plain','Error':'application/error'},
-    // used internally to make queues work, override onLoad or onError to perform custom events when a request is complete
+        contentTypeMap: {
+        'JSON':         'application/json',
+        'Null':         'text/plain',
+        'Error':        'application/error',
+        'PHP':          'application/php-serialized',
+        'Urlencoded':   'application/x-www-form-urlencoded'
+    },
+    // used internally to make queues work, override Load or onError to perform custom events when a request is complete
     // fires on success and error
     requestComplete: function(request,error) {
         for(var i in HTML_AJAX.queues) {
@@ -130,7 +169,93 @@ var HTML_AJAX = {
                 HTML_AJAX.queues[i].requestComplete(request,error);
             }
         }
-    }
+    },
+    // submits a form through ajax. both arguments can be either DOM nodes or IDs, if the target is omitted then the form is set to be the target
+    formSubmit: function (form, target)
+    {
+        if (typeof form == 'string') {
+            form = document.getElementById(form);
+            if (!form) {
+                // let the submit be processed normally
+                return false;
+            }
+        }
+        if (typeof target == 'string') {
+            target = document.getElementById('target');
+            if (!target) {
+                target = form;
+            }
+        }
+        var action = form.action;
+        var el, type, value, name, nameParts;
+        var out = '', tags = form.getElementsByTagName('*')        
+        childLoop:
+        for (i in tags) {
+            el = tags[i];
+            if (!el || !el.getAttribute) {
+                continue;
+            }
+            name = el.getAttribute('name');
+            if (!name) {
+                // no element name so skip
+                continue;
+            }
+            // find the element value
+            type = el.nodeName.toLowerCase();
+            switch (type) {
+            case 'input':
+                var inpType = el.getAttribute('type');
+                switch (inpType) {
+                case 'submit':
+                    type = 'button';
+                    break;
+                case 'checkbox':
+                case 'radio':
+                    if (el.checked) {
+                        value = 'checked';
+                        break;
+                    }
+                    // unchecked radios/checkboxes don't get submitted
+                    continue childLoop;
+                case 'text':
+                default:
+                    type = 'text';
+                    // continue for value
+                    break;
+                }
+                break;
+            case 'button':
+            case 'textarea':
+            case 'select':
+                break;
+            default:
+                // unknown element
+                continue childLoop;
+            }
+            if (typeof value == 'undefined') {
+                value = el.value;
+            }
+            // add element to output array
+            out += escape(name) + '=' + escape(value) + '&';
+            value = undefined;
+        } // end childLoop
+        var callback = function(result) {
+            target.innerHTML = result;
+        }
+        switch (form.method.toLowerCase()) {
+        case 'post':
+            var headers = {};
+            headers['Content-Type'] = 'application/x-www-form-urlencoded';
+            HTML_AJAX.fullcall(action, 'Null', false, form.method, callback, out, headers);
+            break;
+        default:
+            if (action.indexOf('?') == -1) {
+                out = '?' + out.substr(0, out.length - 1);
+            }
+            HTML_AJAX.fullcall(action + out, 'Null', false, form.method, callback);
+        }
+        return true;
+    } // end formSubmit()
 }
 
 
@@ -166,30 +291,6 @@ HTML_AJAX_Serialize_JSON.prototype = {
         }
 	}
 }
-function HTML_AJAX_Serialize_Urlencoded() {}
-HTML_AJAX_Serialize_Urlencoded.prototype = {
-    contentType: 'application/x-www-form-urlencoded; charset=UTF-8',
-    serialize: function(input) {
-        var newURL  = '';	
-        for (var i in input) {
-	        input[i] = escape(input[i]);
-        	newURL = newURL + i + '=' + input[i] + '&';
-        }
-        newURL = encodeURI(newURL.substr(0, (newURL.length-1)));
-        return newURL;
-    },
-
-    unserialize: function(input) {
-        var newURL  = '';
-        for (var i in input) {
-        	input[i] = escape(input[i]);
-        	newURL = newURL + i + '=' + input[i] + '&';
-        }
-        newURL = decodeURI(newURL.substr(0, (newURL.length-1)));
-        return newURL;	
-    }
-}
-
 
 function HTML_AJAX_Serialize_Error() {}
 HTML_AJAX_Serialize_Error.prototype = {

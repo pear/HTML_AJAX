@@ -32,7 +32,12 @@ HTML_AJAX_Dispatcher.prototype = {
      * Timeout for async calls
      */
 	timeout: 20000,
-
+ 
+    /**
+     * Default request priority
+     */
+    priority: 0,
+    
     /**
      * Make an ajax call
      *
@@ -49,6 +54,7 @@ HTML_AJAX_Dispatcher.prototype = {
         request.contentType = this.contentType;
         request.serializer = eval('new HTML_AJAX_Serialize_'+this.serializerType);
         request.queue = this.queue;
+        request.priority = this.priority;
         
 		for(var i=0; i < args.length; i++) {
 		    request.addArg(i,args[i]);

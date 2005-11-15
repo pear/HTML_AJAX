@@ -104,15 +104,19 @@ class HTML_AJAX_Server
         'all'           =>  'HTML_AJAX.js',
         'html_ajax'     =>  'HTML_AJAX.js',
         'html_ajax_lite'=>  'HTML_AJAX_lite.js',
-        'json'          =>  'JSON.js',
+        'json'          =>  'serializer/JSON.js',
         'request'       =>  'Request.js',
-        'main'          =>  'Main.js',
+        'main'          =>  array('Main.js','clientPool.js'),
         'httpclient'    =>  'HttpClient.js',
         'dispatcher'    =>  'Dispatcher.js',
         'util'          =>  'util.js',
         'loading'       =>  'Loading.js',
-        'phpserializer' =>  'serialize.js',
-        'behavior'      =>  array('behavior.js','cssQuery-p.js')
+        'phpserializer' =>  'serializer/phpSerializer.js',
+        'urlserializer' =>  'serializer/UrlSerializer.js',
+        'haserializer'  =>  'serializer/haSerializer.js',
+        'priorityqueue' =>  'priorityQueue.js',
+        'clientpool'    =>  'clientPool.js',
+        'behavior'      =>  array('behavior/behavior.js','behavior/cssQuery-p.js')
     );
 
     /**
@@ -200,6 +204,7 @@ class HTML_AJAX_Server
      * @param object    $instance an external class with initClassName methods
      */
     function registerInitObject(&$instance) {
+        $instance->server =& $instance;
         $methods = get_class_methods($instance);
         foreach($methods as $method) {
             if (preg_match('/^init([a-zA-Z0-9_]+)$/',$method,$match)) {
@@ -383,7 +388,12 @@ class HTML_AJAX_Server
     function clientJsLocation() 
     {
         if (!$this->clientJsLocation) {
-            return '@data-dir@'.DIRECTORY_SEPARATOR.'HTML_AJAX'.DIRECTORY_SEPARATOR.'js'.DIRECTORY_SEPARATOR;
+            $path = '@data-dir@'.DIRECTORY_SEPARATOR.'HTML_AJAX'.DIRECTORY_SEPARATOR.'js'.DIRECTORY_SEPARATOR;
+            if(strpos($path, '@'.'data-dir@') === 0)
+            {
+                $path = realpath(dirname(__FILE__).DIRECTORY_SEPARATOR.'..'.DIRECTORY_SEPARATOR.'..'.DIRECTORY_SEPARATOR.'js').DIRECTORY_SEPARATOR;
+            }
+            return $path;
         } else {
             return $this->clientJsLocation;
         }

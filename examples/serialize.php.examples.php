@@ -1,33 +1,4 @@
-<script type="text/javascript" src="serialize.js"></script>
-<script type="text/javascript">
-
-function describe(inp)
-{
-    var type = gettype(inp);
-    var ctype;
-    var out = "Type: " + type + "\nContents: ";
-    switch (type) {
-        case "string":
-        case "number":
-            out += inp;
-            break;
-        case "boolean":
-            out += (inp ? 'true' : 'false');
-            break;
-        case "array":
-        case "object":
-            for (k in inp) {
-                out += k + " => ";
-                ctype = gettype(inp[k]);
-                out += (ctype == "array" || ctype == "object" ? describe(inp[k]) : inp[k]) + "\n";
-            }
-    }
-    return out;
-}
-
-unserializer = new Unserializer;
-
-</script>
+<script type="text/javascript" src="server.php?client=phpSerializer,util"></script>
 <?php
 
 $examples = array(
@@ -52,9 +23,10 @@ for ($i = 0; $i < $c; $i++) {
     echo "</pre>\n<strong>Serialized in PHP:</strong>\n<pre>", $sfoo, "</pre>\n",
          "<strong>Unserialized in JS:</strong>\n<pre>\n",
          '<script type="text/javascript">',
-         'var sfoo = unescape("', urlencode($sfoo), '"); var usfoo = unserializer.unserialize(sfoo); if (unserializer.error) {',
-         'document.write("Error: " + unserializer.getError() + "\n"); } document.write(describe(usfoo) + ',
-         '"</pre>\n<strong>Serialized in JS:</strong>\n<pre>" + serialize(usfoo));', "</script>\n</pre>\n<hr />\n\n";
+         'var jsr = new HTML_AJAX_Serialize_PHP();',
+         'var sfoo = unescape("', urlencode($sfoo), '"); var usfoo = jsr.unserialize(sfoo); if (jsr.error) {',
+         'document.write("Error: " + jsr.getError() + "\n"); } document.write(HTML_AJAX_Util.varDump(usfoo) + ',
+         '"</pre>\n<strong>Serialized in JS:</strong>\n<pre>" + jsr.serialize(usfoo));', "</script>\n</pre>\n<hr />\n\n";
 }
 
 $bad_examples = array(
@@ -89,8 +61,8 @@ foreach ($bad_examples as $sfoo) {
     echo "</pre>\n<strong>Invalidly serialized:</strong>\n<pre>", $sfoo, "</pre>\n",
          "<strong>Unserialized in JS:</strong>\n<pre>\n",
          '<script type="text/javascript">',
-         'var sfoo = unescape("', urlencode($sfoo), '"); var usfoo = unserializer.unserialize(sfoo); if (unserializer.error) {',
-         'document.write("Error: " + unserializer.getError() + "\n"); } document.write(describe(usfoo));',
+         'var sfoo = unescape("', urlencode($sfoo), '"); var usfoo = jsr.unserialize(sfoo); if (jsr.error) {',
+         'document.write("Error: " + jsr.getError() + "\n"); } document.write(HTML_AJAX_Util.varDump(usfoo));',
          "</script>\n</pre>\n<hr />\n\n";
 }
 

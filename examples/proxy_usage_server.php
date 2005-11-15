@@ -20,6 +20,9 @@
  * @version    Release: @package_version@
  * @link       http://pear.php.net/package/HTML_AJAX
  */
+
+// set a cookie so we always have an example cookie for the test
+setcookie('testcookie',"Doesn't taste as good as a peanut butter cookie");
  
 ?><html>
 <head>
@@ -83,7 +86,8 @@ function cookieTest() {
 <div style="white-space: pre; padding: 1em; margin: 1em; width: 600px; height: 300px; border: solid 2px black; overflow: auto;" id="target">Target</div>
 
 <div>
-Runing view Cookies should show you these same cookies being returned by the AJAX call
+Runing view Cookies should show you these same cookies being returned by the AJAX call<br>
+If the lists don't match, try reloading this page, it sets a test cookie, but we can't see it on the PHP side until the client returns it on a test.
 <pre>
 <?php
 	var_dump($_COOKIE);

@@ -37,16 +37,19 @@ var HTML_AJAX_Util = {
     {
         if (!event) var event = window.event;
         if (event.target) return event.target; // w3c
-	    if (event.srcElement) return event.srcElement; // ie 5
+        if (event.srcElement) return event.srcElement; // ie 5
     },
     // gets the type of a variable or its primitive equivalent as a string
     getType: function(inp) 
     {
         var type = typeof inp, match;
+        if(type == 'object' && !inp)
+        {
+            return 'null';
+        }
         if (type == "object") {
-            try {
-                inp.constructor;
-            } catch (e) {
+            if(!inp.constructor)
+            {
                 return 'object';
             }
             var cons = inp.constructor.toString();
@@ -130,33 +133,33 @@ var HTML_AJAX_Util = {
         return ret;
     },
     //compat function for stupid browsers in which getElementsByTag with a * dunna work
-    getAllElementsByTag: function(parentElement)
+    getAllElements: function(parentElement)
     {
-        if(!parentElement) {
-            var allElements = document.all;
-        }
-        else
-        {
-            var allElements = [], rightName = new RegExp( parentElement, 'i' ), i;
-            for( i=0; i<document.all.length; i++ ) {
-                if( rightName.test( document.all[i].parentElement ) )
-                allElements.push( document.all[i] );
-            }
-        }
-        return allElements;
-    },
-    getElementsByClassName: function(className, parentElement) {
         //check for idiot browsers
-        if( document.all && !document.getElementsByTagName )
+        if( document.all)
         {
-            var allElements = HTML_AJAX_Util.getAllElementsByTag(parentElement);
+            if(!parentElement) {
+                var allElements = document.all;
+            }
+            else
+            {
+                var allElements = [], rightName = new RegExp( parentElement, 'i' ), i;
+                for( i=0; i<document.all.length; i++ ) {
+                    if( rightName.test( document.all[i].parentElement ) )
+                    allElements.push( document.all[i] );
+                }
+            }
+            return allElements;
         }
         //real browsers just do this
         else
         {
             if (!parentElement) { parentElement = document.body; }
-            var allElements = parentElement.getElementsByTagName('*');
+            return parentElement.getElementsByTagName('*');
         }
+    },
+    getElementsByClassName: function(className, parentElement) {
+        var allElements = HTML_AJAX_Util.getAllElements(parentElement);
         var items = [];
         var exp = new RegExp('(^| )' + className + '( |$)');
         for(var i=0,j=allElements.length; i<j; i++)

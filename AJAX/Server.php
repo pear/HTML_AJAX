@@ -116,6 +116,7 @@ class HTML_AJAX_Server
         'haserializer'  =>  'serializer/haSerializer.js',
         'priorityqueue' =>  'priorityQueue.js',
         'clientpool'    =>  'clientPool.js',
+        'iframe'        =>  'IframeXHR.js',
         'behavior'      =>  array('behavior/behavior.js','behavior/cssQuery-p.js')
     );
 
@@ -164,6 +165,8 @@ class HTML_AJAX_Server
         if ($this->options == true) {
             $this->_loadOptions();
         }
+        //basically a hook for iframe but allows processing of data earlier
+        $this->ajax->populatePayload();
         if (!isset($_GET['c']) && (count($this->options['client']) > 0 || count($this->options['stub']) > 0) ) {
             return $this->generateClient();
         } else {
@@ -204,11 +207,11 @@ class HTML_AJAX_Server
      * @param object    $instance an external class with initClassName methods
      */
     function registerInitObject(&$instance) {
-        $instance->server =& $instance;
+        $instance->server =& $this;
         $methods = get_class_methods($instance);
         foreach($methods as $method) {
             if (preg_match('/^init([a-zA-Z0-9_]+)$/',$method,$match)) {
-                $this->_initLookup[$match[1]] = array(&$instance,$method);
+                $this->_initLookup[strtolower($match[1])] = array(&$instance,$method);
             }
         }
     }
@@ -391,7 +394,7 @@ class HTML_AJAX_Server
             $path = '@data-dir@'.DIRECTORY_SEPARATOR.'HTML_AJAX'.DIRECTORY_SEPARATOR.'js'.DIRECTORY_SEPARATOR;
             if(strpos($path, '@'.'data-dir@') === 0)
             {
-                $path = realpath(dirname(__FILE__).DIRECTORY_SEPARATOR.'..'.DIRECTORY_SEPARATOR.'..'.DIRECTORY_SEPARATOR.'js').DIRECTORY_SEPARATOR;
+                $path = realpath(dirname(__FILE__).DIRECTORY_SEPARATOR.'..'.DIRECTORY_SEPARATOR.'js').DIRECTORY_SEPARATOR;
             }
             return $path;
         } else {

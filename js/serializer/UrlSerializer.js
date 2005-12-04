@@ -8,7 +8,7 @@
  * array or a string. See examples/serialize.url.examples.php
  *
  * @version     0.0.1
- * @copyright   2005 Arpad Ray <arpad@rajeczy.com>
+ * @copyright   2005 Arpad Ray <arpad@php.net>
  * @license     http://www.opensource.org/licenses/lgpl-license.php  LGPL
  *
  * See Main.js for Author/license details
@@ -75,7 +75,7 @@ HTML_AJAX_Serialize_Urlencoded.prototype = {
             // null
             return;
         }
-        if (!/^(?:\w+(?:\[[^\[\]]*\])*=[^&]*(?:&|$))+$/.test(input)) {
+        if (!/^(\w+(\[[^\[\]]*\])*=[^&]*(&|$))+$/.test(input)) {
             this.raiseError("invalidly formed input", input);
             return;
         }
@@ -92,7 +92,7 @@ HTML_AJAX_Serialize_Urlencoded.prototype = {
             }
             key = unescape(input[i].substr(0, pos));
             val = unescape(input[i].substr(pos + 1));
-            key = key.replace(/\[((?:\d*\D+)+)\]/g, '["$1"]');
+            key = key.replace(/\[((\d*\D+)+)\]/g, '["$1"]');
             keys = key.split(']');
             for (j in keys) {
                 if (!keys[j].length || keys[j].length == 0) {

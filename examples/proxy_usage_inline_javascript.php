@@ -29,7 +29,7 @@
 include 'HTML/AJAX.php';
 
 // our simple test class
-include 'test.class.php';
+include 'support/test.class.php';
 
 
 
@@ -51,6 +51,7 @@ if ($ajax->handleRequest()) {
 <script type='text/javascript' src="server.php?client=HttpClient"></script>
 <script type='text/javascript' src="server.php?client=Request"></script>
 <script type='text/javascript' src="server.php?client=JSON"></script>
+<script type='text/javascript' src="server.php?client=iframe"></script>
 <script type='text/javascript' src="server.php?client=loading"></script>
 
 <script type='text/javascript'>

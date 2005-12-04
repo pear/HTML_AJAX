@@ -11,9 +11,10 @@
  */
 
 /**
- * Require the response class
+ * Require the response class and json serializer
  */
 require_once 'HTML/AJAX/Response.php';
+require_once 'HTML/AJAX/Serializer/JSON.php';
 
 /**
  * Helper Class for creating information that can be properly serialized and used by
@@ -41,12 +42,16 @@ class HTML_AJAX_Action extends HTML_AJAX_Response
 	 *
 	 * adds $data to the end of the attribute in the item identified by $id ($id can also be a class)
 	 */
-	function prependAttr($id, $attribute, $data)
+	function prependAttr($id, $attribute, $data = NULL)
 	{
+		if(!is_null($data))
+		{
+			$attribute = array($attribute => $data);
+		}
 		$this->_actions[] = array(
 			'action' => 'prepend',
 			'id' => $id,
-			'attributes' => settype($attribute),
+			'attributes' => $attribute,
 			'data' => $data,
 		);
 		return;
@@ -57,13 +62,16 @@ class HTML_AJAX_Action extends HTML_AJAX_Response
 	 *
 	 * adds $data to the beginning of the attribute in the item identified by $id ($id can also be a class)
 	 */
-	function appendAttr($id, $attribute, $data)
+	function appendAttr($id, $attribute, $data = NULL)
 	{
+		if(!is_null($data))
+		{
+			$attribute = array($attribute => $data);
+		}
 		$this->_actions[] = array(
 			'action' => 'append',
 			'id' => $id,
-			'attributes' => settype($attribute),
-			'data' => $data,
+			'attributes' => $attribute,
 		);
 		return;
 	}
@@ -74,13 +82,16 @@ class HTML_AJAX_Action extends HTML_AJAX_Response
 	 * assigns $data to the value of the attribute in the item identified by $id ($id can also be a class)
 	 * if attribute already exists, the entire value of the attribute will be replaced
 	 */
-	function assignAttr($id, $attribute, $data)
+	function assignAttr($id, $attribute, $data = NULL)
 	{
+		if(!is_null($data))
+		{
+			$attribute = array($attribute => $data);
+		}
 		$this->_actions[] = array(
 			'action' => 'assign',
 			'id' => $id,
-			'attributes' => settype($attribute),
-			'data' => $data,
+			'attributes' => $attribute,
 		);
 		return;
 	}
@@ -92,10 +103,14 @@ class HTML_AJAX_Action extends HTML_AJAX_Response
 	 */
 	function clearAttr($id, $attribute)
 	{
+		if(!is_array($attribute))
+		{
+			$attribute = array($attribute);
+		}
 		$this->_actions[] = array(
 			'action' => 'clear',
 			'id' => $id,
-			'attributes' => array($attribute => ''),
+			'attributes' => $attribute,
 		);
 		return;
 	}
@@ -110,11 +125,18 @@ class HTML_AJAX_Action extends HTML_AJAX_Response
 	 */
 	function createNode($id, $tag, $attribute, $type = 'append')
 	{
+		$types = array('append', 'prepend', 'insertBefore', 'insertAfter');
+		if(!in_array($type, $types))
+		{
+			$type = 'append';
+		}
+		settype($attribute, 'array');
 		$this->_actions[] = array(
 			'action' => 'create',
 			'id' => $id,
 			'tag' => $tag,
-			'attributes' => settype($attribute),
+			'attributes' => $attribute,
+			'type' => $type,
 		);
 		return;
 	}
@@ -131,7 +153,8 @@ class HTML_AJAX_Action extends HTML_AJAX_Response
 		$this->_actions[] = array(
 			'action' => 'replace',
 			'id' => $id,
-			'attributes' => settype($attribute),
+			'tag' => $tag,
+			'attributes' => settype($attribute, 'array'),
 		);
 		return;
 	}
@@ -155,7 +178,7 @@ class HTML_AJAX_Action extends HTML_AJAX_Response
 	 *
 	 * adds straight javascript
 	 */
-	function insertScript($string)
+	function insertScript($data)
 	{
 		$this->_actions[] = array(
 			'action' => 'script',
@@ -169,7 +192,7 @@ class HTML_AJAX_Action extends HTML_AJAX_Response
 	 *
 	 * adds javascript alert
 	 */
-	function insertAlert($string)
+	function insertAlert($data)
 	{
 		$this->_actions[] = array(
 			'action' => 'alert',
@@ -185,8 +208,8 @@ class HTML_AJAX_Action extends HTML_AJAX_Response
 	 */
 	function getPayload()
 	{
-		$serializer = HTML_AJAX_Serializer_JSON();
-		return $serializer->serialize($this->_action);
+		$serializer = new HTML_AJAX_Serializer_JSON();
+		return $serializer->serialize($this->_actions);
 	}
 }
 ?>

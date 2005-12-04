@@ -6,7 +6,7 @@
  * format compatible with PHP's native serialization functions.
  *
  * @version     0.0.3
- * @copyright   2005 Arpad Ray <arpad@rajeczy.com>
+ * @copyright   2005 Arpad Ray <arpad@php.net>
  * @license     http://www.opensource.org/licenses/lgpl-license.php  LGPL
  *
  * See Main.js for Author/license details

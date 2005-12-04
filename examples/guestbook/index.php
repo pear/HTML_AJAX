@@ -20,6 +20,8 @@ session_start();
 $ajaxHelper = new HTML_AJAX_Helper();
 //tell it what url to use for the server
 $ajaxHelper->serverUrl = 'auto_server.php';
+//add haserializer to set
+$ajaxHelper->jsLibraries[] = 'haserializer';
 // Open tags problem... I know ugly.
 $ajaxHelper->stubs[] = 'guestbook';
 
@@ -35,6 +37,9 @@ print '<?xml version="1.0" encoding="utf-8"?>';
     // output a javascript neded to setup HTML_AJAX
     echo $ajaxHelper->setupAJAX();
 ?>
+<script type="text/javascript">
+HTML_AJAX.onError = function(e) { alert(HTML_AJAX_Util.quickPrint(e)); }
+</script>
 <style type="text/css">
 body {
 color: #24006B;
@@ -94,7 +99,6 @@ border: 1px solid #AA80FF;
 color: #330099;
 }
 input[type="submit"] {
-clear: both;
 display: block;
 width: auto;
 float: none;
@@ -105,6 +109,14 @@ font-weight: bold;
 background-color: #330099;
 color: #FFCC00;
 border: 3px double #FFE680;
+}
+.error {
+color: #CC0000;
+font-weight: bold;
+float: left;
+}
+.small {
+font-size: 0.8em
 }
 </style>
 
@@ -121,7 +133,20 @@ function sendguestbook(form) {
             payload[form.elements[i].name] = form.elements[i].value;
         }
     }
-    remoteguestbook.newguestbook(payload);
+    remoteguestbook.newEntry(payload);
+    return false;
+}
+function clearguestbook() {
+    var remoteguestbook = new guestbook();
+    remoteguestbook.clearGuestbook();
+}
+function deleteentry(id) {
+    var remoteguestbook = new guestbook();
+    remoteguestbook.deleteEntry(id);
+}
+function editentry(id) {
+    var remoteguestbook = new guestbook();
+    remoteguestbook.editEntry(id);
 }
 </script>
 <h2>Welcome to the Guestbook</h2>
@@ -129,17 +154,24 @@ function sendguestbook(form) {
 <?php
 
     if (isset($_SESSION['entries'])) {
-        foreach($_SESSION['entries'] as $data) {
-           echo '<div class="entry">'
-			.'<h3><a href="mailto:'.$data->email.'">'.$data->name.'</a></h3>'
-			.'<a href="http://'.$data->website.'">'.$data->website.'</a><br />'
-			.'<p>'.$data->comments.'</p>'
+        foreach($_SESSION['entries'] as $key => $data) {
+           echo '<div class="entry" id="entry'.$key.'">'
+			.'<h3><a href="mailto:'.$data->email.'">'.$data->name.'</a></h3>';
+            if(!empty($data->website))
+            {
+                echo '<a href="http://'.$data->website.'">'.$data->website.'</a><br />';
+            }
+			echo '<p>'.$data->comments.'</p>'
+            .'<div class="small">Posted: '.$data->date.' | '
+            .'<a href="#" onclick="editentry('.$key.');">Edit</a> | '
+            .'<a href="#" onclick="deleteentry('.$key.');">Delete</a></div>'
 			.'</div>';
         }
     }
 ?>
 </div>
 
+<div><a href="#" onclick="clearguestbook(this);">Clear Guestbook</a></div>
  <form id="guestbookForm" action="index.php" method="post" onsubmit="sendguestbook(this); return false;">
   <fieldset>
    <legend>Leave Your Comments</legend>
@@ -147,9 +179,20 @@ function sendguestbook(form) {
     <label for="email">Email: </label><input name="email" id="email" />
     <label for="website">Website: </label><input name="website" id="website" />
     <label for="comments">Comments: </label><textarea name="comments" id="comments"></textarea>
-    <input type="submit" name="submit" value="Add Comments" />
+    <br style="clear: both" />
+    <input type="submit" id="submit" name="submit" value="Add Comments" />
   </fieldset>
  </form>
 
+<h4>Current Guestbook Testing Status</h4>
+<h5>Win32 - XP</h5>
+<ol>
+<li>Firefox 1.5b - all passed</li>
+<li>IE 6 - all passed</li>
+<li>Netscape 8 - IE mode passed, Gecko mode failed (some kind of browser bug I suspect)</li>
+<li>Opera 8.5 - all passed</li>
+<li>IE 5.5 - sessions were messed up but what worked was fine</li>
+<li>IE 5.01 - same as 5.5, messed up sessions but partially worked</li>
+</ol>
 </body>
 </html>

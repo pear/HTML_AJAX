@@ -20,25 +20,18 @@
   </maintainer>
   </maintainers>
  <release>
-  <version>0.3.0</version>
-  <date>2005-11-16</date>
+  <version>0.3.1</version>
+  <date>2005-12-05</date>
   <license>lgpl</license>
   <state>alpha</state>
-  <notes>BC BREAK - in js renamed event handlers so they don&apos;t collide with native ones and cause problems onOpen -&gt; Open, onLoad -&gt; Load, onProgress -&gt; Progress, onSend -&gt; Send
-   Added stub support to helper class
-   HTML_AJAX_Util (javascript):
-   - setElementEvent() renamed to registerEvent(), set event should now be fixed
-   - New methods: getType() and strRepeat()
-   - Fixed methods: varDump() and getElementsByClassName()
-   Behavior javascript files moved to own directory and HTML_AJAX_Server updated to reflect change
-   Better example for behavior use in example directory
-   Fixed URL encoding serializer, requires PHP 5 or the PHP_Compat implementation of http_build_query()
-   Added serializer compatible with PHP&apos;s native serialization functions
-   Small optimizations and cleanup of HTML_AJAX
-   Added a request priority queue
-   Added HTTP client pooling
-   Update and cleaned up the examples
-   Pass errors from sync calls to HTML_AJAX.onError
+  <notes>Rearranged the examples dir, moving support files and tests into there own directory
+	Updated examples index.php page so that it makes sense when shown from the HTML_AJAX website
+	Fix some various IE bugs, grabbing non-existant headers was throwing errors
+	Fixed problem with async requests timing out in IE
+	Added IFrame fallback, targeted at versions of Opera before XMLHttpRequest and IE with ActiveX turned off
+	Fix js file detection when not installed through PEAR
+	Fix numerous IE 5 javascript bugs and added js compat functions
+	haSerializer and HTML_AJAX_Action bugs fixed
   </notes>
   <deps>
    <dep type="pkg" rel="ge" version="1.3.5" optional="no">PEAR</dep>
@@ -103,19 +96,19 @@
    <file role="php" baseinstalldir="HTML" md5sum="0b9a9ccf611418d7538e92b0a9925c48" name="AJAX/Serializer/Null.php">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
-   <file role="php" baseinstalldir="HTML" md5sum="465ed942dd06ddbfd39448114ea0c827" name="AJAX/Serializer/PHP.php">
+   <file role="php" baseinstalldir="HTML" md5sum="8f19b027d69d3b82931c47f0b4693e4a" name="AJAX/Serializer/PHP.php">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
-   <file role="php" baseinstalldir="HTML" md5sum="04ddfe0edaab3f63b6e0f8067245b637" name="AJAX/Serializer/Urlencoded.php">
+   <file role="php" baseinstalldir="HTML" md5sum="4354cfd3b08247a5eb23332f7ae05e63" name="AJAX/Serializer/Urlencoded.php">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
-   <file role="php" baseinstalldir="HTML" md5sum="4b0b9a572ea4f685496261d378263d76" name="AJAX/Action.php">
+   <file role="php" baseinstalldir="HTML" md5sum="4606132102904fc0efc0bc44f22c7384" name="AJAX/Action.php">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
    <file role="php" baseinstalldir="HTML" md5sum="68f0ae15c17ec7e363592f7110f9a7e8" name="AJAX/Debug.php">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
-   <file role="php" baseinstalldir="HTML" md5sum="590b77f76e2c774502d1969cdbf15ecb" name="AJAX/Helper.php">
+   <file role="php" baseinstalldir="HTML" md5sum="2b8cbdad57bbcdbd78e7db7bbe54c073" name="AJAX/Helper.php">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
    <file role="php" baseinstalldir="HTML" md5sum="bc644af2ca57e5d5192be6229a764f23" name="AJAX/JSON.php">
@@ -124,23 +117,23 @@
    <file role="php" baseinstalldir="HTML" md5sum="788f64a36b2180bc31d48ee449e274f2" name="AJAX/Response.php">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
-   <file role="php" baseinstalldir="HTML" md5sum="47d7e78003970ab19516193b8ae8eb46" name="AJAX/Server.php">
+   <file role="php" baseinstalldir="HTML" md5sum="f11db25909ce7c56f47fca830e768f99" name="AJAX/Server.php">
     <replace type="pear-config" from="@data-dir@" to="data_dir"/>
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
-   <file role="doc" baseinstalldir="HTML" md5sum="42fe7e39fd364df4e023dd6337e96379" name="docs/authors">
+   <file role="doc" baseinstalldir="HTML" md5sum="0dba16422a9b7871bdfca9ece03350c7" name="docs/authors">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
-   <file role="doc" baseinstalldir="HTML" md5sum="a9228917cfb8840ffd41a634b7964429" name="docs/todo">
+   <file role="doc" baseinstalldir="HTML" md5sum="c21e6ab3066eb3390c152759254bc9e4" name="docs/todo">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
-   <file role="doc" baseinstalldir="HTML" md5sum="33567c901ebf46c61783ba8a97868962" name="examples/guestbook/auto_server.php">
+   <file role="doc" baseinstalldir="HTML" md5sum="c15c8c46bc4b2d1e88bbc777f4ad4819" name="examples/guestbook/auto_server.php">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
-   <file role="doc" baseinstalldir="HTML" md5sum="a03f42c59204fac26892601ade0e2664" name="examples/guestbook/guestbook.class.php">
+   <file role="doc" baseinstalldir="HTML" md5sum="332d76d3b2f0ff4f26cc305b2d3b7bd9" name="examples/guestbook/guestbook.class.php">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
-   <file role="doc" baseinstalldir="HTML" md5sum="c9894f0cf4b414d61e26c6063dbb8ac9" name="examples/guestbook/index.php">
+   <file role="doc" baseinstalldir="HTML" md5sum="6ee14d084b4fa157c700d658065d6006" name="examples/guestbook/index.php">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
    <file role="doc" baseinstalldir="HTML" md5sum="790920b80302c522044d5b93b86d57ad" name="examples/login/inc/login.css">
@@ -155,7 +148,7 @@
    <file role="doc" baseinstalldir="HTML" md5sum="8d8046e5d92cc07c8816856791643a7d" name="examples/login/php/login.class.php">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
-   <file role="doc" baseinstalldir="HTML" md5sum="72ab1aa77852248d693f7be73b2e2598" name="examples/login/index.php">
+   <file role="doc" baseinstalldir="HTML" md5sum="92728466f3adf627c0bb7bfaca5ef6ae" name="examples/login/index.php">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
    <file role="doc" baseinstalldir="HTML" md5sum="56e47b2e9a2c9c36631e50ca61b1e9b9" name="examples/review/auto_server.php">
@@ -167,70 +160,70 @@
    <file role="doc" baseinstalldir="HTML" md5sum="6ff8ae3eb0b74a8cfe4600046f570e57" name="examples/review/review.class.php">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
-   <file role="doc" baseinstalldir="HTML" md5sum="f422936113a5944ef6e362e1ef93909b" name="examples/auto_server.php">
+   <file role="doc" baseinstalldir="HTML" md5sum="0e4268ee8ff8dbf638d8880a8d40ff53" name="examples/support/customLib.js">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
-   <file role="doc" baseinstalldir="HTML" md5sum="0e4268ee8ff8dbf638d8880a8d40ff53" name="examples/customLib.js">
+   <file role="doc" baseinstalldir="HTML" md5sum="369fe6f979f7efb922220f3399b4ed26" name="examples/support/livesearch.class.php">
+    <replace type="package-info" from="@package_version@" to="version"/>
+   </file>
+   <file role="doc" baseinstalldir="HTML" md5sum="9aada3c4889787212c921334b8035d4e" name="examples/support/test.class.php">
+    <replace type="package-info" from="@package_version@" to="version"/>
+   </file>
+   <file role="doc" baseinstalldir="HTML" md5sum="48378c2c69bc72aa32f5453e6e7d4601" name="examples/support/test2.class.php">
+    <replace type="package-info" from="@package_version@" to="version"/>
+   </file>
+   <file role="doc" baseinstalldir="HTML" md5sum="6104f006711768050b305ef7b983ff5e" name="examples/tests/js_utils_vardump.php">
+    <replace type="package-info" from="@package_version@" to="version"/>
+   </file>
+   <file role="doc" baseinstalldir="HTML" md5sum="6446068a8ba1754682488961a7788372" name="examples/tests/serialize.php.examples.php">
+    <replace type="package-info" from="@package_version@" to="version"/>
+   </file>
+   <file role="doc" baseinstalldir="HTML" md5sum="bf50ddba1bc9aeb3e4a540e18dafd068" name="examples/tests/serialize.url.examples.php">
+    <replace type="package-info" from="@package_version@" to="version"/>
+   </file>
+   <file role="doc" baseinstalldir="HTML" md5sum="f56f28a71a2668d294f20c2e7568eba0" name="examples/tests/test_behavior.html">
+    <replace type="package-info" from="@package_version@" to="version"/>
+   </file>
+   <file role="doc" baseinstalldir="HTML" md5sum="86e66d92e703730a79a0bde6999dcb03" name="examples/tests/test_priority.php">
+    <replace type="package-info" from="@package_version@" to="version"/>
+   </file>
+   <file role="doc" baseinstalldir="HTML" md5sum="4883bcc9e888617b694e7ea8b9b96fbe" name="examples/tests/test_speed.php">
+    <replace type="package-info" from="@package_version@" to="version"/>
+   </file>
+   <file role="doc" baseinstalldir="HTML" md5sum="12f504cfcbff1eea6fb23958ef245e04" name="examples/auto_server.php">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
    <file role="doc" baseinstalldir="HTML" md5sum="8408959b53ad15ba00af37c322170402" name="examples/error_usage.php">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
-   <file role="doc" baseinstalldir="HTML" md5sum="58fa277c1bb148ac2b43011784e12afe" name="examples/form.php">
+   <file role="doc" baseinstalldir="HTML" md5sum="faf85e2225f4ae642f4e5307792a99da" name="examples/form.php">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
    <file role="doc" baseinstalldir="HTML" md5sum="f8af303e9baf5fa91d73c150f5a950bc" name="examples/helper_usage.php">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
-   <file role="doc" baseinstalldir="HTML" md5sum="0b90cc57e872397f25391c604af2a0c3" name="examples/index.php">
+   <file role="doc" baseinstalldir="HTML" md5sum="141c38502ed7d3ea2f6ef84c661b4b63" name="examples/index.php">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
-   <file role="doc" baseinstalldir="HTML" md5sum="dea4456d5775128c58f9764458ea1042" name="examples/js_utils_vardump.php">
+   <file role="doc" baseinstalldir="HTML" md5sum="efc6c52ef7127b27127aa08e4c14f4f7" name="examples/proxyless_usage.php">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
-   <file role="doc" baseinstalldir="HTML" md5sum="369fe6f979f7efb922220f3399b4ed26" name="examples/livesearch.class.php">
-    <replace type="package-info" from="@package_version@" to="version"/>
-   </file>
-   <file role="doc" baseinstalldir="HTML" md5sum="b8af4f9387853ecbe55648250a27b2a4" name="examples/proxyless_usage.php">
-    <replace type="package-info" from="@package_version@" to="version"/>
-   </file>
-   <file role="doc" baseinstalldir="HTML" md5sum="fe3ae43eec23330521ac8cd89e339ade" name="examples/proxy_usage_inline_javascript.php">
+   <file role="doc" baseinstalldir="HTML" md5sum="c9b678a55ebe76701d1094551500312a" name="examples/proxy_usage_inline_javascript.php">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
    <file role="doc" baseinstalldir="HTML" md5sum="cdcf483ef1a1b5792a5c4bc8a65c64e9" name="examples/proxy_usage_server.php">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
-   <file role="doc" baseinstalldir="HTML" md5sum="5fcb08d57d177baa0b0f1e8e7cd7d73b" name="examples/queue_usage.php">
+   <file role="doc" baseinstalldir="HTML" md5sum="db4cc374a04dd6c7edd18fca8d994282" name="examples/queue_usage.php">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
-   <file role="doc" baseinstalldir="HTML" md5sum="4710218f06f07c35486e3e169774e342" name="examples/README">
+   <file role="doc" baseinstalldir="HTML" md5sum="d576ed746c32ce98cbd3a3294fafb96b" name="examples/README">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
-   <file role="doc" baseinstalldir="HTML" md5sum="92deabb6f70c56b82623a99cfe9da57e" name="examples/serialize.php.examples.php">
+   <file role="doc" baseinstalldir="HTML" md5sum="e6d2d16df1a16cd4d8675b62ad578bcc" name="examples/server.php">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
-   <file role="doc" baseinstalldir="HTML" md5sum="9a1a99d897b0cf4ef7c2f0a621715750" name="examples/serialize.url.examples.php">
-    <replace type="package-info" from="@package_version@" to="version"/>
-   </file>
-   <file role="doc" baseinstalldir="HTML" md5sum="4119017a9d33bae81c49d8df95b6349e" name="examples/server.php">
-    <replace type="package-info" from="@package_version@" to="version"/>
-   </file>
-   <file role="doc" baseinstalldir="HTML" md5sum="2366af1fe94963ea89a03da5ea3af539" name="examples/shoutbox.php">
-    <replace type="package-info" from="@package_version@" to="version"/>
-   </file>
-   <file role="doc" baseinstalldir="HTML" md5sum="9aada3c4889787212c921334b8035d4e" name="examples/test.class.php">
-    <replace type="package-info" from="@package_version@" to="version"/>
-   </file>
-   <file role="doc" baseinstalldir="HTML" md5sum="48378c2c69bc72aa32f5453e6e7d4601" name="examples/test2.class.php">
-    <replace type="package-info" from="@package_version@" to="version"/>
-   </file>
-   <file role="doc" baseinstalldir="HTML" md5sum="7d540306366936e1470cdd6452d1390f" name="examples/test_behavior.html">
-    <replace type="package-info" from="@package_version@" to="version"/>
-   </file>
-   <file role="doc" baseinstalldir="HTML" md5sum="3fd53dff275cbfaabbed26fa683d0d0b" name="examples/test_priority.php">
-    <replace type="package-info" from="@package_version@" to="version"/>
-   </file>
-   <file role="doc" baseinstalldir="HTML" md5sum="6d1572c5eaae300ad486989abae2ad64" name="examples/test_speed.php">
+   <file role="doc" baseinstalldir="HTML" md5sum="4c00423b2320aa53022b4e5d207b4b02" name="examples/shoutbox.php">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
    <file role="data" baseinstalldir="HTML" md5sum="1172b58f3494210b133239b930cbd55b" name="js/behavior/behavior.js">
@@ -239,16 +232,16 @@
    <file role="data" baseinstalldir="HTML" md5sum="c260e94c53eca2a4c27de8e948664d2b" name="js/behavior/cssQuery-p.js">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
-   <file role="data" baseinstalldir="HTML" md5sum="333752b97cb07149fd0045c6280256b1" name="js/serializer/haSerializer.js">
+   <file role="data" baseinstalldir="HTML" md5sum="6c70f0da30e367b9f3f523e874c7ea5a" name="js/serializer/haSerializer.js">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
    <file role="data" baseinstalldir="HTML" md5sum="2fb00b6914d628f710aca223b1610832" name="js/serializer/JSON.js">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
-   <file role="data" baseinstalldir="HTML" md5sum="2041c85b8254707d1aef707093066886" name="js/serializer/phpSerializer.js">
+   <file role="data" baseinstalldir="HTML" md5sum="91bc9b61bfa4614b79cb24d8bc3a4882" name="js/serializer/phpSerializer.js">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
-   <file role="data" baseinstalldir="HTML" md5sum="1e32264458f05764c0c7e2d156fbe130" name="js/serializer/UrlSerializer.js">
+   <file role="data" baseinstalldir="HTML" md5sum="3de6981d32ede169894f656faee4f045" name="js/serializer/UrlSerializer.js">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
    <file role="data" baseinstalldir="HTML" md5sum="78043bcf5e7241cef24b153ed752cf72" name="js/Alias.js">
@@ -260,19 +253,22 @@
    <file role="data" baseinstalldir="HTML" md5sum="38b87c8b118c0d09028180434a1f54a2" name="js/Dispatcher.js">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
-   <file role="data" baseinstalldir="HTML" md5sum="2d6214c721bdfc8e9930ad4ac084df27" name="js/HTML_AJAX.js">
+   <file role="data" baseinstalldir="HTML" md5sum="a7de7e911125d548c37d160a68e89eb0" name="js/HTML_AJAX.js">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
-   <file role="data" baseinstalldir="HTML" md5sum="e12ab2b8f3cfc60fed8fd4085ac7f02b" name="js/HTML_AJAX_lite.js">
+   <file role="data" baseinstalldir="HTML" md5sum="9be4308e3e9ba9a41cf956f4da08bf50" name="js/HTML_AJAX_lite.js">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
-   <file role="data" baseinstalldir="HTML" md5sum="2072985381e22533fc9ce04fb5d96477" name="js/HttpClient.js">
+   <file role="data" baseinstalldir="HTML" md5sum="1edd2a6258ce974ce141b46a25969f78" name="js/HttpClient.js">
+    <replace type="package-info" from="@package_version@" to="version"/>
+   </file>
+   <file role="data" baseinstalldir="HTML" md5sum="fc9f64e8eb1896c239f1da7bd57e3add" name="js/IframeXHR.js">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
    <file role="data" baseinstalldir="HTML" md5sum="00aa336f242db111e5ad6a356973ee10" name="js/Loading.js">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
-   <file role="data" baseinstalldir="HTML" md5sum="b621ec1a1f621d1d5a46ce30befdcce5" name="js/Main.js">
+   <file role="data" baseinstalldir="HTML" md5sum="21aa9f7d12f24640a1a3e9e700163941" name="js/Main.js">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
    <file role="data" baseinstalldir="HTML" md5sum="1b0ac0ec0f3e506de5509bc569018ac8" name="js/priorityQueue.js">
@@ -281,27 +277,45 @@
    <file role="data" baseinstalldir="HTML" md5sum="4e0909ff44f4d6e02120d0706b45eeb2" name="js/Request.js">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
-   <file role="data" baseinstalldir="HTML" md5sum="545ef6ac41384a53c389b68809e834d5" name="js/util.js">
+   <file role="data" baseinstalldir="HTML" md5sum="a5e8f4de4964c3e0e439feaf49625ef9" name="js/util.js">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
-   <file role="php" baseinstalldir="HTML" md5sum="4a6dea5adb37286eb13e154641ebf8aa" name="AJAX.php">
+   <file role="php" baseinstalldir="HTML" md5sum="a991c99963f889385943f8502e2010f1" name="AJAX.php">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
   </filelist>
  </release>
  <changelog>
    <release>
-    <version>0.3.0</version>
-    <date>2005-11-16</date>
+    <version>0.3.1</version>
+    <date>2005-12-05</date>
     <license>lgpl</license>
     <state>alpha</state>
-    <notes>BC BREAK - in js renamed event handlers so they don&apos;t collide with native ones and cause problems onOpen -&gt; Open, onLoad -&gt; Load, onProgress -&gt; Progress, onSend -&gt; Send
+    <notes>Rearranged the examples dir, moving support files and tests into there own directory
+	Updated examples index.php page so that it makes sense when shown from the HTML_AJAX website
+	Fix some various IE bugs, grabbing non-existant headers was throwing errors
+	Fixed problem with async requests timing out in IE
+	Added IFrame fallback, targeted at versions of Opera before XMLHttpRequest and IE with ActiveX turned off
+	Fix js file detection when not installed through PEAR
+	Fix numerous IE 5 javascript bugs and added js compat functions
+	haSerializer and HTML_AJAX_Action bugs fixed
+    </notes>
+   </release>
+   <release>
+    <version>0.3.0</version>
+    <date>2005-11-17</date>
+    <license>lgpl</license>
+    <state>alpha</state>
+    <notes>Added haSerializer (HTML_AJAX_Serializer) for &quot;event pushing&quot; - you can do javascript events using the HTML_AJAX_Action class and not have to write javascript handlers for data from ajax callbacks
+   Major Bug Fix: json and other serializers now work in opera (bad content-type handling/detection in that browser)
+   BC BREAK - in js renamed event handlers so they don&apos;t collide with native ones and cause problems onOpen -&gt; Open, onLoad -&gt; Load, onProgress -&gt; Progress, onSend -&gt; Send
    Added stub support to helper class
    HTML_AJAX_Util (javascript):
    - setElementEvent() renamed to registerEvent(), set event should now be fixed
    - New methods: getType() and strRepeat()
    - Fixed methods: varDump() and getElementsByClassName()
    Behavior javascript files moved to own directory and HTML_AJAX_Server updated to reflect change
+   Javascript serializer files moved to own directory and files updated to reflect change
    Better example for behavior use in example directory
    Fixed URL encoding serializer, requires PHP 5 or the PHP_Compat implementation of http_build_query()
    Added serializer compatible with PHP&apos;s native serialization functions

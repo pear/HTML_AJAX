@@ -36,6 +36,7 @@
 <script type='text/javascript' src="server.php?client=Request"></script>
 <script type='text/javascript' src="server.php?client=json"></script>
 <script type='text/javascript' src="server.php?client=loading"></script>
+<script type='text/javascript' src="server.php?client=iframe"></script>
 
 </head>
 <body>

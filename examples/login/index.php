@@ -15,7 +15,7 @@
 <head>
 	<title>Form validation with HTML_AJAX</title>
 
-	<script type="text/javascript" src="../server.php?client=Util,main,dispatcher,httpclient,request,json,loading"></script>
+	<script type="text/javascript" src="../server.php?client=Util,main,dispatcher,httpclient,request,json,iframe,loading"></script>
 	<script type="text/javascript" src="./php/auto_server.php?stub=login"></script>
 
 	<!-- STYLESHEET AND SCRIPT -->

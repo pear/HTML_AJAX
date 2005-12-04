@@ -53,7 +53,7 @@ class HTML_AJAX {
     var $_callbacks = array(
             'headers' => array('HTML_AJAX', '_sendHeaders'),
             'get'     => array('HTML_AJAX', '_getVar'),
-            'server'  => array('HTML_AJAX', '_getVar'),
+            'server'  => array('HTML_AJAX', '_getServer'),
         );
 
     /**
@@ -117,7 +117,23 @@ class HTML_AJAX {
      * @var boolean
      */
     var $sendContentLength = true;
-     
+
+    /**
+     * Holds current payload info
+     *
+     * @access private
+     * @var string
+     */
+    var $_payload;
+
+    /**
+     * Holds iframe id IF this is an iframe xmlhttprequest
+     *
+     * @access private
+     * @var string
+     */
+    var $_iframe;
+
     /**
      * Set a class to handle requests
      *
@@ -248,6 +264,42 @@ class HTML_AJAX {
     }
 
     /**
+     * Populates the current payload
+     * 
+     *
+     * @param string the method name
+     * @return string the js code
+     * @access private
+     */    
+    function populatePayload()
+    {
+        if(isset($_REQUEST['Iframe_XHR']))
+        {
+            $this->_iframe = $_REQUEST['Iframe_XHR_id'];
+            foreach($_REQUEST['Iframe_XHR_headers'] as $header)
+            {
+                $array = explode(':', $header);
+                $array[0] = strip_tags(strtoupper(str_replace('-', '_', $array[0])));
+                //only content-length and content-type can go in without an http_ prefix - security
+                if(strpos($array[0], 'HTTP_') !== 0 and strcmp('CONTENT_TYPE', $array[0]) and strcmp('CONTENT_LENGTH', $array[0]))
+                {
+                    $array[0] = 'HTTP_'.$array[0];
+                }
+                $_SERVER[$array[0]] = strip_tags($array[1]);
+            }
+            $this->_payload = $_REQUEST['Iframe_XHR_data'];
+            if($_REQUEST['Iframe_XHR_method'])
+            {
+                $_GET['m'] = $_REQUEST['Iframe_XHR_method'];
+            }
+            if($_REQUEST['Iframe_XHR_class'])
+            {
+                $_GET['c'] = $_REQUEST['Iframe_XHR_class'];
+            }
+        }
+    }
+
+    /**
      * Handle a ajax request if needed
      *
      * The current check is if GET variables c (class) and m (method) are set, more options may be available in the future
@@ -300,9 +352,17 @@ class HTML_AJAX {
 
     function _getClientPayloadContentType()
     {
-        if (isset($_SERVER['CONTENT_TYPE'])) {
-            $pos = strpos($_SERVER['CONTENT_TYPE'], ';');
-            return strtolower($pos ? substr($_SERVER['CONTENT_TYPE'], 0, $pos) : $_SERVER['CONTENT_TYPE']);
+        //OPERA IS STUPID FIX
+        if(isset($_SERVER['HTTP_X_CONTENT_TYPE']))
+        {
+            $type = call_user_func($this->_callbacks['server'], 'HTTP_X_CONTENT_TYPE');
+            $pos = strpos($type, ';');
+            return strtolower($pos ? substr($type, 0, $pos) : $type);
+        }
+        elseif (isset($_SERVER['CONTENT_TYPE'])) {
+            $type = call_user_func($this->_callbacks['server'], 'CONTENT_TYPE');
+            $pos = strpos($type, ';');
+            return strtolower($pos ? substr($type, 0, $pos) : $type);
         }
         return 'text/plain';
     }
@@ -311,6 +371,8 @@ class HTML_AJAX {
      * Send a reponse adding needed headers and serializing content
      *
      * Note: this method echo's output as well as setting headers to prevent caching
+     * Iframe Detection: if this has been detected as an iframe response, it has to
+     * be wrapped in different code and headers changed (quite a mess)
      *
      * @param   mixed content to serialize and send
      * @access private
@@ -330,6 +392,12 @@ class HTML_AJAX {
         }
         // headers to force things not to be cached:
         $headers = array();
+        //OPERA IS STUPID FIX
+        if(isset($_SERVER['HTTP_X_CONTENT_TYPE']))
+        {
+            $headers['X-Content-Type'] = $content;
+            $content = 'text/plain';
+        }
         if ($this->sendContentLength) {
             $headers['Content-Length'] = strlen($output);
         }
@@ -337,8 +405,14 @@ class HTML_AJAX {
         $headers['Last-Modified'] = gmdate( "D, d M Y H:i:s" ) . 'GMT';
         $headers['Cache-Control'] = 'no-cache, must-revalidate';
         $headers['Pragma'] = 'no-cache';
-        $headers['Content-Type'] = $content;
+        $headers['Content-Type'] = $content.'; charset=utf-8';
 
+        //intercept to wrap iframe return data
+        if($this->_iframe)
+        {
+            $output = $this->_iframeWrapper($this->_iframe, $output, $headers);
+            $headers['Content-Type'] = 'text/html; charset=utf-8';
+        }
         call_user_func($this->_callbacks['headers'], $headers);
         echo $output;
     }
@@ -382,11 +456,14 @@ class HTML_AJAX {
      */
     function _getClientPayload()
     {
+        if($this->_payload)
+        return $this->_payload;
+        else
         return $GLOBALS['HTTP_RAW_POST_DATA'];
     }
 
     /**
-     * stub for getting get/server vars - applies strip_tags
+     * stub for getting get vars - applies strip_tags
      *
      * @access  private
      * @return  string  filtered _GET value
@@ -397,6 +474,21 @@ class HTML_AJAX {
             return NULL;
         } else {
             return strip_tags($_GET[$var]);
+        }
+    }
+
+    /**
+     * stub for getting server vars - applies strip_tags
+     *
+     * @access  private
+     * @return  string  filtered _GET value
+     */
+    function _getServer($var)
+    {
+        if (!isset($_SERVER[$var])) {
+            return NULL;
+        } else {
+            return strip_tags($_SERVER[$var]);
         }
     }
 
@@ -435,6 +527,24 @@ class HTML_AJAX {
             }
             die();
         }
+    }
+
+    /**
+     * Creates html to wrap serialized info for iframe xmlhttprequest fakeout
+     *
+     * @access private
+     */
+    function _iframeWrapper($id, $data, $headers = array())
+    {
+        $string = '<html><script type="text/javascript">'."\n".'var Iframe_XHR_headers = new Object();';
+        foreach($headers as $label => $value)
+        {
+            $string .= 'Iframe_XHR_headers["'.preg_replace("/\r?\n/", "\\n", addslashes($label)).'"] = "'.preg_replace("/\r?\n/", "\\n", addslashes($value))."\";\n";
+        }
+        $string .='var Iframe_XHR_data = "'. preg_replace("/\r?\n/", "\\n", addslashes($data)).'";</script>'
+        .'<body onload="parent.HTML_AJAX_IframeXHR_instances[\''.$id.'\']'
+        .'.isLoaded(Iframe_XHR_headers, Iframe_XHR_data);"></body></html>';
+        return $string;
     }
 }
 /* vim: set expandtab tabstop=4 shiftwidth=4 softtabstop=4: */

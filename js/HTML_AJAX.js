@@ -20,13 +20,104 @@
  * @category   HTML
  * @package    Ajax
  * @author     Joshua Eichorn <josh@bluga.net>
- * @author     Arpad Ray <arpad@rajeczy.com>
+ * @author     Arpad Ray <arpad@php.net>
  * @author     David Coallier <davidc@php.net>
  * @author     Elizabeth Smith <auroraeosrose@gmail.com>
  * @copyright  2005 Joshua Eichorn, Arpad Ray, David Coallier, Elizabeth Smith
  * @license    http://www.opensource.org/licenses/lgpl-license.php  LGPL
  */
 
+/**
+ *  Functions for compatibility with older browsers
+ */
+if (!String.fromCharCode) {
+    String.prototype.fromCharCode = function(code)
+    {
+        var h = code.toString(16);
+        if (h.length == 1) {
+            h = '0' + h;
+        }
+        return unescape('%' + h);
+    }
+}
+if (!String.charCodeAt) {
+    String.prototype.charCodeAt = function(str)
+    {
+        for (i = 1, h; i < 256; i++) {
+            if (String.fromCharCode(i) == str.charAt(i)) {
+                return i;
+            }
+        } 
+    }
+}
+// http://www.crockford.com/javascript/remedial.html
+if (!Array.splice) {
+    Array.prototype.splice = function(s, d)
+    {
+        var max = Math.max,
+        min = Math.min,
+        a = [], // The return value array
+        e,  // element
+        i = max(arguments.length - 2, 0),   // insert count
+        k = 0,
+        l = this.length,
+        n,  // new length
+        v,  // delta
+        x;  // shift count
+
+        s = s || 0;
+        if (s < 0) {
+            s += l;
+        }
+        s = max(min(s, l), 0);  // start point
+        d = max(min(typeof d == 'number' ? d : l, l - s), 0);    // delete count
+        v = i - d;
+        n = l + v;
+        while (k < d) {
+            e = this[s + k];
+            if (!e) {
+                a[k] = e;
+            }
+            k += 1;
+        }
+        x = l - s - d;
+        if (v < 0) {
+            k = s + i;
+            while (x) {
+                this[k] = this[k - v];
+                k += 1;
+                x -= 1;
+            }
+            this.length = n;
+        } else if (v > 0) {
+            k = 1;
+            while (x) {
+                this[n - k] = this[l - k];
+                k += 1;
+                x -= 1;
+            }
+        }
+        for (k = 0; k < i; ++k) {
+            this[s + k] = arguments[k + 2];
+        }
+        return a;
+    }
+}
+if (!Array.push) {
+    Array.prototype.push = function()
+    {
+        for (var i = 0, startLength = this.length; i < arguments.length; i++) {
+            this[startLength + i] = arguments[i];
+        }
+        return this.length;
+    }
+}
+if (!Array.pop) {
+    Array.prototype.pop = function()
+    {
+        return this.splice(this.length - 1, 1)[0];
+    }
+}
 
 /**
  * HTML_AJAX static methods, this is the main proxyless api, it also handles global error and event handling
@@ -160,6 +251,7 @@ var HTML_AJAX = {
         'Null':         'text/plain',
         'Error':        'application/error',
         'PHP':          'application/php-serialized',
+		'HA' :           'application/html_ajax_action',
         'Urlencoded':   'application/x-www-form-urlencoded'
     },
     // used internally to make queues work, override Load or onError to perform custom events when a request is complete
@@ -188,8 +280,8 @@ var HTML_AJAX = {
             }
         }
         var action = form.action;
-        var el, type, value, name, nameParts;
-        var out = '', tags = form.getElementsByTagName('*')        
+        var el, type, value, name, nameParts, useValue = true;
+        var out = '', tags = HTML_AJAX_Util.getAllElements(form);
         childLoop:
         for (i in tags) {
             el = tags[i];
@@ -214,6 +306,7 @@ var HTML_AJAX = {
                 case 'radio':
                     if (el.checked) {
                         value = 'checked';
+                        useValue = false;
                         break;
                     }
                     // unchecked radios/checkboxes don't get submitted
@@ -233,12 +326,12 @@ var HTML_AJAX = {
                 // unknown element
                 continue childLoop;
             }
-            if (typeof value == 'undefined') {
+            if (useValue) {
                 value = el.value;
             }
             // add element to output array
             out += escape(name) + '=' + escape(value) + '&';
-            value = undefined;
+            useValue = true;
         } // end childLoop
         var callback = function(result) {
             target.innerHTML = result;
@@ -548,7 +641,272 @@ HTML_AJAX_Client_Pool.prototype = {
 };
 
 // create a default client pool with unlimited clients
-HTML_AJAX.clientPools['default'] = new HTML_AJAX_Client_Pool(0);// serializer/UrlSerializer.js
+HTML_AJAX.clientPools['default'] = new HTML_AJAX_Client_Pool(0);// IframeXHR.js
+/**
+ * XMLHttpRequest Iframe fallback
+ *
+ * http://lxr.mozilla.org/seamonkey/source/extensions/xmlextras/tests/ - should work with these
+ *
+ * @category   HTML
+ * @package    AJAX
+ * @author     Elizabeth Smith <auroraeosrose@gmail.com>
+ * @copyright  2005 Elizabeth Smith
+ * @license    http://www.opensource.org/licenses/lgpl-license.php  LGPL
+ */
+HTML_AJAX_IframeXHR_instances = new Object();
+function HTML_AJAX_IframeXHR() {
+	this._id = 'HAXHR_iframe_' + new Date().getTime();
+	HTML_AJAX_IframeXHR_instances[this._id] = this;
+	}
+HTML_AJAX_IframeXHR.prototype = {
+// Data not sent with text/xml Content-Type will only be available via the responseText property
+
+	// properties available in safari/mozilla/IE xmlhttprequest object
+	onreadystatechange: null, // Event handler for an event that fires at every state change
+	readyState: 0, // Object status integer: 0 = uninitialized 1 = loading 2 = loaded 3 = interactive 4 = complete
+	responseText: '', // String version of data returned from server process
+	responseXML: null, // DOM-compatible document object of data returned from server process
+	status: 0, // Numeric code returned by server, such as 404 for "Not Found" or 200 for "OK"
+	statusText: '', // String message accompanying the status code
+	iframe: true, // flag for iframe
+
+	//these are private properties used internally to keep track of stuff
+	_id: null, // iframe id, unique to object(hopefully)
+	_url: null, // url sent by open
+	_method: null, // get or post
+	_async: null, // sync or async sent by open
+	_headers: new Object(), //request headers to send, actually sent as form vars
+	_response: new Object(), //response headers received
+	_phpclass: null, //class to send
+	_phpmethod: null, //method to send
+	_history: null, // opera has to have history munging
+
+	// Stops the current request
+	abort: function()
+	{
+		var iframe = document.getElementById(this._id);
+		if(iframe)
+		{
+			document.body.removeChild(iframe);
+		}
+		if(this._timeout)
+		{
+			window.clearTimeout(this._timeout);
+		}
+		this.readyState = 1;
+		if(typeof(this.onreadystatechange) == "function")
+			this.onreadystatechange();
+	},
+
+	// This will send all headers in this._response and will include lastModified and contentType if not already set
+	getAllResponseHeaders: function()
+	{
+		var string = '';
+		for(i in this._response)
+		{
+			string += i + ' : ' + this._response[i] + "\n";
+		}
+		return string;
+	},
+
+	// This will use lastModified and contentType if they're not set
+	getResponseHeader: function(header)
+	{
+		if(this._response[header])
+		{
+			return this._response[header];
+		}
+		else
+		{
+			return null;
+		}
+	},
+
+	// Assigns a label/value pair to the header to be sent with a request
+	setRequestHeader: function(label, value) {
+		this._headers[label] = value;
+		return; },
+
+	// Assigns destination URL, method, and other optional attributes of a pending request
+	open: function(method, url, async, username, password)
+	{
+		if(!document.body)
+		{
+			throw('CANNOT_OPEN_SEND_IN_DOCUMENT_HEAD');
+		}
+		//exceptions for not enough arguments
+		if(!method || !url)
+		{
+			throw('NOT_ENOUGH_ARGUMENTS:METHOD_URL_REQUIRED');
+		}
+		//get and post are only methods accepted
+		if(method == 'post')
+		{
+			this._method = 'post';
+		}
+		else
+		{
+			this._method = 'get';
+		}
+		this._decodeUrl(url);
+		this._async = async;
+		if(!this._async && document.readyState && !window.opera)
+		{
+			throw('IE_DOES_NOT_SUPPORT_SYNC_WITH_IFRAMEXHR');
+		}
+		//set status to loading and call onreadystatechange
+		this.readyState = 1;
+		if(typeof(this.onreadystatechange) == "function")
+			this.onreadystatechange();
+	},
+
+	// Transmits the request, optionally with postable string or DOM object data
+	send: function(content)
+	{
+		//attempt opera history munging
+		if(window.opera)
+		{
+			this._history = window.history.length;
+		}
+		//create a "form" for the contents of the iframe
+		var form = '<html><body><form method="' + this._method + '" action="' + this._url + '">';
+		//tell iframe unwrapper this IS an iframe
+		form += '<input name="Iframe_XHR" value="1" />';
+		//class and method
+		if(this._phpclass != null)
+		{
+			form += '<input name="Iframe_XHR_class" value="' + this._phpclass + '" />';
+		}
+		if(this._phpmethod != null)
+		{
+			form += '<input name="Iframe_XHR_method" value="' + this._phpmethod + '" />';
+		}
+		// fake headers
+		for(label in this._headers)
+		{
+			form += '<textarea name="Iframe_XHR_headers[]">' + label +':'+ this._headers[label] + '</textarea>';
+		}
+		// add id
+		form += '<textarea name="Iframe_XHR_id">' + this._id + '</textarea>';
+		if(content != null && content.length > 0)
+		{
+			form += '<textarea name="Iframe_XHR_data">' + content + '</textarea>';
+		}
+		form += '<s'+'cript>document.forms[0].submit();</s'+'cript></form></body></html>';
+		form = "javascript:document.write('" + form.replace(/\'/g,"\\'") + "');void(0);";
+		this.readyState = 2;
+		if(typeof(this.onreadystatechange) == "function")
+			this.onreadystatechange();
+		// try to create an iframe with createElement and append node
+		try {
+			var iframe = document.createElement('iframe');
+			iframe.id = this._id;
+			// display: none will fail on some browsers
+			iframe.style.visibility = 'hidden';
+			// for old browsers with crappy css
+			iframe.style.border = '0';
+			iframe.style.width = '0';
+			iframe.style.height = '0';
+            
+            if (document.all) {
+                // MSIE, opera
+			    iframe.src = form;
+			    document.body.appendChild(iframe);
+            } else {
+                document.body.appendChild(iframe);
+                iframe.src = form;
+            }
+		} catch(exception) {
+			// dom failed, write the sucker manually
+			var html = '<iframe src="' + form +'" id="' + id + '" style="visibility:hidden;border:0;height:0;width:0;"></iframe>';
+			document.body.innerHTML += html;
+		}
+		if(this._async == true)
+		{
+			//avoid race state if onload is called first
+			if(this.readyState < 3)
+			{
+				this.readyState = 3;
+				if(typeof(this.onreadystatechange) == "function")
+					this.onreadystatechange();
+			}
+		}
+		else
+		{
+			//we force a while loop for sync, it's ugly but hopefully it works
+			while(this.readyState != 4)
+			{
+				//just check to see if we can up readyState
+				if(this.readyState < 3)
+				{
+					this.readyState = 3;
+					if(typeof(this.onreadystatechange) == "function")
+						this.onreadystatechange();
+				}
+			}
+		}
+	},
+
+	// attached as an onload function to the iframe to trigger when we're done
+	isLoaded: function(headers, data)
+	{
+		this.readyState = 4;
+		//set responseText, Status, StatusText
+		this.status = 200;
+		this.statusText = 'OK';
+		this.responseText = data;
+		this._response = headers;
+		if(!this._response['Last-Modified'])
+		{
+			string += 'Last-Modified : ' + document.getElementById(this._id).lastModified + "\n";
+		}
+		if(!this._response['Content-Type'])
+		{
+			string += 'Content-Type : ' + document.getElementById(this._id).contentType + "\n";
+		}
+		//attempt opera history munging in opera 8+ - this is a REGRESSION IN OPERA
+		if(window.opera && window.opera.version)
+		{
+			//go back current history - old history
+			window.history.go(this._history - window.history.length);
+		}
+		if(typeof(this.onreadystatechange) == "function")
+			this.onreadystatechange();
+		document.body.removeChild(document.getElementById(this._id));
+	},
+
+	// strip off the c and m from the url send...yuck
+	_decodeUrl: function(querystring)
+	{
+		//opera 7 is too stupid to do a relative url...go figure
+		var url = unescape(location.href);
+		url = url.substring(0, url.lastIndexOf("/") + 1);
+		var item = querystring.split('?');
+		//rip off any path info and append to path above <-  relative paths (../) WILL screw this
+		this._url = url + item[0].substring(item[0].lastIndexOf("/") + 1,item[0].length);
+		if(item[1])
+		{
+			item = item[1].split('&');
+			for(i in item)
+			{
+				var v = item[i].split('=');
+				if(v[0] == 'c')
+				{
+					this._phpclass = v[1];
+				}
+				else if(v[0] == 'm')
+				{
+					this._phpmethod = v[1];
+				}
+			}
+		}
+		else
+		{
+			throw('GRAB_METHODS_DO_NOT_WORK_WITH_IFRAMEXHR');
+		}
+	}
+}
+// serializer/UrlSerializer.js
 // {{{ HTML_AJAX_Serialize_Urlencoded
 /**
  * URL-encoding serializer
@@ -559,7 +917,7 @@ HTML_AJAX.clientPools['default'] = new HTML_AJAX_Client_Pool(0);// serializer/Ur
  * array or a string. See examples/serialize.url.examples.php
  *
  * @version     0.0.1
- * @copyright   2005 Arpad Ray <arpad@rajeczy.com>
+ * @copyright   2005 Arpad Ray <arpad@php.net>
  * @license     http://www.opensource.org/licenses/lgpl-license.php  LGPL
  *
  * See Main.js for Author/license details
@@ -626,7 +984,7 @@ HTML_AJAX_Serialize_Urlencoded.prototype = {
             // null
             return;
         }
-        if (!/^(?:\w+(?:\[[^\[\]]*\])*=[^&]*(?:&|$))+$/.test(input)) {
+        if (!/^(\w+(\[[^\[\]]*\])*=[^&]*(&|$))+$/.test(input)) {
             this.raiseError("invalidly formed input", input);
             return;
         }
@@ -643,7 +1001,7 @@ HTML_AJAX_Serialize_Urlencoded.prototype = {
             }
             key = unescape(input[i].substr(0, pos));
             val = unescape(input[i].substr(pos + 1));
-            key = key.replace(/\[((?:\d*\D+)+)\]/g, '["$1"]');
+            key = key.replace(/\[((\d*\D+)+)\]/g, '["$1"]');
             keys = key.split(']');
             for (j in keys) {
                 if (!keys[j].length || keys[j].length == 0) {
@@ -703,7 +1061,7 @@ HTML_AJAX_Serialize_Urlencoded.prototype = {
  * format compatible with PHP's native serialization functions.
  *
  * @version     0.0.3
- * @copyright   2005 Arpad Ray <arpad@rajeczy.com>
+ * @copyright   2005 Arpad Ray <arpad@php.net>
  * @license     http://www.opensource.org/licenses/lgpl-license.php  LGPL
  *
  * See Main.js for Author/license details
@@ -1041,38 +1399,45 @@ HTML_AJAX_Dispatcher.prototype = {
  */
 function HTML_AJAX_HttpClient() { }
 HTML_AJAX_HttpClient.prototype = {
-	// request object
-	request: null,
+    // request object
+    request: null,
 
     // timeout id
     _timeoutId: null,
-	
-	// method to initialize an xmlhttpclient
-	init:function() 
+    
+    // method to initialize an xmlhttpclient
+    init:function() 
     {
-		try {
-		    // Mozilla / Safari
-		    this.xmlhttp = new XMLHttpRequest();
-		} catch (e) {
-			// IE
-			var XMLHTTP_IDS = new Array(
-			'MSXML2.XMLHTTP.5.0',
-			'MSXML2.XMLHTTP.4.0',
-			'MSXML2.XMLHTTP.3.0',
-			'MSXML2.XMLHTTP',
-			'Microsoft.XMLHTTP' );
-			var success = false;
-			for (var i=0;i < XMLHTTP_IDS.length && !success; i++) {
-				try {
-					this.xmlhttp = new ActiveXObject(XMLHTTP_IDS[i]);
-					success = true;
-				} catch (e) {}
-			}
-			if (!success) {
-				throw new Error('Unable to create XMLHttpRequest.');
-			}
-		}
-	},
+        //this.xmlhttp = new HTML_AJAX_IframeXHR(); return;
+        try {
+            // Mozilla / Safari
+            //this.xmlhttp = new HTML_AJAX_IframeXHR(); //uncomment these two lines to test iframe
+            //return;
+            this.xmlhttp = new XMLHttpRequest();
+        } catch (e) {
+            // IE
+            var XMLHTTP_IDS = new Array(
+            'MSXML2.XMLHTTP.5.0',
+            'MSXML2.XMLHTTP.4.0',
+            'MSXML2.XMLHTTP.3.0',
+            'MSXML2.XMLHTTP',
+            'Microsoft.XMLHTTP' );
+            var success = false;
+            for (var i=0;i < XMLHTTP_IDS.length && !success; i++) {
+                try {
+                    this.xmlhttp = new ActiveXObject(XMLHTTP_IDS[i]);
+                    success = true;
+                } catch (e) {}
+            }
+            if (!success) {
+                try{
+                    this.xmlhttp = new HTML_AJAX_IframeXHR();
+                } catch(e) {
+                    throw new Error('Unable to create XMLHttpRequest.');
+                }
+            }
+        }
+    },
 
     // check if there is a call in progress
     callInProgress: function() 
@@ -1089,12 +1454,12 @@ HTML_AJAX_HttpClient.prototype = {
         }
     },
 
-	// make the request defined in the request object
-	makeRequest: function() 
+    // make the request defined in the request object
+    makeRequest: function() 
     {
-		if (!this.xmlhttp) {
-			this.init();
-		}
+        if (!this.xmlhttp) {
+            this.init();
+        }
 
         try {
             if (this.request.Open) {
@@ -1106,7 +1471,6 @@ HTML_AJAX_HttpClient.prototype = {
 
             // set onreadystatechange here since it will be reset after a completed call in Mozilla
             var self = this;
-            this.xmlhttp.onreadystatechange = function() { self._readyStateChangeCallback(); }
             this.xmlhttp.open(this.request.requestType,this.request.completeUrl(),this.request.isAsync);
             if (this.request.customHeaders) {
                 for (i in this.request.customHeaders) {
@@ -1114,8 +1478,18 @@ HTML_AJAX_HttpClient.prototype = {
                 }
             }
             if (this.request.customHeaders && !this.request.customHeaders['Content-Type']) {
-                this.xmlhttp.setRequestHeader('Content-Type',this.request.getContentType());
+                //opera is stupid!!
+                if(window.opera)
+                {
+                    this.xmlhttp.setRequestHeader('Content-Type','text/plain; charset=utf-8');
+                    this.xmlhttp.setRequestHeader('x-Content-Type',this.request.getContentType() + '; charset=utf-8');
+                }
+                else
+                {
+                    this.xmlhttp.setRequestHeader('Content-Type',this.request.getContentType() + '; charset=utf-8');
+                }
             }
+            this.xmlhttp.onreadystatechange = function() { self._readyStateChangeCallback(); }
             var payload = this.request.getSerializedPayload();
             if (payload) {
                 this.xmlhttp.setRequestHeader('Content-Length', payload.length);
@@ -1146,8 +1520,8 @@ HTML_AJAX_HttpClient.prototype = {
         } catch (e) {
             this._handleError(e);
         }
-	},
-	
+    },
+    
     // abort an inprogress request
     abort: function (automatic) 
     {
@@ -1160,8 +1534,8 @@ HTML_AJAX_HttpClient.prototype = {
         }
     },
 
-	// internal method used to handle ready state changes
-	_readyStateChangeCallback:function() 
+    // internal method used to handle ready state changes
+    _readyStateChangeCallback:function() 
     {
         try {
             switch(this.xmlhttp.readyState) {
@@ -1210,12 +1584,26 @@ HTML_AJAX_HttpClient.prototype = {
         } catch (e) {
                 this._handleError(e);
         }
-	},
+    },
 
     // decode response as needed
     _decodeResponse: function() {
-        var unserializer = HTML_AJAX.serializerForEncoding(this.xmlhttp.getResponseHeader('Content-Type'));
-        //alert(this.xmlhttp.responseText); // some sort of debug hook is needed here
+        //try for x-Content-Type first
+        var content = null;
+        try {
+            content = this.xmlhttp.getResponseHeader('X-Content-Type');
+        } catch(e) {}
+        if(!content || content == null)
+        {
+            content = this.xmlhttp.getResponseHeader('Content-Type');
+        }
+        //strip anything after ;
+        if(content.indexOf(';') != -1)
+        {
+            content = content.substring(0, content.indexOf(';'));
+        }
+        var unserializer = HTML_AJAX.serializerForEncoding(content);
+        //alert(this.xmlhttp.getAllResponseHeaders()); // some sort of debug hook is needed here
 
         // some sort of sane way for a serializer to ask for XML needs to be added
         return unserializer.unserialize(this.xmlhttp.responseText);
@@ -1698,6 +2086,259 @@ outer:          while (next()) {
     }
 };
 /* vim: set expandtab tabstop=4 shiftwidth=4 softtabstop=4: */
+// serializer/haSerializer.js
+/**
+ * HTML_AJAX_Serialize_HA  - custom serialization
+ *
+ * This class is used with the JSON serializer and the HTML_AJAX_Action php class
+ * to allow users to easily write data handling and dom manipulation related to
+ * ajax actions directly from their php code
+ *
+ * See Main.js for Author/license details
+ */
+function HTML_AJAX_Serialize_HA() {}
+HTML_AJAX_Serialize_HA.prototype =
+{
+    /**
+     *  Takes data from JSON - which should be parseable into a nice array
+     *  reads the action to take and pipes it to the right method
+     *
+     *  @param    string payload incoming data from php
+     *  @return   true on success, false on failure
+     */
+    unserialize: function(payload)
+    {
+        var actions = eval(payload);
+        for(var i = 0; i < actions.length; i++)
+        {
+            var action = actions[i];
+            switch(action.action)
+            {
+                case 'prepend':
+                    this._prependAttr(action.id, action.attributes);
+                    break;
+                case 'append':
+                    this._appendAttr(action.id, action.attributes);
+                    break;
+                case 'assign':
+                    this._assignAttr(action.id, action.attributes);
+                    break;
+                case 'clear':
+                    this._clearAttr(action.id, action.attributes);
+                    break;
+                case 'create':
+                    this._createNode(action.id, action.tag, action.attributes, action.type);
+                    break;
+                case 'replace':
+                    this._replaceNode(action.id, action.tag, action.attributes);
+                    break;
+                case 'remove':
+                    this._removeNode(action.id);
+                    break;
+                case 'script':
+                    this._insertScript(action.data);
+                    break;
+                case 'alert':
+                    this._insertAlert(action.data);
+                    break;
+            }
+        }
+    },
+	_prependAttr: function(id, attributes)
+	{
+		var node = document.getElementById(id);
+        for (var i in attributes)
+        {
+            //innerHTML hack bailout
+            if(i == 'innerHTML')
+            {
+                node.innerHTML = attributes[i] + node.innerHTML;
+            }
+            //value hack
+            else if(i == 'value')
+            {
+                node.value = attributes[i];
+            }
+            //I'd use hasAttribute but IE is stupid stupid stupid
+            else
+            {
+                var value = node.getAttribute(i);
+                if(value)
+                {
+                    node.setAttribute(i, attributes[i] + value);
+                }
+                else
+                {
+                    node.setAttribute(i, attributes[i]);
+                }
+            }
+        }
+	},
+	_appendAttr: function(id, attributes)
+	{
+		var node = document.getElementById(id);
+        for (var i in attributes)
+        {
+            //innerHTML hack bailout
+            if(i == 'innerHTML')
+            {
+                node.innerHTML += attributes[i];
+            }
+            //value hack
+            else if(i == 'value')
+            {
+                node.value = attributes[i];
+            }
+            //I'd use hasAttribute but IE is stupid stupid stupid
+            else
+            {
+                var value = node.getAttribute(i);
+                if(value)
+                {
+                    node.setAttribute(i, value + attributes[i]);
+                }
+                else
+                {
+                    node.setAttribute(i, attributes[i]);
+                }
+            }
+        }
+	},
+	_assignAttr: function(id, attributes)
+	{
+		var node = document.getElementById(id);
+        for (var i in attributes)
+        {
+            //innerHTML hack bailout
+            if(i == 'innerHTML')
+            {
+                node.innerHTML = attributes[i];
+            }
+            //value hack
+            else if(i == 'value')
+            {
+                node.value = attributes[i];
+            }
+            //I'd use hasAttribute but IE is stupid stupid stupid
+            else
+            {
+                node.setAttribute(i, attributes[i]);
+            }
+        }
+	},
+	_clearAttr: function(id, attributes)
+	{
+		var node = document.getElementById(id);
+        for(var i = 0; i < attributes.length; i++)
+        {
+            //innerHTML hack bailout
+            if(attributes[i] == 'innerHTML')
+            {
+                node.innerHTML = '';
+            }
+            //value hack
+            else if(attributes[i] == 'value')
+            {
+                node.value = '';
+            }
+            //I'd use hasAttribute but IE is stupid stupid stupid
+            else
+            {
+                node.removeAttribute(attributes[i]);
+            }
+        }
+	},
+    _createNode: function(id, tag, attributes, type)
+    {
+        var newnode = document.createElement(tag);
+        for (var i in attributes)
+        {
+            //innerHTML hack bailout
+            if(i == 'innerHTML')
+            {
+                newnode.innerHTML = attributes[i];
+            }
+            //value hack
+            else if(i == 'value')
+            {
+                newnode.value = attributes[i];
+            }
+            //I'd use hasAttribute but IE is stupid stupid stupid
+            else
+            {
+                newnode.setAttribute(i, attributes[i]);
+            }
+        }
+        switch(type)
+        {
+            case 'append':
+                document.getElementById(id).appendChild(newnode);
+                break
+            case 'prepend':
+                var parent = document.getElementById(id);
+                var sibling = parent.firstChild;
+                parent.insertBefore(newnode, sibling);
+                break;
+            case 'insertBefore':
+                var sibling = document.getElementById(id);
+                var parent = sibling.parentNode;
+                parent.insertBefore(newnode, sibling);
+                break;
+            //this one is tricky, if it's the last one we use append child...ewww
+            case 'insertAfter':
+                var sibling = document.getElementById(id);
+                var parent = sibling.parentNode;
+                var next = sibling.nextSibling;
+                if(next == null)
+                {
+                    parent.appendChild(newnode);
+                }
+                else
+                {
+                    parent.insertBefore(newnode, next);
+                }
+                break;
+        }
+	},
+    _replaceNode: function(id, tag, attributes)
+    {
+		var node = document.getElementById(id);
+		var parent = node.parentNode;
+        var newnode = document.createElement(tag);
+		for (var i in attributes)
+        {
+            //innerHTML hack bailout
+            if(i == 'innerHTML')
+            {
+                newnode.innerHTML = attributes[i];
+            }
+            //value hack
+            else if(i == 'value')
+            {
+                newnode.value = attributes[i];
+            }
+        }
+        parent.replaceChild(newnode, node);
+	},
+	_removeNode: function(id)
+	{
+		var node = document.getElementById(id);
+        if(node)
+        {
+            var parent = node.parentNode;
+            parent.removeChild(node);
+        }
+	},
+    _insertScript: function(data)
+    {
+        eval(data);
+    },
+    _insertAlert: function(data)
+    {
+        alert(data);
+    }
+}
+
 // Loading.js
 /**
  * Default loading implementation
@@ -1781,16 +2422,19 @@ var HTML_AJAX_Util = {
     {
         if (!event) var event = window.event;
         if (event.target) return event.target; // w3c
-	    if (event.srcElement) return event.srcElement; // ie 5
+        if (event.srcElement) return event.srcElement; // ie 5
     },
     // gets the type of a variable or its primitive equivalent as a string
     getType: function(inp) 
     {
         var type = typeof inp, match;
+        if(type == 'object' && !inp)
+        {
+            return 'null';
+        }
         if (type == "object") {
-            try {
-                inp.constructor;
-            } catch (e) {
+            if(!inp.constructor)
+            {
                 return 'object';
             }
             var cons = inp.constructor.toString();
@@ -1874,33 +2518,33 @@ var HTML_AJAX_Util = {
         return ret;
     },
     //compat function for stupid browsers in which getElementsByTag with a * dunna work
-    getAllElementsByTag: function(parentElement)
+    getAllElements: function(parentElement)
     {
-        if(!parentElement) {
-            var allElements = document.all;
-        }
-        else
-        {
-            var allElements = [], rightName = new RegExp( parentElement, 'i' ), i;
-            for( i=0; i<document.all.length; i++ ) {
-                if( rightName.test( document.all[i].parentElement ) )
-                allElements.push( document.all[i] );
-            }
-        }
-        return allElements;
-    },
-    getElementsByClassName: function(className, parentElement) {
         //check for idiot browsers
-        if( document.all && !document.getElementsByTagName )
+        if( document.all)
         {
-            var allElements = HTML_AJAX_Util.getAllElementsByTag(parentElement);
+            if(!parentElement) {
+                var allElements = document.all;
+            }
+            else
+            {
+                var allElements = [], rightName = new RegExp( parentElement, 'i' ), i;
+                for( i=0; i<document.all.length; i++ ) {
+                    if( rightName.test( document.all[i].parentElement ) )
+                    allElements.push( document.all[i] );
+                }
+            }
+            return allElements;
         }
         //real browsers just do this
         else
         {
             if (!parentElement) { parentElement = document.body; }
-            var allElements = parentElement.getElementsByTagName('*');
+            return parentElement.getElementsByTagName('*');
         }
+    },
+    getElementsByClassName: function(className, parentElement) {
+        var allElements = HTML_AJAX_Util.getAllElements(parentElement);
         var items = [];
         var exp = new RegExp('(^| )' + className + '( |$)');
         for(var i=0,j=allElements.length; i<j; i++)

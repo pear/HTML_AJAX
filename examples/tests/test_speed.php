@@ -13,7 +13,7 @@
  */
 	include 'HTML/AJAX.php';
 
-	include 'test.class.php';
+	include '../support/test.class.php';
 
 
 
@@ -28,7 +28,7 @@
 ?><html>
 <head>
 
-<script type='text/javascript' src="server.php?client=all&stub=all"></script>
+<script type='text/javascript' src="../server.php?client=all&stub=all"></script>
 </head>
 <body>
 <script type="text/javascript">
@@ -41,16 +41,16 @@ var count = 0;
 
 function speedTest() {
 
-	document.getElementById('target').innerHTML += "10 Sync Calls\n";
+	document.getElementById('target').innerHTML += "10 Sync Calls<br>";
 	for(var i = 0; i < 10; i++) {
 		startCall();
 		t.echo_string('Test');
 		endCall('Sync Echo');
 	}
-	document.getElementById('target').innerHTML += "Total: "+total+"\n\n\n";
+	document.getElementById('target').innerHTML += "Total: "+total+"<br><br><br>";
 	total = 0;
 
-	document.getElementById('target').innerHTML += "10 Async Calls\n";
+	document.getElementById('target').innerHTML += "10 Async Calls<br>";
 	count = 0;
 	for(var i = 0; i < 10; i++) {
 		setTimeout("runAsync();",500*i);
@@ -61,7 +61,7 @@ function speedTest() {
 function totalA() {
 	count++;
 	if (count == 10) {
-		document.getElementById('target').innerHTML += "Total: "+total+"\n";
+		document.getElementById('target').innerHTML += "Total: "+total+"<br>";
 	}
 }
 function runAsync() {
@@ -79,13 +79,13 @@ function endCall(name) {
 	time = time2.getTime() - time1.getTime();
 	total += time;
 	
-	document.getElementById('target').innerHTML += name+":"+time+"\n";
+	document.getElementById('target').innerHTML += name+":"+time+"<br>";
 }
 
 
 </script>
 <a href="javascript:speedTest()">Start Speed Test</a>
-<pre id="target">
-</pre>
+<div id="target">
+</div>
 </body>
 </html>

@@ -18,7 +18,7 @@
 include 'HTML/AJAX/Server.php';
 
 // include the test class will be registering
-	include 'test.class.php';
+	include 'support/test.class.php';
 
 // create our new server
 $server = new HTML_AJAX_Server();

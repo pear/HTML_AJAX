@@ -6,7 +6,7 @@
  *
  * @category   HTML
  * @package    AJAX
- * @author     Arpad Ray <arpad@rajeczy.com>
+ * @author     Arpad Ray <arpad@php.net>
  * @copyright  2005 Arpad Ray
  * @license    http://www.opensource.org/licenses/lgpl-license.php  LGPL
  * @version    Release: @package_version@
@@ -14,7 +14,7 @@
  */
 
 include 'HTML/AJAX.php';
-include 'test.class.php';
+include '../support/test.class.php';
 
 $ajax = new HTML_AJAX();
 $ajax->serializer = "Null";
@@ -26,7 +26,7 @@ if ($ajax->handleRequest()) {
 }
 ?><html>
 <head>
-<script type='text/javascript' src="server.php?client=all&amp;stub=all"></script>
+<script type='text/javascript' src="../server.php?client=all&amp;stub=all"></script>
 <script type="text/javascript">
 
 HTML_AJAX.queues['priority'] = new HTML_AJAX_Queue_Priority_Simple(40);
@@ -37,7 +37,7 @@ var time1;
 var count = 0;
 
 function priorityTest() {
-    document.getElementById('target').innerHTML += "\n\n";
+    document.getElementById('target').innerHTML += "<br><br>";
 	count = 0;
 	for (var i = 0; i < 10; i++) {
         runLow(i);
@@ -67,9 +67,9 @@ function endCall(name) {
     var time2 = new Date();
     time = time2.getTime() - time1.getTime();
     
-    document.getElementById('target').innerHTML += name + "time: " + time + "\n";
+    document.getElementById('target').innerHTML += name + "time: " + time + "<br>";
     if (++count == 20) {
-        document.getElementById('target').innerHTML += "Done\n";
+        document.getElementById('target').innerHTML += "Done<br>";
     }
 }
 
@@ -77,7 +77,7 @@ function endCall(name) {
 </head>
 <body>
 <a href="javascript:priorityTest()">Start Priority Test</a>
-<pre id="target">
-</pre>
+<div id="target">
+</div>
 </body>
 </html>

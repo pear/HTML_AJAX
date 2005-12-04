@@ -8,7 +8,8 @@
  * See Main.js for Author/license details
  */
 function HTML_AJAX_Serialize_HA() {}
-HTML_AJAX_Serialize_HA.prototype = {
+HTML_AJAX_Serialize_HA.prototype =
+{
     /**
      *  Takes data from JSON - which should be parseable into a nice array
      *  reads the action to take and pipes it to the right method
@@ -21,131 +22,228 @@ HTML_AJAX_Serialize_HA.prototype = {
         var actions = eval(payload);
         for(var i = 0; i < actions.length; i++)
         {
-            switch(i.action)
+            var action = actions[i];
+            switch(action.action)
             {
                 case 'prepend':
-                    HTML_AJAX_Serialize_HA._prependAttr(i.id, i.attribute, i.data);
+                    this._prependAttr(action.id, action.attributes);
                     break;
                 case 'append':
-                    HTML_AJAX_Serialize_HA._appendAttr(i.id, i.attribute, i.data);
+                    this._appendAttr(action.id, action.attributes);
                     break;
                 case 'assign':
-                    HTML_AJAX_Serialize_HA._assignAttr(i.id, i.attribute, i.data);
+                    this._assignAttr(action.id, action.attributes);
                     break;
                 case 'clear':
-                    HTML_AJAX_Serialize_HA._clearAttr(i.id, i.attribute);
+                    this._clearAttr(action.id, action.attributes);
                     break;
                 case 'create':
-                    HTML_AJAX_Serialize_HA._createNode(i.id, i.tag, i.attribute, i.type);
+                    this._createNode(action.id, action.tag, action.attributes, action.type);
                     break;
                 case 'replace':
-                    HTML_AJAX_Serialize_HA._removeAttr(i.id, i.tag, i.attribute);
+                    this._replaceNode(action.id, action.tag, action.attributes);
                     break;
                 case 'remove':
-                    HTML_AJAX_Serialize_HA._removeAttr(i.id);
+                    this._removeNode(action.id);
                     break;
                 case 'script':
-                    HTML_AJAX_Serialize_HA._insertScript(i.data);
+                    this._insertScript(action.data);
                     break;
                 case 'alert':
-                    HTML_AJAX_Serialize_HA._insertAttr(i.data);
+                    this._insertAlert(action.data);
                     break;
             }
         }
-    }
-	_prependAttr: function(id, attribute, data)
+    },
+	_prependAttr: function(id, attributes)
 	{
 		var node = document.getElementById(id);
-        for (var i in attribute)
+        for (var i in attributes)
         {
-            if node.hasAttribute(i)
+            //innerHTML hack bailout
+            if(i == 'innerHTML')
             {
-                node.setAttribute(i, attribute[i] + node.i);
+                node.innerHTML = attributes[i] + node.innerHTML;
+            }
+            //value hack
+            else if(i == 'value')
+            {
+                node.value = attributes[i];
+            }
+            //I'd use hasAttribute but IE is stupid stupid stupid
+            else
+            {
+                var value = node.getAttribute(i);
+                if(value)
+                {
+                    node.setAttribute(i, attributes[i] + value);
+                }
+                else
+                {
+                    node.setAttribute(i, attributes[i]);
+                }
             }
         }
-	}
-	_appendAttr: function(id, attribute, data)
+	},
+	_appendAttr: function(id, attributes)
 	{
 		var node = document.getElementById(id);
-        for (var i in attribute)
+        for (var i in attributes)
         {
-            if node.hasAttribute(i)
+            //innerHTML hack bailout
+            if(i == 'innerHTML')
             {
-                node.setAttribute(i, node.i + attribute[i]);
+                node.innerHTML += attributes[i];
+            }
+            //value hack
+            else if(i == 'value')
+            {
+                node.value = attributes[i];
+            }
+            //I'd use hasAttribute but IE is stupid stupid stupid
+            else
+            {
+                var value = node.getAttribute(i);
+                if(value)
+                {
+                    node.setAttribute(i, value + attributes[i]);
+                }
+                else
+                {
+                    node.setAttribute(i, attributes[i]);
+                }
             }
         }
-	}
-	_assignAttr: function(id, attribute, data)
+	},
+	_assignAttr: function(id, attributes)
 	{
 		var node = document.getElementById(id);
-        for (var i in attribute)
+        for (var i in attributes)
         {
-            node.setAttribute(i, attribute[i]);
+            //innerHTML hack bailout
+            if(i == 'innerHTML')
+            {
+                node.innerHTML = attributes[i];
+            }
+            //value hack
+            else if(i == 'value')
+            {
+                node.value = attributes[i];
+            }
+            //I'd use hasAttribute but IE is stupid stupid stupid
+            else
+            {
+                node.setAttribute(i, attributes[i]);
+            }
         }
-	}
-	_clearAttr: function(id, attribute)
+	},
+	_clearAttr: function(id, attributes)
 	{
 		var node = document.getElementById(id);
-        for(var i = 0; i < attribute.length; i++)
+        for(var i = 0; i < attributes.length; i++)
         {
-            node.removeAttribute(i);
+            //innerHTML hack bailout
+            if(attributes[i] == 'innerHTML')
+            {
+                node.innerHTML = '';
+            }
+            //value hack
+            else if(attributes[i] == 'value')
+            {
+                node.value = '';
+            }
+            //I'd use hasAttribute but IE is stupid stupid stupid
+            else
+            {
+                node.removeAttribute(attributes[i]);
+            }
         }
-	}
-    _createNode(id, tag, attribute, type);
+	},
+    _createNode: function(id, tag, attributes, type)
     {
         var newnode = document.createElement(tag);
-		for (var i in attribute)
+        for (var i in attributes)
         {
-            newnode.setAttribute(i, attribute[i]);
+            //innerHTML hack bailout
+            if(i == 'innerHTML')
+            {
+                newnode.innerHTML = attributes[i];
+            }
+            //value hack
+            else if(i == 'value')
+            {
+                newnode.value = attributes[i];
+            }
+            //I'd use hasAttribute but IE is stupid stupid stupid
+            else
+            {
+                newnode.setAttribute(i, attributes[i]);
+            }
         }
         switch(type)
         {
             case 'append':
-                var parent = document.getElementById(id).parentNode;
-                document.parent.appendChild(newnode);
+                document.getElementById(id).appendChild(newnode);
                 break
             case 'prepend':
-                var sibling = ;
-                var parent = sibling.parentNode;
+                var parent = document.getElementById(id);
+                var sibling = parent.firstChild;
                 parent.insertBefore(newnode, sibling);
                 break;
-            case 'insert':
+            case 'insertBefore':
                 var sibling = document.getElementById(id);
                 var parent = sibling.parentNode;
                 parent.insertBefore(newnode, sibling);
                 break;
+            //this one is tricky, if it's the last one we use append child...ewww
+            case 'insertAfter':
+                var sibling = document.getElementById(id);
+                var parent = sibling.parentNode;
+                var next = sibling.nextSibling;
+                if(next == null)
+                {
+                    parent.appendChild(newnode);
+                }
+                else
+                {
+                    parent.insertBefore(newnode, next);
+                }
+                break;
         }
-		var node = document.getElementById(id);
-		var parent = node.parentNode;
-        var newnode = document.createElement(tag);
-		for (var i in attribute)
-        {
-            newnode.setAttribute(i, attribute[i]);
-        }
-        parent.replaceChild(newnode, node);
-	}
-    _replaceNode: function(id, tag, attribute)
+	},
+    _replaceNode: function(id, tag, attributes)
     {
 		var node = document.getElementById(id);
 		var parent = node.parentNode;
         var newnode = document.createElement(tag);
-		for (var i in attribute)
+		for (var i in attributes)
         {
-            newnode.setAttribute(i, attribute[i]);
+            //innerHTML hack bailout
+            if(i == 'innerHTML')
+            {
+                newnode.innerHTML = attributes[i];
+            }
+            //value hack
+            else if(i == 'value')
+            {
+                newnode.value = attributes[i];
+            }
         }
         parent.replaceChild(newnode, node);
-	}
-    }
+	},
 	_removeNode: function(id)
 	{
 		var node = document.getElementById(id);
-		var parent = node.parentNode;
-		parent.removeChild(node);
-	}
-    _insertScript(data)
+        if(node)
+        {
+            var parent = node.parentNode;
+            parent.removeChild(node);
+        }
+	},
+    _insertScript: function(data)
     {
         eval(data);
-    }
+    },
     _insertAlert: function(data)
     {
         alert(data);

@@ -1,4 +1,90 @@
 // Main.js
+if (!String.fromCharCode) {
+String.prototype.fromCharCode = function(code)
+{
+var h = code.toString(16);
+if (h.length == 1) {
+h = '0' + h;
+}
+return unescape('%' + h);
+}
+}
+if (!String.charCodeAt) {
+String.prototype.charCodeAt = function(str)
+{
+for (i = 1, h; i < 256; i++) {
+if (String.fromCharCode(i) == str.charAt(i)) {
+return i;
+}
+}
+}
+}
+if (!Array.splice) {
+Array.prototype.splice = function(s, d)
+{
+var max = Math.max,
+min = Math.min,
+a = [], // The return value array
+e,  // element
+i = max(arguments.length - 2, 0),   // insert count
+k = 0,
+l = this.length,
+n,  // new length
+v,  // delta
+x;  // shift count
+s = s || 0;
+if (s < 0) {
+s += l;
+}
+s = max(min(s, l), 0);  // start point
+d = max(min(typeof d == 'number' ? d : l, l - s), 0);    // delete count
+v = i - d;
+n = l + v;
+while (k < d) {
+e = this[s + k];
+if (!e) {
+a[k] = e;
+}
+k += 1;
+}
+x = l - s - d;
+if (v < 0) {
+k = s + i;
+while (x) {
+this[k] = this[k - v];
+k += 1;
+x -= 1;
+}
+this.length = n;
+} else if (v > 0) {
+k = 1;
+while (x) {
+this[n - k] = this[l - k];
+k += 1;
+x -= 1;
+}
+}
+for (k = 0; k < i; ++k) {
+this[s + k] = arguments[k + 2];
+}
+return a;
+}
+}
+if (!Array.push) {
+Array.prototype.push = function()
+{
+for (var i = 0, startLength = this.length; i < arguments.length; i++) {
+this[startLength + i] = arguments[i];
+}
+return this.length;
+}
+}
+if (!Array.pop) {
+Array.prototype.pop = function()
+{
+return this.splice(this.length - 1, 1)[0];
+}
+}
 var HTML_AJAX = {
 defaultServerUrl: false,
 defaultEncoding: 'Null',
@@ -103,6 +189,7 @@ contentTypeMap: {
 'Null':         'text/plain',
 'Error':        'application/error',
 'PHP':          'application/php-serialized',
+'HA' :           'application/html_ajax_action',
 'Urlencoded':   'application/x-www-form-urlencoded'
 },
 requestComplete: function(request,error) {
@@ -127,8 +214,8 @@ target = form;
 }
 }
 var action = form.action;
-var el, type, value, name, nameParts;
-var out = '', tags = form.getElementsByTagName('*')
+var el, type, value, name, nameParts, useValue = true;
+var out = '', tags = HTML_AJAX_Util.getAllElements(form);
 childLoop:
 for (i in tags) {
 el = tags[i];
@@ -151,6 +238,7 @@ case 'checkbox':
 case 'radio':
 if (el.checked) {
 value = 'checked';
+useValue = false;
 break;
 }
 continue childLoop;
@@ -167,11 +255,11 @@ break;
 default:
 continue childLoop;
 }
-if (typeof value == 'undefined') {
+if (useValue) {
 value = el.value;
 }
 out += escape(name) + '=' + escape(value) + '&';
-value = undefined;
+useValue = true;
 } // end childLoop
 var callback = function(result) {
 target.innerHTML = result;
@@ -441,6 +529,216 @@ this._len = 0;
 }
 };
 HTML_AJAX.clientPools['default'] = new HTML_AJAX_Client_Pool(0);
+// IframeXHR.js
+HTML_AJAX_IframeXHR_instances = new Object();
+function HTML_AJAX_IframeXHR() {
+this._id = 'HAXHR_iframe_' + new Date().getTime();
+HTML_AJAX_IframeXHR_instances[this._id] = this;
+}
+HTML_AJAX_IframeXHR.prototype = {
+onreadystatechange: null, // Event handler for an event that fires at every state change
+readyState: 0, // Object status integer: 0 = uninitialized 1 = loading 2 = loaded 3 = interactive 4 = complete
+responseText: '', // String version of data returned from server process
+responseXML: null, // DOM-compatible document object of data returned from server process
+status: 0, // Numeric code returned by server, such as 404 for "Not Found" or 200 for "OK"
+statusText: '', // String message accompanying the status code
+iframe: true, // flag for iframe
+_id: null, // iframe id, unique to object(hopefully)
+_url: null, // url sent by open
+_method: null, // get or post
+_async: null, // sync or async sent by open
+_headers: new Object(), //request headers to send, actually sent as form vars
+_response: new Object(), //response headers received
+_phpclass: null, //class to send
+_phpmethod: null, //method to send
+_history: null, // opera has to have history munging
+abort: function()
+{
+var iframe = document.getElementById(this._id);
+if(iframe)
+{
+document.body.removeChild(iframe);
+}
+if(this._timeout)
+{
+window.clearTimeout(this._timeout);
+}
+this.readyState = 1;
+if(typeof(this.onreadystatechange) == "function")
+this.onreadystatechange();
+},
+getAllResponseHeaders: function()
+{
+var string = '';
+for(i in this._response)
+{
+string += i + ' : ' + this._response[i] + "\n";
+}
+return string;
+},
+getResponseHeader: function(header)
+{
+if(this._response[header])
+{
+return this._response[header];
+}
+else
+{
+return null;
+}
+},
+setRequestHeader: function(label, value) {
+this._headers[label] = value;
+return; },
+open: function(method, url, async, username, password)
+{
+if(!document.body)
+{
+throw('CANNOT_OPEN_SEND_IN_DOCUMENT_HEAD');
+}
+if(!method || !url)
+{
+throw('NOT_ENOUGH_ARGUMENTS:METHOD_URL_REQUIRED');
+}
+if(method == 'post')
+{
+this._method = 'post';
+}
+else
+{
+this._method = 'get';
+}
+this._decodeUrl(url);
+this._async = async;
+if(!this._async && document.readyState && !window.opera)
+{
+throw('IE_DOES_NOT_SUPPORT_SYNC_WITH_IFRAMEXHR');
+}
+this.readyState = 1;
+if(typeof(this.onreadystatechange) == "function")
+this.onreadystatechange();
+},
+send: function(content)
+{
+if(window.opera)
+{
+this._history = window.history.length;
+}
+var form = '<html><body><form method="' + this._method + '" action="' + this._url + '">';
+form += '<input name="Iframe_XHR" value="1" />';
+if(this._phpclass != null)
+{
+form += '<input name="Iframe_XHR_class" value="' + this._phpclass + '" />';
+}
+if(this._phpmethod != null)
+{
+form += '<input name="Iframe_XHR_method" value="' + this._phpmethod + '" />';
+}
+for(label in this._headers)
+{
+form += '<textarea name="Iframe_XHR_headers[]">' + label +':'+ this._headers[label] + '</textarea>';
+}
+form += '<textarea name="Iframe_XHR_id">' + this._id + '</textarea>';
+if(content != null && content.length > 0)
+{
+form += '<textarea name="Iframe_XHR_data">' + content + '</textarea>';
+}
+form += '<s'+'cript>document.forms[0].submit();</s'+'cript></form></body></html>';
+form = "javascript:document.write('" + form.replace(/\'/g,"\\'") + "');void(0);";
+this.readyState = 2;
+if(typeof(this.onreadystatechange) == "function")
+this.onreadystatechange();
+try {
+var iframe = document.createElement('iframe');
+iframe.id = this._id;
+iframe.style.visibility = 'hidden';
+iframe.style.border = '0';
+iframe.style.width = '0';
+iframe.style.height = '0';
+if (document.all) {
+iframe.src = form;
+document.body.appendChild(iframe);
+} else {
+document.body.appendChild(iframe);
+iframe.src = form;
+}
+} catch(exception) {
+var html = '<iframe src="' + form +'" id="' + id + '" style="visibility:hidden;border:0;height:0;width:0;"></iframe>';
+document.body.innerHTML += html;
+}
+if(this._async == true)
+{
+if(this.readyState < 3)
+{
+this.readyState = 3;
+if(typeof(this.onreadystatechange) == "function")
+this.onreadystatechange();
+}
+}
+else
+{
+while(this.readyState != 4)
+{
+if(this.readyState < 3)
+{
+this.readyState = 3;
+if(typeof(this.onreadystatechange) == "function")
+this.onreadystatechange();
+}
+}
+}
+},
+isLoaded: function(headers, data)
+{
+this.readyState = 4;
+this.status = 200;
+this.statusText = 'OK';
+this.responseText = data;
+this._response = headers;
+if(!this._response['Last-Modified'])
+{
+string += 'Last-Modified : ' + document.getElementById(this._id).lastModified + "\n";
+}
+if(!this._response['Content-Type'])
+{
+string += 'Content-Type : ' + document.getElementById(this._id).contentType + "\n";
+}
+if(window.opera && window.opera.version)
+{
+window.history.go(this._history - window.history.length);
+}
+if(typeof(this.onreadystatechange) == "function")
+this.onreadystatechange();
+document.body.removeChild(document.getElementById(this._id));
+},
+_decodeUrl: function(querystring)
+{
+var url = unescape(location.href);
+url = url.substring(0, url.lastIndexOf("/") + 1);
+var item = querystring.split('?');
+this._url = url + item[0].substring(item[0].lastIndexOf("/") + 1,item[0].length);
+if(item[1])
+{
+item = item[1].split('&');
+for(i in item)
+{
+var v = item[i].split('=');
+if(v[0] == 'c')
+{
+this._phpclass = v[1];
+}
+else if(v[0] == 'm')
+{
+this._phpmethod = v[1];
+}
+}
+}
+else
+{
+throw('GRAB_METHODS_DO_NOT_WORK_WITH_IFRAMEXHR');
+}
+}
+}
 // serializer/UrlSerializer.js
 function HTML_AJAX_Serialize_Urlencoded() {}
 HTML_AJAX_Serialize_Urlencoded.prototype = {
@@ -487,7 +785,7 @@ unserialize: function(input) {
 if (!input.length || input.length == 0) {
 return;
 }
-if (!/^(?:\w+(?:\[[^\[\]]*\])*=[^&]*(?:&|$))+$/.test(input)) {
+if (!/^(\w+(\[[^\[\]]*\])*=[^&]*(&|$))+$/.test(input)) {
 this.raiseError("invalidly formed input", input);
 return;
 }
@@ -504,7 +802,7 @@ return;
 }
 key = unescape(input[i].substr(0, pos));
 val = unescape(input[i].substr(pos + 1));
-key = key.replace(/\[((?:\d*\D+)+)\]/g, '["$1"]');
+key = key.replace(/\[((\d*\D+)+)\]/g, '["$1"]');
 keys = key.split(']');
 for (j in keys) {
 if (!keys[j].length || keys[j].length == 0) {
@@ -810,7 +1108,11 @@ success = true;
 } catch (e) {}
 }
 if (!success) {
+try{
+this.xmlhttp = new HTML_AJAX_IframeXHR();
+} catch(e) {
 throw new Error('Unable to create XMLHttpRequest.');
+}
 }
 }
 },
@@ -840,7 +1142,6 @@ else if (HTML_AJAX.Open) {
 HTML_AJAX.Open(this.request);
 }
 var self = this;
-this.xmlhttp.onreadystatechange = function() { self._readyStateChangeCallback(); }
 this.xmlhttp.open(this.request.requestType,this.request.completeUrl(),this.request.isAsync);
 if (this.request.customHeaders) {
 for (i in this.request.customHeaders) {
@@ -848,8 +1149,17 @@ this.xmlhttp.setRequestHeader(i, this.request.customHeaders[i]);
 }
 }
 if (this.request.customHeaders && !this.request.customHeaders['Content-Type']) {
-this.xmlhttp.setRequestHeader('Content-Type',this.request.getContentType());
+if(window.opera)
+{
+this.xmlhttp.setRequestHeader('Content-Type','text/plain; charset=utf-8');
+this.xmlhttp.setRequestHeader('x-Content-Type',this.request.getContentType() + '; charset=utf-8');
 }
+else
+{
+this.xmlhttp.setRequestHeader('Content-Type',this.request.getContentType() + '; charset=utf-8');
+}
+}
+this.xmlhttp.onreadystatechange = function() { self._readyStateChangeCallback(); }
 var payload = this.request.getSerializedPayload();
 if (payload) {
 this.xmlhttp.setRequestHeader('Content-Length', payload.length);
@@ -931,7 +1241,19 @@ this._handleError(e);
 }
 },
 _decodeResponse: function() {
-var unserializer = HTML_AJAX.serializerForEncoding(this.xmlhttp.getResponseHeader('Content-Type'));
+var content = null;
+try {
+content = this.xmlhttp.getResponseHeader('X-Content-Type');
+} catch(e) {}
+if(!content || content == null)
+{
+content = this.xmlhttp.getResponseHeader('Content-Type');
+}
+if(content.indexOf(';') != -1)
+{
+content = content.substring(0, content.indexOf(';'));
+}
+var unserializer = HTML_AJAX.serializerForEncoding(content);
 return unserializer.unserialize(this.xmlhttp.responseText);
 },
 _handleError: function(e)
@@ -1302,6 +1624,224 @@ return ch >= '0' && ch <= '9' ? number() : word();
 return value();
 }
 };
+// serializer/haSerializer.js
+function HTML_AJAX_Serialize_HA() {}
+HTML_AJAX_Serialize_HA.prototype =
+{
+unserialize: function(payload)
+{
+var actions = eval(payload);
+for(var i = 0; i < actions.length; i++)
+{
+var action = actions[i];
+switch(action.action)
+{
+case 'prepend':
+this._prependAttr(action.id, action.attributes);
+break;
+case 'append':
+this._appendAttr(action.id, action.attributes);
+break;
+case 'assign':
+this._assignAttr(action.id, action.attributes);
+break;
+case 'clear':
+this._clearAttr(action.id, action.attributes);
+break;
+case 'create':
+this._createNode(action.id, action.tag, action.attributes, action.type);
+break;
+case 'replace':
+this._replaceNode(action.id, action.tag, action.attributes);
+break;
+case 'remove':
+this._removeNode(action.id);
+break;
+case 'script':
+this._insertScript(action.data);
+break;
+case 'alert':
+this._insertAlert(action.data);
+break;
+}
+}
+},
+_prependAttr: function(id, attributes)
+{
+var node = document.getElementById(id);
+for (var i in attributes)
+{
+if(i == 'innerHTML')
+{
+node.innerHTML = attributes[i] + node.innerHTML;
+}
+else if(i == 'value')
+{
+node.value = attributes[i];
+}
+else
+{
+var value = node.getAttribute(i);
+if(value)
+{
+node.setAttribute(i, attributes[i] + value);
+}
+else
+{
+node.setAttribute(i, attributes[i]);
+}
+}
+}
+},
+_appendAttr: function(id, attributes)
+{
+var node = document.getElementById(id);
+for (var i in attributes)
+{
+if(i == 'innerHTML')
+{
+node.innerHTML += attributes[i];
+}
+else if(i == 'value')
+{
+node.value = attributes[i];
+}
+else
+{
+var value = node.getAttribute(i);
+if(value)
+{
+node.setAttribute(i, value + attributes[i]);
+}
+else
+{
+node.setAttribute(i, attributes[i]);
+}
+}
+}
+},
+_assignAttr: function(id, attributes)
+{
+var node = document.getElementById(id);
+for (var i in attributes)
+{
+if(i == 'innerHTML')
+{
+node.innerHTML = attributes[i];
+}
+else if(i == 'value')
+{
+node.value = attributes[i];
+}
+else
+{
+node.setAttribute(i, attributes[i]);
+}
+}
+},
+_clearAttr: function(id, attributes)
+{
+var node = document.getElementById(id);
+for(var i = 0; i < attributes.length; i++)
+{
+if(attributes[i] == 'innerHTML')
+{
+node.innerHTML = '';
+}
+else if(attributes[i] == 'value')
+{
+node.value = '';
+}
+else
+{
+node.removeAttribute(attributes[i]);
+}
+}
+},
+_createNode: function(id, tag, attributes, type)
+{
+var newnode = document.createElement(tag);
+for (var i in attributes)
+{
+if(i == 'innerHTML')
+{
+newnode.innerHTML = attributes[i];
+}
+else if(i == 'value')
+{
+newnode.value = attributes[i];
+}
+else
+{
+newnode.setAttribute(i, attributes[i]);
+}
+}
+switch(type)
+{
+case 'append':
+document.getElementById(id).appendChild(newnode);
+break
+case 'prepend':
+var parent = document.getElementById(id);
+var sibling = parent.firstChild;
+parent.insertBefore(newnode, sibling);
+break;
+case 'insertBefore':
+var sibling = document.getElementById(id);
+var parent = sibling.parentNode;
+parent.insertBefore(newnode, sibling);
+break;
+case 'insertAfter':
+var sibling = document.getElementById(id);
+var parent = sibling.parentNode;
+var next = sibling.nextSibling;
+if(next == null)
+{
+parent.appendChild(newnode);
+}
+else
+{
+parent.insertBefore(newnode, next);
+}
+break;
+}
+},
+_replaceNode: function(id, tag, attributes)
+{
+var node = document.getElementById(id);
+var parent = node.parentNode;
+var newnode = document.createElement(tag);
+for (var i in attributes)
+{
+if(i == 'innerHTML')
+{
+newnode.innerHTML = attributes[i];
+}
+else if(i == 'value')
+{
+newnode.value = attributes[i];
+}
+}
+parent.replaceChild(newnode, node);
+},
+_removeNode: function(id)
+{
+var node = document.getElementById(id);
+if(node)
+{
+var parent = node.parentNode;
+parent.removeChild(node);
+}
+},
+_insertScript: function(data)
+{
+eval(data);
+},
+_insertAlert: function(data)
+{
+alert(data);
+}
+}
 // Loading.js
 HTML_AJAX.Open = function(request) {
 var loading = document.getElementById('HTML_AJAX_LOADING');
@@ -1363,10 +1903,13 @@ if (event.srcElement) return event.srcElement; // ie 5
 getType: function(inp)
 {
 var type = typeof inp, match;
+if(type == 'object' && !inp)
+{
+return 'null';
+}
 if (type == "object") {
-try {
-inp.constructor;
-} catch (e) {
+if(!inp.constructor)
+{
 return 'object';
 }
 var cons = inp.constructor.toString();
@@ -1447,7 +1990,9 @@ ret += i+':'+input[i]+"\n";
 }
 return ret;
 },
-getAllElementsByTag: function(parentElement)
+getAllElements: function(parentElement)
+{
+if( document.all)
 {
 if(!parentElement) {
 var allElements = document.all;
@@ -1461,17 +2006,15 @@ allElements.push( document.all[i] );
 }
 }
 return allElements;
-},
-getElementsByClassName: function(className, parentElement) {
-if( document.all && !document.getElementsByTagName )
-{
-var allElements = HTML_AJAX_Util.getAllElementsByTag(parentElement);
 }
 else
 {
 if (!parentElement) { parentElement = document.body; }
-var allElements = parentElement.getElementsByTagName('*');
+return parentElement.getElementsByTagName('*');
 }
+},
+getElementsByClassName: function(className, parentElement) {
+var allElements = HTML_AJAX_Util.getAllElements(parentElement);
 var items = [];
 var exp = new RegExp('(^| )' + className + '( |$)');
 for(var i=0,j=allElements.length; i<j; i++)

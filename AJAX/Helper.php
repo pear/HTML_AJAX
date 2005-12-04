@@ -33,7 +33,7 @@ class HTML_AJAX_Helper
 	 *
 	 * @var	array
 	 */
-	var $jsLibraries = array('Util','Main','Request','HttpClient','Dispatcher','Behavior','Loading','JSON');
+	var $jsLibraries = array('Util','Main','Request','HttpClient','Dispatcher','Behavior','Loading','JSON','iframe');
 
 	/**
 	 * Remote class stubs to include

@@ -1,5 +1,7 @@
-Autodetect encoding on client and server using Content-type
-Finish up basic usage docs
-Error handling setup in javascript
-Passing php errors to javascript
-Event handling setup in javascript
+JPSpan serializer for compatibility
+Additional functionality to helper class
+Inline frame ajax fallback and file upload support
+Something for Polling
+Basic debugging tools (XMLHttpRequest tester, serialized items viewer, debug console)
+Complete Documentation including basic tutorials and step by step for advanced uses
+Framework integration - either documentation or some kind of API

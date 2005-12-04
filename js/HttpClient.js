@@ -8,38 +8,45 @@
  */
 function HTML_AJAX_HttpClient() { }
 HTML_AJAX_HttpClient.prototype = {
-	// request object
-	request: null,
+    // request object
+    request: null,
 
     // timeout id
     _timeoutId: null,
-	
-	// method to initialize an xmlhttpclient
-	init:function() 
+    
+    // method to initialize an xmlhttpclient
+    init:function() 
     {
-		try {
-		    // Mozilla / Safari
-		    this.xmlhttp = new XMLHttpRequest();
-		} catch (e) {
-			// IE
-			var XMLHTTP_IDS = new Array(
-			'MSXML2.XMLHTTP.5.0',
-			'MSXML2.XMLHTTP.4.0',
-			'MSXML2.XMLHTTP.3.0',
-			'MSXML2.XMLHTTP',
-			'Microsoft.XMLHTTP' );
-			var success = false;
-			for (var i=0;i < XMLHTTP_IDS.length && !success; i++) {
-				try {
-					this.xmlhttp = new ActiveXObject(XMLHTTP_IDS[i]);
-					success = true;
-				} catch (e) {}
-			}
-			if (!success) {
-				throw new Error('Unable to create XMLHttpRequest.');
-			}
-		}
-	},
+        //this.xmlhttp = new HTML_AJAX_IframeXHR(); return;
+        try {
+            // Mozilla / Safari
+            //this.xmlhttp = new HTML_AJAX_IframeXHR(); //uncomment these two lines to test iframe
+            //return;
+            this.xmlhttp = new XMLHttpRequest();
+        } catch (e) {
+            // IE
+            var XMLHTTP_IDS = new Array(
+            'MSXML2.XMLHTTP.5.0',
+            'MSXML2.XMLHTTP.4.0',
+            'MSXML2.XMLHTTP.3.0',
+            'MSXML2.XMLHTTP',
+            'Microsoft.XMLHTTP' );
+            var success = false;
+            for (var i=0;i < XMLHTTP_IDS.length && !success; i++) {
+                try {
+                    this.xmlhttp = new ActiveXObject(XMLHTTP_IDS[i]);
+                    success = true;
+                } catch (e) {}
+            }
+            if (!success) {
+                try{
+                    this.xmlhttp = new HTML_AJAX_IframeXHR();
+                } catch(e) {
+                    throw new Error('Unable to create XMLHttpRequest.');
+                }
+            }
+        }
+    },
 
     // check if there is a call in progress
     callInProgress: function() 
@@ -56,12 +63,12 @@ HTML_AJAX_HttpClient.prototype = {
         }
     },
 
-	// make the request defined in the request object
-	makeRequest: function() 
+    // make the request defined in the request object
+    makeRequest: function() 
     {
-		if (!this.xmlhttp) {
-			this.init();
-		}
+        if (!this.xmlhttp) {
+            this.init();
+        }
 
         try {
             if (this.request.Open) {
@@ -73,7 +80,6 @@ HTML_AJAX_HttpClient.prototype = {
 
             // set onreadystatechange here since it will be reset after a completed call in Mozilla
             var self = this;
-            this.xmlhttp.onreadystatechange = function() { self._readyStateChangeCallback(); }
             this.xmlhttp.open(this.request.requestType,this.request.completeUrl(),this.request.isAsync);
             if (this.request.customHeaders) {
                 for (i in this.request.customHeaders) {
@@ -81,8 +87,18 @@ HTML_AJAX_HttpClient.prototype = {
                 }
             }
             if (this.request.customHeaders && !this.request.customHeaders['Content-Type']) {
-                this.xmlhttp.setRequestHeader('Content-Type',this.request.getContentType());
+                //opera is stupid!!
+                if(window.opera)
+                {
+                    this.xmlhttp.setRequestHeader('Content-Type','text/plain; charset=utf-8');
+                    this.xmlhttp.setRequestHeader('x-Content-Type',this.request.getContentType() + '; charset=utf-8');
+                }
+                else
+                {
+                    this.xmlhttp.setRequestHeader('Content-Type',this.request.getContentType() + '; charset=utf-8');
+                }
             }
+            this.xmlhttp.onreadystatechange = function() { self._readyStateChangeCallback(); }
             var payload = this.request.getSerializedPayload();
             if (payload) {
                 this.xmlhttp.setRequestHeader('Content-Length', payload.length);
@@ -113,8 +129,8 @@ HTML_AJAX_HttpClient.prototype = {
         } catch (e) {
             this._handleError(e);
         }
-	},
-	
+    },
+    
     // abort an inprogress request
     abort: function (automatic) 
     {
@@ -127,8 +143,8 @@ HTML_AJAX_HttpClient.prototype = {
         }
     },
 
-	// internal method used to handle ready state changes
-	_readyStateChangeCallback:function() 
+    // internal method used to handle ready state changes
+    _readyStateChangeCallback:function() 
     {
         try {
             switch(this.xmlhttp.readyState) {
@@ -177,12 +193,26 @@ HTML_AJAX_HttpClient.prototype = {
         } catch (e) {
                 this._handleError(e);
         }
-	},
+    },
 
     // decode response as needed
     _decodeResponse: function() {
-        var unserializer = HTML_AJAX.serializerForEncoding(this.xmlhttp.getResponseHeader('Content-Type'));
-        //alert(this.xmlhttp.responseText); // some sort of debug hook is needed here
+        //try for x-Content-Type first
+        var content = null;
+        try {
+            content = this.xmlhttp.getResponseHeader('X-Content-Type');
+        } catch(e) {}
+        if(!content || content == null)
+        {
+            content = this.xmlhttp.getResponseHeader('Content-Type');
+        }
+        //strip anything after ;
+        if(content.indexOf(';') != -1)
+        {
+            content = content.substring(0, content.indexOf(';'));
+        }
+        var unserializer = HTML_AJAX.serializerForEncoding(content);
+        //alert(this.xmlhttp.getAllResponseHeaders()); // some sort of debug hook is needed here
 
         // some sort of sane way for a serializer to ask for XML needs to be added
         return unserializer.unserialize(this.xmlhttp.responseText);

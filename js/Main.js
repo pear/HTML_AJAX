@@ -19,13 +19,104 @@
  * @category   HTML
  * @package    Ajax
  * @author     Joshua Eichorn <josh@bluga.net>
- * @author     Arpad Ray <arpad@rajeczy.com>
+ * @author     Arpad Ray <arpad@php.net>
  * @author     David Coallier <davidc@php.net>
  * @author     Elizabeth Smith <auroraeosrose@gmail.com>
  * @copyright  2005 Joshua Eichorn, Arpad Ray, David Coallier, Elizabeth Smith
  * @license    http://www.opensource.org/licenses/lgpl-license.php  LGPL
  */
 
+/**
+ *  Functions for compatibility with older browsers
+ */
+if (!String.fromCharCode) {
+    String.prototype.fromCharCode = function(code)
+    {
+        var h = code.toString(16);
+        if (h.length == 1) {
+            h = '0' + h;
+        }
+        return unescape('%' + h);
+    }
+}
+if (!String.charCodeAt) {
+    String.prototype.charCodeAt = function(str)
+    {
+        for (i = 1, h; i < 256; i++) {
+            if (String.fromCharCode(i) == str.charAt(i)) {
+                return i;
+            }
+        } 
+    }
+}
+// http://www.crockford.com/javascript/remedial.html
+if (!Array.splice) {
+    Array.prototype.splice = function(s, d)
+    {
+        var max = Math.max,
+        min = Math.min,
+        a = [], // The return value array
+        e,  // element
+        i = max(arguments.length - 2, 0),   // insert count
+        k = 0,
+        l = this.length,
+        n,  // new length
+        v,  // delta
+        x;  // shift count
+
+        s = s || 0;
+        if (s < 0) {
+            s += l;
+        }
+        s = max(min(s, l), 0);  // start point
+        d = max(min(typeof d == 'number' ? d : l, l - s), 0);    // delete count
+        v = i - d;
+        n = l + v;
+        while (k < d) {
+            e = this[s + k];
+            if (!e) {
+                a[k] = e;
+            }
+            k += 1;
+        }
+        x = l - s - d;
+        if (v < 0) {
+            k = s + i;
+            while (x) {
+                this[k] = this[k - v];
+                k += 1;
+                x -= 1;
+            }
+            this.length = n;
+        } else if (v > 0) {
+            k = 1;
+            while (x) {
+                this[n - k] = this[l - k];
+                k += 1;
+                x -= 1;
+            }
+        }
+        for (k = 0; k < i; ++k) {
+            this[s + k] = arguments[k + 2];
+        }
+        return a;
+    }
+}
+if (!Array.push) {
+    Array.prototype.push = function()
+    {
+        for (var i = 0, startLength = this.length; i < arguments.length; i++) {
+            this[startLength + i] = arguments[i];
+        }
+        return this.length;
+    }
+}
+if (!Array.pop) {
+    Array.prototype.pop = function()
+    {
+        return this.splice(this.length - 1, 1)[0];
+    }
+}
 
 /**
  * HTML_AJAX static methods, this is the main proxyless api, it also handles global error and event handling
@@ -159,6 +250,7 @@ var HTML_AJAX = {
         'Null':         'text/plain',
         'Error':        'application/error',
         'PHP':          'application/php-serialized',
+		'HA' :           'application/html_ajax_action',
         'Urlencoded':   'application/x-www-form-urlencoded'
     },
     // used internally to make queues work, override Load or onError to perform custom events when a request is complete
@@ -187,8 +279,8 @@ var HTML_AJAX = {
             }
         }
         var action = form.action;
-        var el, type, value, name, nameParts;
-        var out = '', tags = form.getElementsByTagName('*')        
+        var el, type, value, name, nameParts, useValue = true;
+        var out = '', tags = HTML_AJAX_Util.getAllElements(form);
         childLoop:
         for (i in tags) {
             el = tags[i];
@@ -213,6 +305,7 @@ var HTML_AJAX = {
                 case 'radio':
                     if (el.checked) {
                         value = 'checked';
+                        useValue = false;
                         break;
                     }
                     // unchecked radios/checkboxes don't get submitted
@@ -232,12 +325,12 @@ var HTML_AJAX = {
                 // unknown element
                 continue childLoop;
             }
-            if (typeof value == 'undefined') {
+            if (useValue) {
                 value = el.value;
             }
             // add element to output array
             out += escape(name) + '=' + escape(value) + '&';
-            value = undefined;
+            useValue = true;
         } // end childLoop
         var callback = function(result) {
             target.innerHTML = result;

@@ -4,7 +4,7 @@
  *
  * @category   HTML
  * @package    AJAX
- * @author     Arpad Ray <arpad@rajeczy.com>
+ * @author     Arpad Ray <arpad@php.net>
  * @copyright  2005 Arpad Ray
  * @license    http://www.opensource.org/licenses/lgpl-license.php  LGPL
  * @version    Release: @package_version@
@@ -17,7 +17,7 @@ $messages = (is_readable(MESSAGE_FILE) ? unserialize(file_get_contents(MESSAGE_F
 function show_messages()
 {
     foreach ($GLOBALS['messages'] as $m) {
-        echo "\nName:{$m[0]}\nMessage:{$m[1]}\n----------------";
+        echo "<br>Name:{$m[0]}<br>Message:{$m[1]}<br><hr>";
     }
 }
 
@@ -31,6 +31,7 @@ function save_messages()
 }
 
 if (!empty($_POST)) {
+
     if (!empty($_POST['name']) && !empty($_POST['message'])) {
         $messages[] = array(
             htmlspecialchars(strip_tags(substr($_POST['name'], 0, 10))),
@@ -48,9 +49,9 @@ if (!empty($_POST)) {
     </head>
     <body>
         <h1>Messages:</h1>
-        <pre id="target">
+        <div id="target">
             <?php show_messages(); ?>
-        </pre>
+        </div>
         <form action="" method="post" onsubmit="return !HTML_AJAX.formSubmit(this, 'target')">
             <label>
                 Name:

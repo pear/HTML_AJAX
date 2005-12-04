@@ -23,7 +23,7 @@
 <html>
 <head>
 
-<script type='text/javascript' src="server.php?client=Util,main,dispatcher,httpclient,request,json,loading"></script>
+<script type='text/javascript' src="server.php?client=Util,main,dispatcher,httpclient,request,json,loading,iframe"></script>
 <script type='text/javascript' src="auto_server.php?stub=livesearch"></script>
 
 </head>

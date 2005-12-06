@@ -40,10 +40,11 @@ if (!String.fromCharCode) {
     }
 }
 if (!String.charCodeAt) {
-    String.prototype.charCodeAt = function(str)
+    String.prototype.charCodeAt = function(index)
     {
-        for (i = 1, h; i < 256; i++) {
-            if (String.fromCharCode(i) == str.charAt(i)) {
+        var c = this.charAt(index);
+        for (i = 1; i < 256; i++) {
+            if (String.fromCharCode(i) == c) {
                 return i;
             }
         } 

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE package SYSTEM "http://pear.php.net/dtd/package-1.0">
-<package version="1.0" packagerversion="1.4.1">
+<package version="1.0" packagerversion="1.4.2">
  <name>HTML_AJAX</name>
  <summary>PHP and JavaScript AJAX library</summary>
  <description>Provides PHP and JavaScript libraries for performing AJAX (Communication from JavaScript to your browser without reloading the page)
@@ -20,8 +20,8 @@
   </maintainer>
   </maintainers>
  <release>
-  <version>0.3.1</version>
-  <date>2005-12-05</date>
+  <version>0.3.2</version>
+  <date>2005-12-07</date>
   <license>lgpl</license>
   <state>alpha</state>
   <notes>Rearranged the examples dir, moving support files and tests into there own directory
@@ -31,7 +31,8 @@
 	Added IFrame fallback, targeted at versions of Opera before XMLHttpRequest and IE with ActiveX turned off
 	Fix js file detection when not installed through PEAR
 	Fix numerous IE 5 javascript bugs and added js compat functions
-	haSerializer and HTML_AJAX_Action bugs fixed
+    haSerializer and HTML_AJAX_Action bugs fixed
+    Fixed Numerous Firefox bugs
   </notes>
   <deps>
    <dep type="pkg" rel="ge" version="1.3.5" optional="no">PEAR</dep>
@@ -268,7 +269,7 @@
    <file role="data" baseinstalldir="HTML" md5sum="00aa336f242db111e5ad6a356973ee10" name="js/Loading.js">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
-   <file role="data" baseinstalldir="HTML" md5sum="21aa9f7d12f24640a1a3e9e700163941" name="js/Main.js">
+   <file role="data" baseinstalldir="HTML" md5sum="5b668a0cb6699b0cee86419c4d4ab742" name="js/Main.js">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
    <file role="data" baseinstalldir="HTML" md5sum="1b0ac0ec0f3e506de5509bc569018ac8" name="js/priorityQueue.js">

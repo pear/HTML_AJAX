@@ -1,5 +1,5 @@
 // Main.js
-if (!String.fromCharCode) {
+if (!String.fromCharCode && !String.prototype.fromCharCode) {
 String.prototype.fromCharCode = function(code)
 {
 var h = code.toString(16);
@@ -9,17 +9,18 @@ h = '0' + h;
 return unescape('%' + h);
 }
 }
-if (!String.charCodeAt) {
-String.prototype.charCodeAt = function(str)
+if (!String.charCodeAt && !String.prototype.charCodeAt) {
+String.prototype.charCodeAt = function(index)
 {
-for (i = 1, h; i < 256; i++) {
-if (String.fromCharCode(i) == str.charAt(i)) {
+var c = this.charAt(index);
+for (i = 1; i < 256; i++) {
+if (String.fromCharCode(i) == c) {
 return i;
 }
 }
 }
 }
-if (!Array.splice) {
+if (!Array.splice && !Array.prototype.splice) {
 Array.prototype.splice = function(s, d)
 {
 var max = Math.max,
@@ -70,7 +71,7 @@ this[s + k] = arguments[k + 2];
 return a;
 }
 }
-if (!Array.push) {
+if (!Array.push && !Array.prototype.push) {
 Array.prototype.push = function()
 {
 for (var i = 0, startLength = this.length; i < arguments.length; i++) {
@@ -79,7 +80,7 @@ this[startLength + i] = arguments[i];
 return this.length;
 }
 }
-if (!Array.pop) {
+if (!Array.pop && !Array.prototype.pop) {
 Array.prototype.pop = function()
 {
 return this.splice(this.length - 1, 1)[0];
@@ -124,7 +125,7 @@ return eval("new HTML_AJAX_Serialize_"+i+";");
 }
 return new HTML_AJAX_Serialize_Null();
 },
-fullcall: function(url,encoding,className,method,callback,args, customHeaders) {
+fullcall: function(url,encoding,className,method,callback,args, customHeaders, grab) {
 var serializer = HTML_AJAX.serializerForEncoding(encoding);
 var request = new HTML_AJAX_Request(serializer);
 if (callback) {
@@ -138,6 +139,12 @@ request.args = args;
 if (customHeaders) {
 request.customHeaders = customHeaders;
 }
+if (grab) {
+request.grab = true;
+if (!args || !args.length) {
+request.requestType = 'GET';
+}
+}
 return HTML_AJAX.makeRequest(request);
 },
 call: function(className,method,callback) {
@@ -148,7 +155,7 @@ args.push(arguments[i]);
 return HTML_AJAX.fullcall(HTML_AJAX.defaultServerUrl,HTML_AJAX.defaultEncoding,className,method,callback,args);
 },
 grab: function(url,callback) {
-return HTML_AJAX.fullcall(url,'Null',false,null,callback,{});
+return HTML_AJAX.fullcall(url,'Null',false,null,callback, '', false, true);
 },
 replace: function(id) {
 var callback = function(result) {
@@ -162,7 +169,7 @@ var args = new Array();
 for(var i = 3; i < arguments.length; i++) {
 args.push(arguments[i]);
 }
-HTML_AJAX.fullcall(HTML_AJAX.defaultServerUrl,HTML_AJAX.defaultEncoding,arguments[1],arguments[2],callback,args);
+HTML_AJAX.fullcall(HTML_AJAX.defaultServerUrl,HTML_AJAX.defaultEncoding,arguments[1],arguments[2],callback,args, false, true);
 }
 },
 append: function(id) {
@@ -177,7 +184,7 @@ var args = new Array();
 for(var i = 3; i < arguments.length; i++) {
 args.push(arguments[i]);
 }
-HTML_AJAX.fullcall(HTML_AJAX.defaultServerUrl,HTML_AJAX.defaultEncoding,arguments[1],arguments[2],callback,args);
+HTML_AJAX.fullcall(HTML_AJAX.defaultServerUrl,HTML_AJAX.defaultEncoding,arguments[1],arguments[2],callback,args, false, true);
 }
 },
 Open: function(request) {
@@ -199,7 +206,7 @@ HTML_AJAX.queues[i].requestComplete(request,error);
 }
 }
 },
-formSubmit: function (form, target)
+formSubmit: function (form, target, customRequest)
 {
 if (typeof form == 'string') {
 form = document.getElementById(form);
@@ -209,13 +216,13 @@ return false;
 }
 if (typeof target == 'string') {
 target = document.getElementById('target');
+}
 if (!target) {
 target = form;
 }
-}
 var action = form.action;
 var el, type, value, name, nameParts, useValue = true;
-var out = '', tags = HTML_AJAX_Util.getAllElements(form);
+var out = '', tags = form.elements;
 childLoop:
 for (i in tags) {
 el = tags[i];
@@ -264,18 +271,32 @@ useValue = true;
 var callback = function(result) {
 target.innerHTML = result;
 }
+var serializer = HTML_AJAX.serializerForEncoding('Null');
+var request = new HTML_AJAX_Request(serializer);
+request.isAsync = true;
+request.callback = callback;
 switch (form.method.toLowerCase()) {
 case 'post':
 var headers = {};
 headers['Content-Type'] = 'application/x-www-form-urlencoded';
-HTML_AJAX.fullcall(action, 'Null', false, form.method, callback, out, headers);
+request.customHeaders = headers;
+request.requestType = 'POST';
+request.requestUrl = action;
+request.args = out;
 break;
 default:
 if (action.indexOf('?') == -1) {
 out = '?' + out.substr(0, out.length - 1);
 }
-HTML_AJAX.fullcall(action + out, 'Null', false, form.method, callback);
+request.requestUrl = action+out;
+request.requestType = 'GET';
 }
+if(customRequest) {
+for(var i in customRequest) {
+request[i] = customRequest[i];
+}
+}
+HTML_AJAX.makeRequest(request);
 return true;
 } // end formSubmit()
 }
@@ -531,7 +552,8 @@ this._len = 0;
 HTML_AJAX.clientPools['default'] = new HTML_AJAX_Client_Pool(0);
 // IframeXHR.js
 HTML_AJAX_IframeXHR_instances = new Object();
-function HTML_AJAX_IframeXHR() {
+function HTML_AJAX_IframeXHR()
+{
 this._id = 'HAXHR_iframe_' + new Date().getTime();
 HTML_AJAX_IframeXHR_instances[this._id] = this;
 }
@@ -555,99 +577,80 @@ _history: null, // opera has to have history munging
 abort: function()
 {
 var iframe = document.getElementById(this._id);
-if(iframe)
-{
+if (iframe) {
 document.body.removeChild(iframe);
 }
-if(this._timeout)
-{
+if (this._timeout) {
 window.clearTimeout(this._timeout);
 }
 this.readyState = 1;
-if(typeof(this.onreadystatechange) == "function")
+if (typeof(this.onreadystatechange) == "function") {
 this.onreadystatechange();
+}
 },
 getAllResponseHeaders: function()
 {
 var string = '';
-for(i in this._response)
-{
+for (i in this._response) {
 string += i + ' : ' + this._response[i] + "\n";
 }
 return string;
 },
 getResponseHeader: function(header)
 {
-if(this._response[header])
-{
-return this._response[header];
-}
-else
-{
-return null;
-}
+return (this._response[header] ? this._response[header] : null);
 },
 setRequestHeader: function(label, value) {
 this._headers[label] = value;
 return; },
 open: function(method, url, async, username, password)
 {
-if(!document.body)
-{
+if (!document.body) {
 throw('CANNOT_OPEN_SEND_IN_DOCUMENT_HEAD');
 }
-if(!method || !url)
-{
+if (!method || !url) {
 throw('NOT_ENOUGH_ARGUMENTS:METHOD_URL_REQUIRED');
 }
-if(method == 'post')
-{
-this._method = 'post';
-}
-else
-{
-this._method = 'get';
-}
+this._method = (method.toUpperCase() == 'POST' ? 'POST' : 'GET');
 this._decodeUrl(url);
 this._async = async;
-if(!this._async && document.readyState && !window.opera)
-{
+if(!this._async && document.readyState && !window.opera) {
 throw('IE_DOES_NOT_SUPPORT_SYNC_WITH_IFRAMEXHR');
 }
 this.readyState = 1;
-if(typeof(this.onreadystatechange) == "function")
+if(typeof(this.onreadystatechange) == "function") {
 this.onreadystatechange();
+}
 },
 send: function(content)
 {
-if(window.opera)
-{
+if (window.opera) {
 this._history = window.history.length;
 }
-var form = '<html><body><form method="' + this._method + '" action="' + this._url + '">';
+var form = '<html><body><form method="'
++ (this._url.indexOf('px=') < 0 ? this._method : 'post')
++ '" action="' + this._url + '">';
 form += '<input name="Iframe_XHR" value="1" />';
-if(this._phpclass != null)
-{
+if (this._phpclass != null) {
 form += '<input name="Iframe_XHR_class" value="' + this._phpclass + '" />';
 }
-if(this._phpmethod != null)
-{
+if (this._phpmethod != null) {
 form += '<input name="Iframe_XHR_method" value="' + this._phpmethod + '" />';
 }
-for(label in this._headers)
-{
+for (label in this._headers) {
 form += '<textarea name="Iframe_XHR_headers[]">' + label +':'+ this._headers[label] + '</textarea>';
 }
 form += '<textarea name="Iframe_XHR_id">' + this._id + '</textarea>';
-if(content != null && content.length > 0)
-{
+if (content != null && content.length > 0) {
 form += '<textarea name="Iframe_XHR_data">' + content + '</textarea>';
 }
+form += '<input name="Iframe_XHR_HTTP_method" value="' + this._method + '" />';
 form += '<s'+'cript>document.forms[0].submit();</s'+'cript></form></body></html>';
 form = "javascript:document.write('" + form.replace(/\'/g,"\\'") + "');void(0);";
 this.readyState = 2;
-if(typeof(this.onreadystatechange) == "function")
+if (typeof(this.onreadystatechange) == "function") {
 this.onreadystatechange();
+}
 try {
 var iframe = document.createElement('iframe');
 iframe.id = this._id;
@@ -663,27 +666,23 @@ document.body.appendChild(iframe);
 iframe.src = form;
 }
 } catch(exception) {
-var html = '<iframe src="' + form +'" id="' + id + '" style="visibility:hidden;border:0;height:0;width:0;"></iframe>';
+var html = '<iframe src="' + form +'" id="' + this._id + '" style="visibility:hidden;border:0;height:0;width:0;"></iframe>';
 document.body.innerHTML += html;
 }
-if(this._async == true)
-{
-if(this.readyState < 3)
-{
+if (this._async == true) {
+if (this.readyState < 3) {
 this.readyState = 3;
-if(typeof(this.onreadystatechange) == "function")
+if(typeof(this.onreadystatechange) == "function") {
 this.onreadystatechange();
 }
 }
-else
-{
-while(this.readyState != 4)
-{
-if(this.readyState < 3)
-{
+} else {
+while (this.readyState != 4) {
+if (this.readyState < 3) {
 this.readyState = 3;
-if(typeof(this.onreadystatechange) == "function")
+if(typeof(this.onreadystatechange) == "function") {
 this.onreadystatechange();
+}
 }
 }
 }
@@ -695,20 +694,18 @@ this.status = 200;
 this.statusText = 'OK';
 this.responseText = data;
 this._response = headers;
-if(!this._response['Last-Modified'])
-{
+if (!this._response['Last-Modified']) {
 string += 'Last-Modified : ' + document.getElementById(this._id).lastModified + "\n";
 }
-if(!this._response['Content-Type'])
-{
+if (!this._response['Content-Type']) {
 string += 'Content-Type : ' + document.getElementById(this._id).contentType + "\n";
 }
-if(window.opera && window.opera.version)
-{
+if (window.opera && window.opera.version) {
 window.history.go(this._history - window.history.length);
 }
-if(typeof(this.onreadystatechange) == "function")
+if (typeof(this.onreadystatechange) == "function") {
 this.onreadystatechange();
+}
 document.body.removeChild(document.getElementById(this._id));
 },
 _decodeUrl: function(querystring)
@@ -717,25 +714,20 @@ var url = unescape(location.href);
 url = url.substring(0, url.lastIndexOf("/") + 1);
 var item = querystring.split('?');
 this._url = url + item[0].substring(item[0].lastIndexOf("/") + 1,item[0].length);
-if(item[1])
-{
+if(item[1]) {
 item = item[1].split('&');
-for(i in item)
-{
+for (i in item) {
 var v = item[i].split('=');
-if(v[0] == 'c')
-{
+if (v[0] == 'c') {
 this._phpclass = v[1];
-}
-else if(v[0] == 'm')
-{
+} else if (v[0] == 'm') {
 this._phpmethod = v[1];
 }
 }
 }
-else
-{
-throw('GRAB_METHODS_DO_NOT_WORK_WITH_IFRAMEXHR');
+if (!this._phpclass || !this._phpmethod) {
+var cloc = window.location.href;
+this._url = cloc + (cloc.indexOf('?') >= 0 ? '&' : '?') + 'px=' + escape(HTML_AJAX_Util.absoluteURL(querystring));
 }
 }
 }
@@ -1110,6 +1102,7 @@ success = true;
 if (!success) {
 try{
 this.xmlhttp = new HTML_AJAX_IframeXHR();
+this.request.iframe = true;
 } catch(e) {
 throw new Error('Unable to create XMLHttpRequest.');
 }
@@ -1193,7 +1186,8 @@ abort: function (automatic)
 if (this.callInProgress()) {
 this.xmlhttp.abort();
 if (automatic) {
-this._handleError(new Error('Request Timed Out'));
+HTML_AJAX.requestComplete(this.request);
+this._handleError(new Error('Request Timed Out: time out was '+this.request.timeout+'ms'));
 }
 }
 },
@@ -1218,7 +1212,7 @@ HTML_AJAX.Progress(this.request);
 }
 break;
 case 4:
-window.clearTimeout(this._timeout_id);
+window.clearTimeout(this._timeoutId);
 if (this.xmlhttp.status == 200) {
 HTML_AJAX.requestComplete(this.request);
 if (this.request.Load) {
@@ -1286,6 +1280,8 @@ callback: null,
 queue: 'default',
 priority: 0,
 customHeaders: {},
+iframe: false,
+grab: false,
 addArg: function(name, value)
 {
 if ( !this.args ) {
@@ -1735,7 +1731,7 @@ node.value = attributes[i];
 }
 else
 {
-node.setAttribute(i, attributes[i]);
+node[i] = attributes[i];
 }
 }
 },
@@ -1849,12 +1845,15 @@ if (!loading) {
 loading = document.createElement('div');
 loading.id = 'HTML_AJAX_LOADING';
 loading.innerHTML = 'Loading...';
-loading.style.position = 'absolute';
-loading.style.top = 0;
-loading.style.right = 0;
-loading.style.backgroundColor = 'red';
-loading.style.width = '80px';
-loading.style.padding = '4px';
+loading.style.color           = '#fff';
+loading.style.position        = 'absolute';
+loading.style.top             = 0;
+loading.style.right           = 0;
+loading.style.backgroundColor = '#f00';
+loading.style.border          = '1px solid #f99';
+loading.style.width           = '80px';
+loading.style.padding         = '4px';
+loading.style.fontFamily      = 'Arial, Helvetica, sans';
 document.body.insertBefore(loading,document.body.firstChild);
 }
 if (request.isAsync) {
@@ -2036,6 +2035,75 @@ for (i in chars) {
 inp.replace(new RegExp(chars[i][0]), chars[i][1]);
 }
 return inp;
+},
+baseURL: function(absolute) {
+var qPos = absolute.indexOf('?');
+if (qPos >= 0) {
+absolute = absolute.substr(0, qPos);
+}
+var slashPos = absolute.lastIndexOf('/');
+if (slashPos < 0) {
+return absolute;
+}
+return absolute.substr(0, slashPos + 1);
+},
+queryString: function(url) {
+var qPos = url.indexOf('?');
+if (qPos >= 0) {
+return url.substr(qPos+1);
+}
+},
+absoluteURL: function(rel, absolute) {
+if (/^https?:\/\//i.test(rel)) {
+return rel;
+}
+if (!absolute) {
+var bases = document.getElementsByTagName('base');
+for (i in bases) {
+if (bases[i].href) {
+absolute = bases[i].href;
+break;
+}
+}
+if (!absolute) {
+absolute = window.location.href;
+}
+}
+if (rel == '') {
+return absolute;
+}
+if (rel.substr(0, 2) == '//') {
+var slashesPos = absolute.indexOf('//');
+if (slashesPos < 0) {
+return 'http:' + rel;
+}
+return absolute.substr(0, slashesPos) + rel;
+}
+var base = this.baseURL(absolute);
+var absParts = base.substr(0, base.length - 1).split('/');
+var absHost = absParts.slice(0, 3).join('/') + '/';
+if (rel.substr(0, 1) == '/') {
+return absHost + rel;
+}
+if (rel.substr(0, 1) == '.' && rel.substr(1, 1) != '.') {
+return base + rel.substr(1);
+}
+absParts.splice(0, 3);
+var relParts = rel.split('/');
+var loopStart = relParts.length - 1;
+relParts = absParts.concat(relParts);
+for (i = loopStart; i < relParts.length;) {
+if (relParts[i] == '..') {
+if (i == 0) {
+return absolute;
+}
+relParts.splice(i - 1, 2);
+--i;
+continue;
+}
+i++;
+}
+return absHost + relParts.join('/');
 }
 }
 // behavior/behavior.js

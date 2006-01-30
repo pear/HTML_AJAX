@@ -15,19 +15,19 @@
 	include 'HTML/AJAX/Server.php';
 
 	// extend HTML_AJAX_Server creating our own custom one with init{ClassName} methods for each class it supports calls on
-	class TestServer extends HTML_AJAX_Server {
+	class LoginServer extends HTML_AJAX_Server {
 		// this flag must be set to on init methods
 		var $initMethods = true;
 
 		// init method for the test class, includes needed files an registers it for ajax
 		function initLogin() {
-			include 'login.class.php';
-			$this->registerClass(new login());
+			include 'class.login.php';
+			$this->registerClass(new login(), 'login', array('validate'));
 		}
 	}
 
 	// create an instance of our test server
-	$server = new TestServer();
+	$server = new LoginServer();
 
 	// handle requests as needed
 	$server->handleRequest();

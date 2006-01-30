@@ -29,7 +29,7 @@
 /**
  *  Functions for compatibility with older browsers
  */
-if (!String.fromCharCode) {
+if (!String.fromCharCode && !String.prototype.fromCharCode) {
     String.prototype.fromCharCode = function(code)
     {
         var h = code.toString(16);
@@ -39,7 +39,7 @@ if (!String.fromCharCode) {
         return unescape('%' + h);
     }
 }
-if (!String.charCodeAt) {
+if (!String.charCodeAt && !String.prototype.charCodeAt) {
     String.prototype.charCodeAt = function(index)
     {
         var c = this.charAt(index);
@@ -51,7 +51,7 @@ if (!String.charCodeAt) {
     }
 }
 // http://www.crockford.com/javascript/remedial.html
-if (!Array.splice) {
+if (!Array.splice && !Array.prototype.splice) {
     Array.prototype.splice = function(s, d)
     {
         var max = Math.max,
@@ -103,7 +103,7 @@ if (!Array.splice) {
         return a;
     }
 }
-if (!Array.push) {
+if (!Array.push && !Array.prototype.push) {
     Array.prototype.push = function()
     {
         for (var i = 0, startLength = this.length; i < arguments.length; i++) {
@@ -112,7 +112,7 @@ if (!Array.push) {
         return this.length;
     }
 }
-if (!Array.pop) {
+if (!Array.pop && !Array.prototype.pop) {
     Array.prototype.pop = function()
     {
         return this.splice(this.length - 1, 1)[0];
@@ -167,7 +167,7 @@ var HTML_AJAX = {
         }
         return new HTML_AJAX_Serialize_Null();
     },
-	fullcall: function(url,encoding,className,method,callback,args, customHeaders) {
+	fullcall: function(url,encoding,className,method,callback,args, customHeaders, grab) {
         var serializer = HTML_AJAX.serializerForEncoding(encoding);
 
         var request = new HTML_AJAX_Request(serializer);
@@ -182,6 +182,12 @@ var HTML_AJAX = {
         if (customHeaders) {
             request.customHeaders = customHeaders;
         }
+        if (grab) {
+            request.grab = true;
+            if (!args || !args.length) {
+                request.requestType = 'GET';
+            }
+        }
 
         return HTML_AJAX.makeRequest(request);
 	},
@@ -193,7 +199,7 @@ var HTML_AJAX = {
 		return HTML_AJAX.fullcall(HTML_AJAX.defaultServerUrl,HTML_AJAX.defaultEncoding,className,method,callback,args);
 	},
 	grab: function(url,callback) {
-		return HTML_AJAX.fullcall(url,'Null',false,null,callback,{});
+		return HTML_AJAX.fullcall(url,'Null',false,null,callback, '', false, true);
 	},
 	replace: function(id) {
         var callback = function(result) {
@@ -209,7 +215,7 @@ var HTML_AJAX = {
 			for(var i = 3; i < arguments.length; i++) {
 				args.push(arguments[i]);
 			}
-			HTML_AJAX.fullcall(HTML_AJAX.defaultServerUrl,HTML_AJAX.defaultEncoding,arguments[1],arguments[2],callback,args);
+			HTML_AJAX.fullcall(HTML_AJAX.defaultServerUrl,HTML_AJAX.defaultEncoding,arguments[1],arguments[2],callback,args, false, true);
 		}
 	},
     append: function(id) {
@@ -226,7 +232,7 @@ var HTML_AJAX = {
             for(var i = 3; i < arguments.length; i++) {
                 args.push(arguments[i]);
             }
-            HTML_AJAX.fullcall(HTML_AJAX.defaultServerUrl,HTML_AJAX.defaultEncoding,arguments[1],arguments[2],callback,args);
+            HTML_AJAX.fullcall(HTML_AJAX.defaultServerUrl,HTML_AJAX.defaultEncoding,arguments[1],arguments[2],callback,args, false, true);
         }
     }, 
     // override to add top level loading notification (start)
@@ -264,7 +270,7 @@ var HTML_AJAX = {
         }
     },
     // submits a form through ajax. both arguments can be either DOM nodes or IDs, if the target is omitted then the form is set to be the target
-    formSubmit: function (form, target)
+    formSubmit: function (form, target, customRequest)
     {
         if (typeof form == 'string') {
             form = document.getElementById(form);
@@ -275,13 +281,13 @@ var HTML_AJAX = {
         }
         if (typeof target == 'string') {
             target = document.getElementById('target');
-            if (!target) {
-                target = form;
-            }
+        }
+        if (!target) {
+            target = form;
         }
         var action = form.action;
         var el, type, value, name, nameParts, useValue = true;
-        var out = '', tags = HTML_AJAX_Util.getAllElements(form);
+        var out = '', tags = form.elements;
         childLoop:
         for (i in tags) {
             el = tags[i];
@@ -336,18 +342,35 @@ var HTML_AJAX = {
         var callback = function(result) {
             target.innerHTML = result;
         }
+
+        var serializer = HTML_AJAX.serializerForEncoding('Null');
+        var request = new HTML_AJAX_Request(serializer);
+        request.isAsync = true;
+        request.callback = callback;
+
         switch (form.method.toLowerCase()) {
         case 'post':
             var headers = {};
             headers['Content-Type'] = 'application/x-www-form-urlencoded';
-            HTML_AJAX.fullcall(action, 'Null', false, form.method, callback, out, headers);
+            request.customHeaders = headers;
+            request.requestType = 'POST';
+            request.requestUrl = action;
+            request.args = out;
             break;
         default:
             if (action.indexOf('?') == -1) {
                 out = '?' + out.substr(0, out.length - 1);
             }
-            HTML_AJAX.fullcall(action + out, 'Null', false, form.method, callback);
+            request.requestUrl = action+out;
+            request.requestType = 'GET';
         }
+
+        if(customRequest) {
+            for(var i in customRequest) {
+                request[i] = customRequest[i];
+            }
+        }
+        HTML_AJAX.makeRequest(request);
         return true;
     } // end formSubmit()
 }

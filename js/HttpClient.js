@@ -17,7 +17,6 @@ HTML_AJAX_HttpClient.prototype = {
     // method to initialize an xmlhttpclient
     init:function() 
     {
-        //this.xmlhttp = new HTML_AJAX_IframeXHR(); return;
         try {
             // Mozilla / Safari
             //this.xmlhttp = new HTML_AJAX_IframeXHR(); //uncomment these two lines to test iframe
@@ -41,6 +40,7 @@ HTML_AJAX_HttpClient.prototype = {
             if (!success) {
                 try{
                     this.xmlhttp = new HTML_AJAX_IframeXHR();
+                    this.request.iframe = true;
                 } catch(e) {
                     throw new Error('Unable to create XMLHttpRequest.');
                 }
@@ -138,7 +138,8 @@ HTML_AJAX_HttpClient.prototype = {
             this.xmlhttp.abort();
 
             if (automatic) {
-                this._handleError(new Error('Request Timed Out'));
+                HTML_AJAX.requestComplete(this.request);
+                this._handleError(new Error('Request Timed Out: time out was '+this.request.timeout+'ms'));
             }
         }
     },
@@ -169,7 +170,7 @@ HTML_AJAX_HttpClient.prototype = {
                 break;
                 // Download complete
                 case 4:
-                    window.clearTimeout(this._timeout_id);
+                    window.clearTimeout(this._timeoutId);
 
                     if (this.xmlhttp.status == 200) {
                         HTML_AJAX.requestComplete(this.request);

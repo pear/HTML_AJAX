@@ -66,5 +66,41 @@ foreach ($bad_examples as $sfoo) {
          "</script>\n</pre>\n<hr />\n\n";
 }
 
+$good_objects = array(
+    'O:3:"Foo":2:{s:3:"foo";s:5:"hello";s:3:"bar";a:2:{i:0;s:5:"world";i:1;s:8:"universe";}}',
+    'O:3:"Foo":2:{s:3:"foo";s:87:"O:3:"Bar":2:{s:3:"foo";s:5:"hello";s:3:"bar";a:2:{i:0;s:5:"world";i:1;s:8:"universe";}}";s:3:"bar";a:2:{i:0;s:5:"world";i:1;s:8:"universe";}}',
+    'O:3:"Foo":2:{s:3:"foo";s:90:"hi"O:3:"Bar":2:{s:3:"foo";s:5:"hello";s:3:"bar";a:2:{i:0;s:5:"world";i:1;s:8:"universe";}}";s:3:"bar";a:2:{i:0;s:5:"world";i:1;s:8:"universe";}}'
+);
+
+$bad_objects = array(
+    'O:6:"stdClass":2:{s:3:"foo";s:5:"hello";s:3:"bar";a:2:{i:0;s:5:"world";i:1;s:8:"universe";}}',
+    'O:3:"Foo":2:{s:3:"foo";O:8:"stdClass":1:{s:3:"bar";s:2:"hi";}s:3:"bar";a:2:{i:0;s:5:"world";i:1;s:8:"universe";}}',
+    'O:3:"Foo":2:{s:6:"hi"foo";O:8:"stdClass":1:{s:3:"bar";s:2:"hi";}s:3:"bar";a:2:{i:0;s:5:"world";i:1;s:8:"universe";}}'
+);
+
+include('HTML/AJAX/Serializer/PHP.php');
+$sr = new HTML_AJAX_Serializer_PHP;
+
+$allowedClasses = array('Foo');
+
+echo '<h1><a name="opos">Object Positives</a> | <a href="#oneg">Object Negatives</a></h1>';
+foreach ($good_objects as $sfoo) {
+    echo "</pre>\n<strong>Serialized in PHP:</strong>\n<pre>", $sfoo, "</pre>\n",
+        "<strong>Class Names</strong><pre>\n", implode(', ', $sr->_getSerializedClassNames($sfoo)),
+        "</pre><strong>Unserialized in PHP:</strong>\n<pre>\n";
+    var_dump($sr->unserialize($sfoo, $allowedClasses));
+    echo "</pre>\n<hr />\n\n";
+}
+
+echo '<h1><a href="#opos">Object Positives</a> | <a name="oneg">Object Negatives</a></h1>';
+foreach ($bad_objects as $sfoo) {
+    echo "</pre>\n<strong>Serialized in PHP:</strong>\n<pre>", $sfoo, "</pre>\n",
+        "<strong>Class Names</strong><pre>\n", implode(', ', $sr->_getSerializedClassNames($sfoo)),
+        "</pre><strong>Unserialized in PHP:</strong>\n<pre>\n";
+    var_dump($sr->unserialize($sfoo, $allowedClasses));
+    echo "</pre>\n<hr />\n\n";
+}
+
+
 
 ?>

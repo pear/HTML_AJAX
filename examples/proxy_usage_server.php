@@ -46,6 +46,12 @@ callback.prototype = {
 			ret += i+':'+result[i]+"\n";
 		}
 		document.getElementById('target').innerHTML = ret;
+	},
+	echo_data: function(result) {
+		document.getElementById('target').innerHTML = HTML_AJAX_Util.varDump(result);
+	},
+	unicode_data: function(result) {
+		document.getElementById('target').innerHTML = HTML_AJAX_Util.varDump(result);
 	}
 }
 
@@ -72,6 +78,14 @@ function asyncCall() {
 	asyncProxy.echo_string("I'm a async call");
 }
 
+function unicodeTest() {
+	asyncProxy.echo_data({'suggestion': ['Français', 'caractères']});
+}
+
+function unicodeTest2() {
+	asyncProxy.unicode_data();
+}
+
 function cookieTest() {
 	asyncProxy.cookies();
 }
@@ -80,6 +94,8 @@ function cookieTest() {
 	<li><a href="javascript:clearTarget()">Clear Target</a></li>
 	<li><a href="javascript:syncCall()">Run Sync Echo call</a></li>
 	<li><a href="javascript:asyncCall();">Run Async Echo call</a></li>
+	<li><a href="javascript:unicodeTest();">Check ability to round trip utf-8 JSON data</a></li>
+	<li><a href="javascript:unicodeTest2();">Check ability to recieve utf-8 JSON data</a></li>
 	<li><a href="javascript:cookieTest();">View Cookies</a></li>
 </ul>
 

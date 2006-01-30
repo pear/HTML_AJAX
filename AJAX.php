@@ -119,6 +119,16 @@ class HTML_AJAX {
     var $sendContentLength = true;
 
     /**
+     * Make Generated code compatible with php4 by lowercasing all class/method names before exporting to JavaScript
+     * If you have code that works on php4 but not on php5 then setting this flag can fix the problem.  
+     * The recommended solution is too specify the class and method names when registering the class letting you have function case in php4 as well
+     *
+     * @access public
+     * @var boolean
+     */
+    var $php4CompatCase = false;
+
+    /**
      * Holds current payload info
      *
      * @access private
@@ -135,6 +145,14 @@ class HTML_AJAX {
     var $_iframe;
 
     /**
+     * Holds the list of classes permitted to be unserialized
+     *
+     * @access private
+     * @var array
+     */
+    var $_allowedClasses;
+
+    /**
      * Set a class to handle requests
      *
      * @param   object  $instance
@@ -148,6 +166,9 @@ class HTML_AJAX {
 
         if ($exportedName === false) {
             $exportedName = $className;
+            if ($this->php4CompatCase) {
+                $exportedName = strtolower($exportedName);
+            }
         }
 
         if ($exportedMethods === false) {
@@ -181,6 +202,9 @@ class HTML_AJAX {
         foreach ($funcs as $key => $func) {
             if (strtolower($func) === $className || substr($func,0,1) === '_') {
                 unset($funcs[$key]);
+            }
+            else if ($this->php4CompatCase) {
+                $funcs[$key] = strtolower($func);
             }
         }
         return $funcs;
@@ -273,27 +297,25 @@ class HTML_AJAX {
      */    
     function populatePayload()
     {
-        if(isset($_REQUEST['Iframe_XHR']))
-        {
+        if(isset($_REQUEST['Iframe_XHR'])) {
             $this->_iframe = $_REQUEST['Iframe_XHR_id'];
-            foreach($_REQUEST['Iframe_XHR_headers'] as $header)
-            {
-                $array = explode(':', $header);
-                $array[0] = strip_tags(strtoupper(str_replace('-', '_', $array[0])));
-                //only content-length and content-type can go in without an http_ prefix - security
-                if(strpos($array[0], 'HTTP_') !== 0 and strcmp('CONTENT_TYPE', $array[0]) and strcmp('CONTENT_LENGTH', $array[0]))
-                {
-                    $array[0] = 'HTTP_'.$array[0];
+            if (isset($_REQUEST['Iframe_XHR_headers']) && is_array($_REQUEST['Iframe_XHR_headers'])) {
+                foreach ($_REQUEST['Iframe_XHR_headers'] as $header) {
+                    $array = explode(':', $header);
+                    $array[0] = strip_tags(strtoupper(str_replace('-', '_', $array[0])));
+                    //only content-length and content-type can go in without an http_ prefix - security
+                    if(strpos($array[0], 'HTTP_') !== 0 and strcmp('CONTENT_TYPE', $array[0]) and strcmp('CONTENT_LENGTH', $array[0]))
+                    {
+                        $array[0] = 'HTTP_'.$array[0];
+                    }
+                    $_SERVER[$array[0]] = strip_tags($array[1]);
                 }
-                $_SERVER[$array[0]] = strip_tags($array[1]);
             }
-            $this->_payload = $_REQUEST['Iframe_XHR_data'];
-            if($_REQUEST['Iframe_XHR_method'])
-            {
+            $this->_payload = (isset($_REQUEST['Iframe_XHR_data']) ? $_REQUEST['Iframe_XHR_data'] : '');
+            if (isset($_REQUEST['Iframe_XHR_method'])) {
                 $_GET['m'] = $_REQUEST['Iframe_XHR_method'];
             }
-            if($_REQUEST['Iframe_XHR_class'])
-            {
+            if (isset($_REQUEST['Iframe_XHR_class'])) {
                 $_GET['c'] = $_REQUEST['Iframe_XHR_class'];
             }
         }
@@ -310,21 +332,25 @@ class HTML_AJAX {
      */
     function handleRequest() 
     {
+        set_error_handler(array(&$this,'_errorHandler'));
+        if (function_exists('set_exception_handler')) {
+            set_exception_handler(array(&$this,'_exceptionHandler'));
+        }
+        if (isset($_GET['px'])) {
+            if ($this->_iframeGrabProxy()) {
+                return true;
+            }
+        }
         $class = call_user_func((array)$this->_callbacks['get'], 'c');
         $method = call_user_func($this->_callbacks['get'], 'm');
         if (!empty($class) && !empty($method)) {
-            set_error_handler(array(&$this,'_errorHandler'));
-            if (function_exists('set_exception_handler')) {
-                set_exception_handler(array(&$this,'_exceptionHandler'));
-            }
-            
             if (!isset($this->_exportedInstances[$class])) {
                 // handle error
-                trigger_error('Unknown class: '.$class);
+                trigger_error('Unknown class');
             }
             if (!in_array($method,$this->_exportedInstances[$class]['exportedMethods'])) {
                 // handle error
-                trigger_error('Unknown method: '.$method);
+                trigger_error('Unknown method');
             }
 
             // auto-detect serializer to use from content-type
@@ -335,7 +361,7 @@ class HTML_AJAX {
             }
             $unserializer = $this->_getSerializer($type);
 
-            $args = $unserializer->unserialize($this->_getClientPayload());
+            $args = $unserializer->unserialize($this->_getClientPayload(), $this->_allowedClasses);
             if (!is_array($args)) {
                 $args = array($args);
             }
@@ -398,7 +424,7 @@ class HTML_AJAX {
             $headers['X-Content-Type'] = $content;
             $content = 'text/plain';
         }
-        if ($this->sendContentLength) {
+        if ($this->_sendContentLength()) {
             $headers['Content-Length'] = strlen($output);
         }
         $headers['Expires'] = 'Mon, 26 Jul 1997 05:00:00 GMT';
@@ -415,6 +441,25 @@ class HTML_AJAX {
         }
         call_user_func($this->_callbacks['headers'], $headers);
         echo $output;
+    }
+
+    /**
+     * Decide if we should send a Content-length header
+     */
+    function _sendContentLength() {
+        if (!$this->sendContentLength) return false;
+
+        $ini_tests = array( "output_handler",
+                            "zlib.output_compression",
+                            "zlib.output_handler");
+
+        foreach($ini_tests as $test) {
+            if (ini_get($test)) return false;
+        }
+
+        if (ob_get_level() > 0) return false;
+
+        return true;
     }
 
     /**
@@ -456,10 +501,17 @@ class HTML_AJAX {
      */
     function _getClientPayload()
     {
-        if($this->_payload)
+        if (empty($this->_payload)) {
+            if (isset($GLOBALS['HTTP_RAW_POST_DATA'])) {
+                $this->_payload = $GLOBALS['HTTP_RAW_POST_DATA'];
+            } else if (function_exists('file_get_contents')) {
+                // both file_get_contents() and php://input require PHP >= 4.3.0
+                $this->_payload = file_get_contents('php://input');
+            } else {
+                $this->_payload = '';
+            }
+        }
         return $this->_payload;
-        else
-        return $GLOBALS['HTTP_RAW_POST_DATA'];
     }
 
     /**
@@ -545,6 +597,105 @@ class HTML_AJAX {
         .'<body onload="parent.HTML_AJAX_IframeXHR_instances[\''.$id.'\']'
         .'.isLoaded(Iframe_XHR_headers, Iframe_XHR_data);"></body></html>';
         return $string;
+    }
+
+    /**
+     * Handles a proxied grab request
+     *
+     * @return  bool    true to end the response, false to continue trying to handle it
+     * @access  private
+     */
+    function _iframeGrabProxy()
+    {
+        $this->_iframe = true;
+        $url = urldecode($_GET['px']);
+        $url_parts = parse_url($url);
+        $urlregex = '#^https?://[\w\-/.,?&=%]+$#';
+        $this->populatePayload();
+        if (!preg_match($urlregex, $url) || $url_parts['host'] != $_SERVER['HTTP_HOST']) {
+            trigger_error('Invalid URL for grab proxy');
+            return true;
+        }
+        $method = (isset($_REQUEST['Iframe_XHR_HTTP_method'])
+            ? strtoupper($_REQUEST['Iframe_XHR_HTTP_method'])
+            : 'GET');
+        // validate method
+        if ($method != 'GET' && $method != 'POST') {
+            trigger_error('Invalid grab URL');
+            return true;
+        }
+        // validate headers
+        if (isset($_REQUEST['Iframe_XHR_headers'])) {
+            foreach ($_REQUEST['Iframe_XHR_headers'] as $header) {
+                if (strpos($header, "\r") !== false
+                        || strpos($header, "\n") !== false) {
+                    trigger_error('Invalid grab header');
+                    return true;
+                }
+                $headers[] = $header . "\r\n";
+            }
+        }
+        if (!is_array($headers)) {
+            $headers = array();
+        }
+        // tries to make request with file_get_contents()
+        if (ini_get('allow_url_fopen') && version_compare(phpversion(), '5.0.0'. '>=')) {
+            $opts = array(
+                $url_parts['scheme'] => array(
+                    'method'  => $method,
+                    'headers' => $headers,
+                    'content' => $this->_payload
+                )
+            );
+            $ret = @file_get_contents($url, false, stream_context_create($opts));
+            if (!empty($ret)) {
+                $this->_sendResponse($ret);
+                return true;
+            }
+        }
+        // tries to make request using the sockets extension
+        $port = (strtolower($url_parts['scheme']) == 'https' ? 443 : 80);
+        $fp = fsockopen($_SERVER['HTTP_HOST'], $port, $errno, $errstr, 4);
+        if (!$fp) {
+            trigger_error('Failed to open socket');
+            return true;
+        }
+        if (!isset($url_parts['path'])) {
+            $url_parts['path'] = '/';
+        }
+        if (!empty($url_parts['query'])) {
+            $url_parts['path'] .= '?' . $url_parts['query'];
+        }
+        $request = "$method {$url_parts['path']} HTTP/1.0\r\n";
+        $request .= "Host: {$url['host']}\r\nConnection: close\r\n\r\n";
+        fputs($fp, $request);
+        $ret = '';
+        $done_headers = false;
+        while (!feof($fp)) {
+            $ret .= fgets($fp, 1024);
+            if ($done_headers) {
+                continue;
+            }
+            $contentpos = strpos($ret, "\r\n\r\n");
+            if ($contentpos === false) {
+                continue;
+            }
+            $done_headers = true;
+            $ret = substr($ret, $contentpos + 4);
+        }
+        fclose($fp);
+        $this->_sendResponse($ret);
+        return true;
+    }
+
+    function addAllowedClasses($classes)
+    {
+        if (!is_array($classes)) {
+            $this->_allowedClasses[] = $classes;
+        } else {
+            $this->_allowedClasses = array_merge($this->_allowedClasses, $classes);
+        }
+        $this->_allowedClasses = array_unique($this->_allowedClasses);
     }
 }
 /* vim: set expandtab tabstop=4 shiftwidth=4 softtabstop=4: */

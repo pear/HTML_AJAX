@@ -181,6 +181,82 @@ var HTML_AJAX_Util = {
             inp.replace(new RegExp(chars[i][0]), chars[i][1]);
         }
         return inp;
+    },
+    // return the base of the given absolute url
+    baseURL: function(absolute) {
+        var qPos = absolute.indexOf('?');
+        if (qPos >= 0) {
+            absolute = absolute.substr(0, qPos);
+        }
+        var slashPos = absolute.lastIndexOf('/');
+        if (slashPos < 0) {
+            return absolute;
+        }
+        return absolute.substr(0, slashPos + 1);
+    },
+    // return the query string from a url
+    queryString: function(url) {
+        var qPos = url.indexOf('?');
+        if (qPos >= 0) {
+            return url.substr(qPos+1);
+        }
+    },
+    // return the absolute path to the given relative url
+    absoluteURL: function(rel, absolute) {
+        if (/^https?:\/\//i.test(rel)) {
+            return rel;
+        }
+        if (!absolute) {
+            var bases = document.getElementsByTagName('base');
+            for (i in bases) {
+                if (bases[i].href) {
+                    absolute = bases[i].href;
+                    break;
+                }
+            }
+            if (!absolute) {
+                absolute = window.location.href;
+            }
+        }
+        if (rel == '') {
+            return absolute;
+        }
+        if (rel.substr(0, 2) == '//') {
+            // starts with '//', replace everything but the protocol
+            var slashesPos = absolute.indexOf('//');
+            if (slashesPos < 0) {
+                return 'http:' + rel;
+            }
+            return absolute.substr(0, slashesPos) + rel;
+        }
+        var base = this.baseURL(absolute);
+        var absParts = base.substr(0, base.length - 1).split('/');
+        var absHost = absParts.slice(0, 3).join('/') + '/';
+        if (rel.substr(0, 1) == '/') {
+            // starts with '/', append it to the host
+            return absHost + rel;
+        }
+        if (rel.substr(0, 1) == '.' && rel.substr(1, 1) != '.') {
+            // starts with '.', append it to the base
+            return base + rel.substr(1);
+        }
+        // remove everything upto the path and beyond 
+        absParts.splice(0, 3);
+        var relParts = rel.split('/');
+        var loopStart = relParts.length - 1;
+        relParts = absParts.concat(relParts);
+        for (i = loopStart; i < relParts.length;) {
+            if (relParts[i] == '..') {
+                if (i == 0) {
+                    return absolute;
+                }
+                relParts.splice(i - 1, 2);
+                --i;
+                continue;
+            }
+            i++;
+        }
+        return absHost + relParts.join('/');
     }
 }
 // }}}

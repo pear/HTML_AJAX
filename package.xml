@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE package SYSTEM "http://pear.php.net/dtd/package-1.0">
-<package version="1.0" packagerversion="1.4.2">
+<package version="1.0" packagerversion="1.4.1">
  <name>HTML_AJAX</name>
  <summary>PHP and JavaScript AJAX library</summary>
  <description>Provides PHP and JavaScript libraries for performing AJAX (Communication from JavaScript to your browser without reloading the page)
@@ -26,12 +26,19 @@
   </maintainer>
   </maintainers>
  <release>
-  <version>0.3.3</version>
-  <date>2005-12-07</date>
+  <version>0.3.4</version>
+  <date>2006-01-31</date>
   <license>lgpl</license>
   <state>alpha</state>
-  <notes>- Firefox bugs
-- added arpad as maintainer.
+  <notes>Fix for Bug #6478 problems with assignAttr in HTML_AJAX_Action
+	Add a flag (HTML_AJAX-&gt;php4CompatCase) that allows for exporting all introspected method/class names in php5 in lower case for php4 compat
+	Update to the newest Services_JSON code, still waiting for a Services_JSON release so we can stop embedding it (fixes bug: #6501)
+	Fix bug #6424, getting extra Request timeouts errors
+	Fix bug #6564, Don&apos;t send Content-Length header when output buffering is enabled
+	Fix bug #6295, Use std input when HTTP_RAW_POST isn&apos;t set
+	Fix for Main.js compatibility function tests
+	Patch from Julien Wajsberg, Keep extra query params passed to HTML_AJAX_Server in the default serverUrl, this helps when integrating with frameworks
+	Fix bug #6478, Not possible to set className in firefox using HTML_AJAX_Action, now were setting the attribute directly instead of calling setAttribute
   </notes>
   <deps>
    <dep type="pkg" rel="ge" version="1.3.5" optional="no">PEAR</dep>
@@ -50,6 +57,7 @@
   <provides type="class" name="HTML_AJAX_Serialize_Urlencoded" />
   <provides type="function" name="HTML_AJAX_Serialize_Urlencoded::serialize" />
   <provides type="function" name="HTML_AJAX_Serialize_Urlencoded::unserialize" />
+  <provides type="function" name="HTML_AJAX_Serialize_Urlencoded::local_build_query" />
   <provides type="class" name="HTML_AJAX_Action" extends="HTML_AJAX_Response" />
   <provides type="function" name="HTML_AJAX_Action::prependAttr" />
   <provides type="function" name="HTML_AJAX_Action::appendAttr" />
@@ -66,12 +74,14 @@
   <provides type="class" name="HTML_AJAX_Helper" />
   <provides type="function" name="HTML_AJAX_Helper::setupAJAX" />
   <provides type="class" name="HTML_AJAX_JSON" />
+  <provides type="class" name="HTML_AJAX_JSON_Error" extends="PEAR_Error" />
+  <provides type="function" name="HTML_AJAX_JSON::utf162utf8" />
+  <provides type="function" name="HTML_AJAX_JSON::utf82utf16" />
   <provides type="function" name="HTML_AJAX_JSON::encode" />
-  <provides type="function" name="HTML_AJAX_JSON::enc" />
   <provides type="function" name="HTML_AJAX_JSON::name_value" />
   <provides type="function" name="HTML_AJAX_JSON::reduce_string" />
   <provides type="function" name="HTML_AJAX_JSON::decode" />
-  <provides type="function" name="HTML_AJAX_JSON::dec" />
+  <provides type="function" name="HTML_AJAX_JSON::isError" />
   <provides type="class" name="HTML_AJAX_Response" />
   <provides type="function" name="HTML_AJAX_Response::getContentType" />
   <provides type="function" name="HTML_AJAX_Response::getPayload" />
@@ -96,10 +106,10 @@
    <file role="php" baseinstalldir="HTML" md5sum="0b9a9ccf611418d7538e92b0a9925c48" name="AJAX/Serializer/Null.php">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
-   <file role="php" baseinstalldir="HTML" md5sum="8f19b027d69d3b82931c47f0b4693e4a" name="AJAX/Serializer/PHP.php">
+   <file role="php" baseinstalldir="HTML" md5sum="dd7bfb341eb3b93b3dd5d74d0ec8a03e" name="AJAX/Serializer/PHP.php">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
-   <file role="php" baseinstalldir="HTML" md5sum="4354cfd3b08247a5eb23332f7ae05e63" name="AJAX/Serializer/Urlencoded.php">
+   <file role="php" baseinstalldir="HTML" md5sum="425cdce1f22723a0b3b2066413310b09" name="AJAX/Serializer/Urlencoded.php">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
    <file role="php" baseinstalldir="HTML" md5sum="4606132102904fc0efc0bc44f22c7384" name="AJAX/Action.php">
@@ -111,13 +121,13 @@
    <file role="php" baseinstalldir="HTML" md5sum="2b8cbdad57bbcdbd78e7db7bbe54c073" name="AJAX/Helper.php">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
-   <file role="php" baseinstalldir="HTML" md5sum="bc644af2ca57e5d5192be6229a764f23" name="AJAX/JSON.php">
+   <file role="php" baseinstalldir="HTML" md5sum="5337e5a76f73776d22ab8647fdd3e71d" name="AJAX/JSON.php">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
    <file role="php" baseinstalldir="HTML" md5sum="788f64a36b2180bc31d48ee449e274f2" name="AJAX/Response.php">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
-   <file role="php" baseinstalldir="HTML" md5sum="f11db25909ce7c56f47fca830e768f99" name="AJAX/Server.php">
+   <file role="php" baseinstalldir="HTML" md5sum="6060c587b521f5bbe397171aed62b7b4" name="AJAX/Server.php">
     <replace type="pear-config" from="@data-dir@" to="data_dir"/>
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
@@ -136,19 +146,16 @@
    <file role="doc" baseinstalldir="HTML" md5sum="6ee14d084b4fa157c700d658065d6006" name="examples/guestbook/index.php">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
-   <file role="doc" baseinstalldir="HTML" md5sum="790920b80302c522044d5b93b86d57ad" name="examples/login/inc/login.css">
+   <file role="doc" baseinstalldir="HTML" md5sum="8d22b91692554305f726c453c21ec37c" name="examples/login/php/auto_server.php">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
-   <file role="doc" baseinstalldir="HTML" md5sum="6be3a95e374616a5450e1cd7ccaa25f2" name="examples/login/inc/login.js">
+   <file role="doc" baseinstalldir="HTML" md5sum="d0709028b0ed12ccf57f9fb9f4916b7c" name="examples/login/php/class.login.php">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
-   <file role="doc" baseinstalldir="HTML" md5sum="1b666144dfd79d1ea97045ab3a1da1e6" name="examples/login/php/auto_server.php">
+   <file role="doc" baseinstalldir="HTML" md5sum="0f7e70d918e397b577ddd2f1189bb635" name="examples/login/index.php">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
-   <file role="doc" baseinstalldir="HTML" md5sum="8d8046e5d92cc07c8816856791643a7d" name="examples/login/php/login.class.php">
-    <replace type="package-info" from="@package_version@" to="version"/>
-   </file>
-   <file role="doc" baseinstalldir="HTML" md5sum="92728466f3adf627c0bb7bfaca5ef6ae" name="examples/login/index.php">
+   <file role="doc" baseinstalldir="HTML" md5sum="bfb52a8179489b1191c958436d15e33d" name="examples/login/login.css">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
    <file role="doc" baseinstalldir="HTML" md5sum="56e47b2e9a2c9c36631e50ca61b1e9b9" name="examples/review/auto_server.php">
@@ -166,16 +173,19 @@
    <file role="doc" baseinstalldir="HTML" md5sum="369fe6f979f7efb922220f3399b4ed26" name="examples/support/livesearch.class.php">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
-   <file role="doc" baseinstalldir="HTML" md5sum="9aada3c4889787212c921334b8035d4e" name="examples/support/test.class.php">
+   <file role="doc" baseinstalldir="HTML" md5sum="f4e9dd89bc499263fc245e11645ed9c0" name="examples/support/test.class.php">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
    <file role="doc" baseinstalldir="HTML" md5sum="48378c2c69bc72aa32f5453e6e7d4601" name="examples/support/test2.class.php">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
+   <file role="doc" baseinstalldir="HTML" md5sum="8fae565fcb98b4a4b2da48d59fe9a331" name="examples/support/testHaa.class.php">
+    <replace type="package-info" from="@package_version@" to="version"/>
+   </file>
    <file role="doc" baseinstalldir="HTML" md5sum="6104f006711768050b305ef7b983ff5e" name="examples/tests/js_utils_vardump.php">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
-   <file role="doc" baseinstalldir="HTML" md5sum="6446068a8ba1754682488961a7788372" name="examples/tests/serialize.php.examples.php">
+   <file role="doc" baseinstalldir="HTML" md5sum="f9459f17d4fca087a1afe33470afc3ca" name="examples/tests/serialize.php.examples.php">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
    <file role="doc" baseinstalldir="HTML" md5sum="bf50ddba1bc9aeb3e4a540e18dafd068" name="examples/tests/serialize.url.examples.php">
@@ -190,7 +200,7 @@
    <file role="doc" baseinstalldir="HTML" md5sum="4883bcc9e888617b694e7ea8b9b96fbe" name="examples/tests/test_speed.php">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
-   <file role="doc" baseinstalldir="HTML" md5sum="12f504cfcbff1eea6fb23958ef245e04" name="examples/auto_server.php">
+   <file role="doc" baseinstalldir="HTML" md5sum="b9ad35262715a5b8989653f045e027de" name="examples/auto_server.php">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
    <file role="doc" baseinstalldir="HTML" md5sum="8408959b53ad15ba00af37c322170402" name="examples/error_usage.php">
@@ -199,10 +209,16 @@
    <file role="doc" baseinstalldir="HTML" md5sum="faf85e2225f4ae642f4e5307792a99da" name="examples/form.php">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
+   <file role="doc" baseinstalldir="HTML" md5sum="41d08013bf3e13948d7421d43bd011ec" name="examples/grab.php">
+    <replace type="package-info" from="@package_version@" to="version"/>
+   </file>
+   <file role="doc" baseinstalldir="HTML" md5sum="8c4240bc6c3663394b609e47bb5998ca" name="examples/haa_usage.php">
+    <replace type="package-info" from="@package_version@" to="version"/>
+   </file>
    <file role="doc" baseinstalldir="HTML" md5sum="f8af303e9baf5fa91d73c150f5a950bc" name="examples/helper_usage.php">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
-   <file role="doc" baseinstalldir="HTML" md5sum="141c38502ed7d3ea2f6ef84c661b4b63" name="examples/index.php">
+   <file role="doc" baseinstalldir="HTML" md5sum="44d0ef271745a4720210c36b5163df97" name="examples/index.php">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
    <file role="doc" baseinstalldir="HTML" md5sum="efc6c52ef7127b27127aa08e4c14f4f7" name="examples/proxyless_usage.php">
@@ -211,7 +227,7 @@
    <file role="doc" baseinstalldir="HTML" md5sum="c9b678a55ebe76701d1094551500312a" name="examples/proxy_usage_inline_javascript.php">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
-   <file role="doc" baseinstalldir="HTML" md5sum="cdcf483ef1a1b5792a5c4bc8a65c64e9" name="examples/proxy_usage_server.php">
+   <file role="doc" baseinstalldir="HTML" md5sum="c73fad70ffcb5bca2a6fbd4f8aa7facc" name="examples/proxy_usage_server.php">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
    <file role="doc" baseinstalldir="HTML" md5sum="db4cc374a04dd6c7edd18fca8d994282" name="examples/queue_usage.php">
@@ -223,7 +239,7 @@
    <file role="doc" baseinstalldir="HTML" md5sum="e6d2d16df1a16cd4d8675b62ad578bcc" name="examples/server.php">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
-   <file role="doc" baseinstalldir="HTML" md5sum="4c00423b2320aa53022b4e5d207b4b02" name="examples/shoutbox.php">
+   <file role="doc" baseinstalldir="HTML" md5sum="a61ee44852bd358fee94574007dc2cf5" name="examples/shoutbox.php">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
    <file role="data" baseinstalldir="HTML" md5sum="1172b58f3494210b133239b930cbd55b" name="js/behavior/behavior.js">
@@ -232,7 +248,7 @@
    <file role="data" baseinstalldir="HTML" md5sum="c260e94c53eca2a4c27de8e948664d2b" name="js/behavior/cssQuery-p.js">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
-   <file role="data" baseinstalldir="HTML" md5sum="6c70f0da30e367b9f3f523e874c7ea5a" name="js/serializer/haSerializer.js">
+   <file role="data" baseinstalldir="HTML" md5sum="2819d5894a7e165fa96fe7161c12af96" name="js/serializer/haSerializer.js">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
    <file role="data" baseinstalldir="HTML" md5sum="2fb00b6914d628f710aca223b1610832" name="js/serializer/JSON.js">
@@ -253,39 +269,55 @@
    <file role="data" baseinstalldir="HTML" md5sum="38b87c8b118c0d09028180434a1f54a2" name="js/Dispatcher.js">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
-   <file role="data" baseinstalldir="HTML" md5sum="a7de7e911125d548c37d160a68e89eb0" name="js/HTML_AJAX.js">
+   <file role="data" baseinstalldir="HTML" md5sum="2168e72d00ce23e40782599ba07d919b" name="js/HTML_AJAX.js">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
-   <file role="data" baseinstalldir="HTML" md5sum="9be4308e3e9ba9a41cf956f4da08bf50" name="js/HTML_AJAX_lite.js">
+   <file role="data" baseinstalldir="HTML" md5sum="7f5419e6d2db40744cedf89880b04f5e" name="js/HTML_AJAX_lite.js">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
-   <file role="data" baseinstalldir="HTML" md5sum="1edd2a6258ce974ce141b46a25969f78" name="js/HttpClient.js">
+   <file role="data" baseinstalldir="HTML" md5sum="24bf0101c98b316419175b3691feb8d3" name="js/HttpClient.js">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
-   <file role="data" baseinstalldir="HTML" md5sum="fc9f64e8eb1896c239f1da7bd57e3add" name="js/IframeXHR.js">
+   <file role="data" baseinstalldir="HTML" md5sum="597199c1c4ec94deaf71c4637733a5dd" name="js/IframeXHR.js">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
-   <file role="data" baseinstalldir="HTML" md5sum="00aa336f242db111e5ad6a356973ee10" name="js/Loading.js">
+   <file role="data" baseinstalldir="HTML" md5sum="b5f5d3ab34edcc5e18732be4a99eecd8" name="js/Loading.js">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
-   <file role="data" baseinstalldir="HTML" md5sum="5b668a0cb6699b0cee86419c4d4ab742" name="js/Main.js">
+   <file role="data" baseinstalldir="HTML" md5sum="ccc347b0f3995f13511616af7edc8771" name="js/Main.js">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
    <file role="data" baseinstalldir="HTML" md5sum="1b0ac0ec0f3e506de5509bc569018ac8" name="js/priorityQueue.js">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
-   <file role="data" baseinstalldir="HTML" md5sum="4e0909ff44f4d6e02120d0706b45eeb2" name="js/Request.js">
+   <file role="data" baseinstalldir="HTML" md5sum="1e262132606a3af4021008badf15f0dc" name="js/Request.js">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
-   <file role="data" baseinstalldir="HTML" md5sum="a5e8f4de4964c3e0e439feaf49625ef9" name="js/util.js">
+   <file role="data" baseinstalldir="HTML" md5sum="245f21ab0fafd4e2d54e827f41b296d9" name="js/util.js">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
-   <file role="php" baseinstalldir="HTML" md5sum="a991c99963f889385943f8502e2010f1" name="AJAX.php">
+   <file role="php" baseinstalldir="HTML" md5sum="496deba4e84c3bc9457a9bebb23983ea" name="AJAX.php">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
   </filelist>
  </release>
  <changelog>
+   <release>
+    <version>0.3.4</version>
+    <date>2006-01-31</date>
+    <license>lgpl</license>
+    <state>alpha</state>
+    <notes>Fix for Bug #6478 problems with assignAttr in HTML_AJAX_Action
+	Add a flag (HTML_AJAX-&gt;php4CompatCase) that allows for exporting all introspected method/class names in php5 in lower case for php4 compat
+	Update to the newest Services_JSON code, still waiting for a Services_JSON release so we can stop embedding it (fixes bug: #6501)
+	Fix bug #6424, getting extra Request timeouts errors
+	Fix bug #6564, Don&apos;t send Content-Length header when output buffering is enabled
+	Fix bug #6295, Use std input when HTTP_RAW_POST isn&apos;t set
+	Fix for Main.js compatibility function tests
+	Patch from Julien Wajsberg, Keep extra query params passed to HTML_AJAX_Server in the default serverUrl, this helps when integrating with frameworks
+	Fix bug #6478, Not possible to set className in firefox using HTML_AJAX_Action, now were setting the attribute directly instead of calling setAttribute
+    </notes>
+   </release>
    <release>
     <version>0.3.1</version>
     <date>2005-12-05</date>

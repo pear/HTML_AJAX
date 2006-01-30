@@ -133,7 +133,8 @@ HTML_AJAX_Serialize_HA.prototype =
             //I'd use hasAttribute but IE is stupid stupid stupid
             else
             {
-                node.setAttribute(i, attributes[i]);
+                //node.setAttribute(i, attributes[i]);
+		node[i] = attributes[i];
             }
         }
 	},

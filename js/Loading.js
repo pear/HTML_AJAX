@@ -13,12 +13,16 @@ HTML_AJAX.Open = function(request) {
         loading = document.createElement('div');
         loading.id = 'HTML_AJAX_LOADING';
         loading.innerHTML = 'Loading...';
-        loading.style.position = 'absolute';
-        loading.style.top = 0;
-        loading.style.right = 0;
-        loading.style.backgroundColor = 'red';
-        loading.style.width = '80px';
-        loading.style.padding = '4px';
+        
+        loading.style.color           = '#fff';
+        loading.style.position        = 'absolute';
+        loading.style.top             = 0;
+        loading.style.right           = 0;
+        loading.style.backgroundColor = '#f00';
+        loading.style.border          = '1px solid #f99';
+        loading.style.width           = '80px';
+        loading.style.padding         = '4px';
+        loading.style.fontFamily      = 'Arial, Helvetica, sans';
     
         document.body.insertBefore(loading,document.body.firstChild);
     }

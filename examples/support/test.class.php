@@ -33,6 +33,13 @@ class test {
 	function cookies() {
 		return $_COOKIE;
 	}
+	function echo_data($data) {
+		return array('From PHP:'=>$data);
+	}
+	function unicode_data() {
+		$returnData = array('word' => mb_convert_encoding('Français','UTF-8'), 'suggestion' => array(mb_convert_encoding('Français','UTF-8'), mb_convert_encoding('caractères','UTF-8')));
+		return $returnData;
+	}
 }
 
 if (isset($_GET['TEST_CLASS'])) {

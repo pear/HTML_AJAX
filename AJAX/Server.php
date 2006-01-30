@@ -139,14 +139,22 @@ class HTML_AJAX_Server
 
     /**
      * Constructor creates the HTML_AJAX instance
-     *
-     * @todo: verify that PHP_SELF always does what we want
      */
     function HTML_AJAX_Server() 
     {
         $this->ajax =& new HTML_AJAX();
-        $this->ajax->serverUrl = $_SERVER['PHP_SELF'];
 
+        // parameters for HTML::AJAX
+        $parameters = array('stub', 'client');
+
+        // keep in the query string all the parameters that don't belong to AJAX
+        // we remove all string like "parameter=something&". Final '&' can also
+        // be '&amp;' (to be sure) and is optional. '=something' is optional too.
+        $querystring = preg_replace('/(' . join('|', $parameters) . ')(?:=[^&]*(?:&(?:amp;)?|$))?/', '', $_SERVER['QUERY_STRING']);
+
+        // call the server with this query string
+        $this->ajax->serverUrl = htmlentities($_SERVER['PHP_SELF']) .'?'. htmlentities($querystring);
+        
         $methods = get_class_methods($this);
         foreach($methods as $method) {
             if (preg_match('/^init([a-zA-Z0-9_]+)$/',$method,$match)) {
@@ -158,7 +166,7 @@ class HTML_AJAX_Server
     /**
      * Handle a client request, either generating a client or having HTML_AJAX handle the request
      *
-     * @return  string generated client or ajax response
+     * @return boolean true if request was handled, false otherwise
      */
     function handleRequest() 
     {
@@ -168,7 +176,8 @@ class HTML_AJAX_Server
         //basically a hook for iframe but allows processing of data earlier
         $this->ajax->populatePayload();
         if (!isset($_GET['c']) && (count($this->options['client']) > 0 || count($this->options['stub']) > 0) ) {
-            return $this->generateClient();
+            $this->generateClient();
+            return true;
         } else {
             $this->_init($this->_cleanIdentifier($_GET['c']));
             return $this->ajax->handleRequest();
@@ -224,6 +233,7 @@ class HTML_AJAX_Server
     function generateClient() 
     {
         $headers = array();
+
         ob_start();
 
         // create a list list of js files were going to need to output
@@ -357,12 +367,14 @@ class HTML_AJAX_Server
 
         // were outputting content, add our length header and send the output
         $length = ob_get_length();
-        if ($length > 0) {
+        $output = ob_get_contents();
+        ob_end_clean();
+        if ($length > 0 && $this->ajax->_sendContentLength()) { 
             $headers['Content-Length'] = $length;
         }
         $headers['Content-Type'] = 'text/javascript; charset=utf-8';
-        call_user_func($this->ajax->_callbacks['headers'],$headers);
-        ob_end_flush();
+        call_user_func($this->ajax->_callbacks['headers'], $headers);
+        echo($output);
     }
 
     /**

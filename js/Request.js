@@ -58,6 +58,12 @@ HTML_AJAX_Request.prototype = {
     // a hash of headers to add to add to this request
     customHeaders: {},
 
+    // true if this request will be sent using iframes
+    iframe: false,
+    
+    // is this a grab request? if so we need to proxy for iframes
+    grab: false,
+    
     /**
      * Add an argument for the remote method
      * @param string argument name

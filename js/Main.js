@@ -1,24 +1,140 @@
 /**
  * JavaScript library for use with HTML_AJAX
  *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to:
+ * Free Software Foundation, Inc.,
+ * 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+ *
  * @category   HTML
  * @package    Ajax
  * @author     Joshua Eichorn <josh@bluga.net>
- * @copyright  2005 Joshua Eichorn
+ * @author     Arpad Ray <arpad@php.net>
+ * @author     David Coallier <davidc@php.net>
+ * @author     Elizabeth Smith <auroraeosrose@gmail.com>
+ * @copyright  2005 Joshua Eichorn, Arpad Ray, David Coallier, Elizabeth Smith
  * @license    http://www.opensource.org/licenses/lgpl-license.php  LGPL
  */
 
+/**
+ *  Functions for compatibility with older browsers
+ */
+if (!String.fromCharCode && !String.prototype.fromCharCode) {
+    String.prototype.fromCharCode = function(code)
+    {
+        var h = code.toString(16);
+        if (h.length == 1) {
+            h = '0' + h;
+        }
+        return unescape('%' + h);
+    }
+}
+if (!String.charCodeAt && !String.prototype.charCodeAt) {
+    String.prototype.charCodeAt = function(index)
+    {
+        var c = this.charAt(index);
+        for (i = 1; i < 256; i++) {
+            if (String.fromCharCode(i) == c) {
+                return i;
+            }
+        } 
+    }
+}
+// http://www.crockford.com/javascript/remedial.html
+if (!Array.splice && !Array.prototype.splice) {
+    Array.prototype.splice = function(s, d)
+    {
+        var max = Math.max,
+        min = Math.min,
+        a = [], // The return value array
+        e,  // element
+        i = max(arguments.length - 2, 0),   // insert count
+        k = 0,
+        l = this.length,
+        n,  // new length
+        v,  // delta
+        x;  // shift count
+
+        s = s || 0;
+        if (s < 0) {
+            s += l;
+        }
+        s = max(min(s, l), 0);  // start point
+        d = max(min(typeof d == 'number' ? d : l, l - s), 0);    // delete count
+        v = i - d;
+        n = l + v;
+        while (k < d) {
+            e = this[s + k];
+            if (!e) {
+                a[k] = e;
+            }
+            k += 1;
+        }
+        x = l - s - d;
+        if (v < 0) {
+            k = s + i;
+            while (x) {
+                this[k] = this[k - v];
+                k += 1;
+                x -= 1;
+            }
+            this.length = n;
+        } else if (v > 0) {
+            k = 1;
+            while (x) {
+                this[n - k] = this[l - k];
+                k += 1;
+                x -= 1;
+            }
+        }
+        for (k = 0; k < i; ++k) {
+            this[s + k] = arguments[k + 2];
+        }
+        return a;
+    }
+}
+if (!Array.push && !Array.prototype.push) {
+    Array.prototype.push = function()
+    {
+        for (var i = 0, startLength = this.length; i < arguments.length; i++) {
+            this[startLength + i] = arguments[i];
+        }
+        return this.length;
+    }
+}
+if (!Array.pop && !Array.prototype.pop) {
+    Array.prototype.pop = function()
+    {
+        return this.splice(this.length - 1, 1)[0];
+    }
+}
 
 /**
  * HTML_AJAX static methods, this is the main proxyless api, it also handles global error and event handling
  */
 var HTML_AJAX = {
 	defaultServerUrl: false,
-	defaultEncoding: 'Null',
+	defaultEncoding: 'JSON',
     queues: false,
-    // get an HttpClient, at some point this might be actually smart
-    httpClient: function() {
-        return new HTML_AJAX_HttpClient();
+    clientPools: {},
+    // get an HttpClient, supply a name to use the pool of that name or the default if it isn't found
+    httpClient: function(name) {
+        if (name) {
+            if (this.clientPools[name]) {
+                return this.clientPools[name].getClient();
+            }
+        }
+        return this.clientPools['default'].getClient();
     },
     // Pushing the given request to queue specified by it, in default operation this will immediately make a request
     // request might be delayed or never happen depending on the queue setup
@@ -51,7 +167,7 @@ var HTML_AJAX = {
         }
         return new HTML_AJAX_Serialize_Null();
     },
-	fullcall: function(url,encoding,className,method,callback,args) {
+	fullcall: function(url,encoding,className,method,callback,args, customHeaders, grab) {
         var serializer = HTML_AJAX.serializerForEncoding(encoding);
 
         var request = new HTML_AJAX_Request(serializer);
@@ -63,6 +179,15 @@ var HTML_AJAX = {
         request.methodName = method;
         request.callback = callback;
         request.args = args;
+        if (customHeaders) {
+            request.customHeaders = customHeaders;
+        }
+        if (grab) {
+            request.grab = true;
+            if (!args || !args.length) {
+                request.requestType = 'GET';
+            }
+        }
 
         return HTML_AJAX.makeRequest(request);
 	},
@@ -74,7 +199,7 @@ var HTML_AJAX = {
 		return HTML_AJAX.fullcall(HTML_AJAX.defaultServerUrl,HTML_AJAX.defaultEncoding,className,method,callback,args);
 	},
 	grab: function(url,callback) {
-		return HTML_AJAX.fullcall(url,'Null',false,null,callback,{});
+		return HTML_AJAX.fullcall(url,'Null',false,null,callback, '', false, true);
 	},
 	replace: function(id) {
         var callback = function(result) {
@@ -90,7 +215,7 @@ var HTML_AJAX = {
 			for(var i = 3; i < arguments.length; i++) {
 				args.push(arguments[i]);
 			}
-			HTML_AJAX.fullcall(HTML_AJAX.defaultServerUrl,HTML_AJAX.defaultEncoding,arguments[1],arguments[2],callback,args);
+			HTML_AJAX.fullcall(HTML_AJAX.defaultServerUrl,HTML_AJAX.defaultEncoding,arguments[1],arguments[2],callback,args, false, true);
 		}
 	},
     append: function(id) {
@@ -107,9 +232,15 @@ var HTML_AJAX = {
             for(var i = 3; i < arguments.length; i++) {
                 args.push(arguments[i]);
             }
-            HTML_AJAX.fullcall(HTML_AJAX.defaultServerUrl,HTML_AJAX.defaultEncoding,arguments[1],arguments[2],callback,args);
+            HTML_AJAX.fullcall(HTML_AJAX.defaultServerUrl,HTML_AJAX.defaultEncoding,arguments[1],arguments[2],callback,args, false, true);
         }
     }, 
+    // override to add top level loading notification (start)
+    Open: function(request) {
+    },
+    // override to add top level loading notification (finish)
+    Load: function(request) {
+    },
     /*
     // A really basic error handler 
     onError: function(e) {
@@ -121,8 +252,15 @@ var HTML_AJAX = {
     },
     */
     // Class postfix to content-type map
-    contentTypeMap: {'JSON':'application/json','Null':'text/plain','Error':'application/error'},
-    // used internally to make queues work, override onLoad or onError to perform custom events when a request is complete
+        contentTypeMap: {
+        'JSON':         'application/json',
+        'Null':         'text/plain',
+        'Error':        'application/error',
+        'PHP':          'application/php-serialized',
+		'HA' :           'application/html_ajax_action',
+        'Urlencoded':   'application/x-www-form-urlencoded'
+    },
+    // used internally to make queues work, override Load or onError to perform custom events when a request is complete
     // fires on success and error
     requestComplete: function(request,error) {
         for(var i in HTML_AJAX.queues) {
@@ -130,7 +268,111 @@ var HTML_AJAX = {
                 HTML_AJAX.queues[i].requestComplete(request,error);
             }
         }
-    }
+    },
+    // submits a form through ajax. both arguments can be either DOM nodes or IDs, if the target is omitted then the form is set to be the target
+    formSubmit: function (form, target, customRequest)
+    {
+        if (typeof form == 'string') {
+            form = document.getElementById(form);
+            if (!form) {
+                // let the submit be processed normally
+                return false;
+            }
+        }
+        if (typeof target == 'string') {
+            target = document.getElementById('target');
+        }
+        if (!target) {
+            target = form;
+        }
+        var action = form.action;
+        var el, type, value, name, nameParts, useValue = true;
+        var out = '', tags = form.elements;
+        childLoop:
+        for (i in tags) {
+            el = tags[i];
+            if (!el || !el.getAttribute) {
+                continue;
+            }
+            name = el.getAttribute('name');
+            if (!name) {
+                // no element name so skip
+                continue;
+            }
+            // find the element value
+            type = el.nodeName.toLowerCase();
+            switch (type) {
+            case 'input':
+                var inpType = el.getAttribute('type');
+                switch (inpType) {
+                case 'submit':
+                    type = 'button';
+                    break;
+                case 'checkbox':
+                case 'radio':
+                    if (el.checked) {
+                        value = 'checked';
+                        useValue = false;
+                        break;
+                    }
+                    // unchecked radios/checkboxes don't get submitted
+                    continue childLoop;
+                case 'text':
+                default:
+                    type = 'text';
+                    // continue for value
+                    break;
+                }
+                break;
+            case 'button':
+            case 'textarea':
+            case 'select':
+                break;
+            default:
+                // unknown element
+                continue childLoop;
+            }
+            if (useValue) {
+                value = el.value;
+            }
+            // add element to output array
+            out += escape(name) + '=' + escape(value) + '&';
+            useValue = true;
+        } // end childLoop
+        var callback = function(result) {
+            target.innerHTML = result;
+        }
+
+        var serializer = HTML_AJAX.serializerForEncoding('Null');
+        var request = new HTML_AJAX_Request(serializer);
+        request.isAsync = true;
+        request.callback = callback;
+
+        switch (form.method.toLowerCase()) {
+        case 'post':
+            var headers = {};
+            headers['Content-Type'] = 'application/x-www-form-urlencoded';
+            request.customHeaders = headers;
+            request.requestType = 'POST';
+            request.requestUrl = action;
+            request.args = out;
+            break;
+        default:
+            if (action.indexOf('?') == -1) {
+                out = '?' + out.substr(0, out.length - 1);
+            }
+            request.requestUrl = action+out;
+            request.requestType = 'GET';
+        }
+
+        if(customRequest) {
+            for(var i in customRequest) {
+                request[i] = customRequest[i];
+            }
+        }
+        HTML_AJAX.makeRequest(request);
+        return true;
+    } // end formSubmit()
 }
 
 
@@ -140,7 +382,7 @@ var HTML_AJAX = {
 
 function HTML_AJAX_Serialize_Null() {}
 HTML_AJAX_Serialize_Null.prototype = {
-	contentType: 'text/plain; charset=UTF-8;',
+	contentType: 'text/plain; charset=utf-8',
 	serialize: function(input) {
 		return new String(input).valueOf();
 	},
@@ -153,7 +395,7 @@ HTML_AJAX_Serialize_Null.prototype = {
 // serialization class for JSON, wrapper for JSON.stringify in json.js
 function HTML_AJAX_Serialize_JSON() {}
 HTML_AJAX_Serialize_JSON.prototype = {
-	contentType: 'application/json; charset=UTF-8',
+	contentType: 'application/json; charset=utf-8',
 	serialize: function(input) {
 		return HTML_AJAX_JSON.stringify(input);
 	},
@@ -166,34 +408,10 @@ HTML_AJAX_Serialize_JSON.prototype = {
         }
 	}
 }
-function HTML_AJAX_Serialize_Urlencoded() {}
-HTML_AJAX_Serialize_Urlencoded.prototype = {
-    contentType: 'application/x-www-form-urlencoded; charset=UTF-8',
-    serialize: function(input) {
-        var newURL  = '';	
-        for (var i in input) {
-	        input[i] = escape(input[i]);
-        	newURL = newURL + i + '=' + input[i] + '&';
-        }
-        newURL = encodeURI(newURL.substr(0, (newURL.length-1)));
-        return newURL;
-    },
-
-    unserialize: function(input) {
-        var newURL  = '';
-        for (var i in input) {
-        	input[i] = escape(input[i]);
-        	newURL = newURL + i + '=' + input[i] + '&';
-        }
-        newURL = decodeURI(newURL.substr(0, (newURL.length-1)));
-        return newURL;	
-    }
-}
-
 
 function HTML_AJAX_Serialize_Error() {}
 HTML_AJAX_Serialize_Error.prototype = {
-	contentType: 'application/error; charset=UTF-8',
+	contentType: 'application/error; charset=utf-8',
 	serialize: function(input) {
         var ser = new HTML_AJAX_Serialize_JSON();
         return ser.serialize(input);

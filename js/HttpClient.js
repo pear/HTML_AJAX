@@ -8,38 +8,45 @@
  */
 function HTML_AJAX_HttpClient() { }
 HTML_AJAX_HttpClient.prototype = {
-	// request object
-	request: null,
+    // request object
+    request: null,
 
     // timeout id
     _timeoutId: null,
-	
-	// method to initialize an xmlhttpclient
-	init:function() 
+    
+    // method to initialize an xmlhttpclient
+    init:function() 
     {
-		try {
-		    // Mozilla / Safari
-		    this.xmlhttp = new XMLHttpRequest();
-		} catch (e) {
-			// IE
-			var XMLHTTP_IDS = new Array(
-			'MSXML2.XMLHTTP.5.0',
-			'MSXML2.XMLHTTP.4.0',
-			'MSXML2.XMLHTTP.3.0',
-			'MSXML2.XMLHTTP',
-			'Microsoft.XMLHTTP' );
-			var success = false;
-			for (var i=0;i < XMLHTTP_IDS.length && !success; i++) {
-				try {
-					this.xmlhttp = new ActiveXObject(XMLHTTP_IDS[i]);
-					success = true;
-				} catch (e) {}
-			}
-			if (!success) {
-				throw new Error('Unable to create XMLHttpRequest.');
-			}
-		}
-	},
+        try {
+            // Mozilla / Safari
+            //this.xmlhttp = new HTML_AJAX_IframeXHR(); //uncomment these two lines to test iframe
+            //return;
+            this.xmlhttp = new XMLHttpRequest();
+        } catch (e) {
+            // IE
+            var XMLHTTP_IDS = new Array(
+            'MSXML2.XMLHTTP.5.0',
+            'MSXML2.XMLHTTP.4.0',
+            'MSXML2.XMLHTTP.3.0',
+            'MSXML2.XMLHTTP',
+            'Microsoft.XMLHTTP' );
+            var success = false;
+            for (var i=0;i < XMLHTTP_IDS.length && !success; i++) {
+                try {
+                    this.xmlhttp = new ActiveXObject(XMLHTTP_IDS[i]);
+                    success = true;
+                } catch (e) {}
+            }
+            if (!success) {
+                try{
+                    this.xmlhttp = new HTML_AJAX_IframeXHR();
+                    this.request.iframe = true;
+                } catch(e) {
+                    throw new Error('Unable to create XMLHttpRequest.');
+                }
+            }
+        }
+    },
 
     // check if there is a call in progress
     callInProgress: function() 
@@ -56,59 +63,74 @@ HTML_AJAX_HttpClient.prototype = {
         }
     },
 
-	// make the request defined in the request object
-	makeRequest: function() 
+    // make the request defined in the request object
+    makeRequest: function() 
     {
-		if (!this.xmlhttp) {
-			this.init();
-		}
+        if (!this.xmlhttp) {
+            this.init();
+        }
 
         try {
-            if (this.request.onOpen) {
-                this.request.onOpen();
+            if (this.request.Open) {
+                this.request.Open();
             }
-            else if (HTML_AJAX.onOpen) {
-                HTML_AJAX.onOpen(this.request);
+            else if (HTML_AJAX.Open) {
+                HTML_AJAX.Open(this.request);
             }
-		    this.xmlhttp.open(this.request.requestType,this.request.completeUrl(),this.request.isAsync);
 
             // set onreadystatechange here since it will be reset after a completed call in Mozilla
             var self = this;
+            this.xmlhttp.open(this.request.requestType,this.request.completeUrl(),this.request.isAsync);
+            if (this.request.customHeaders) {
+                for (i in this.request.customHeaders) {
+                    this.xmlhttp.setRequestHeader(i, this.request.customHeaders[i]);
+                }
+            }
+            if (this.request.customHeaders && !this.request.customHeaders['Content-Type']) {
+                //opera is stupid!!
+                if(window.opera)
+                {
+                    this.xmlhttp.setRequestHeader('Content-Type','text/plain; charset=utf-8');
+                    this.xmlhttp.setRequestHeader('x-Content-Type',this.request.getContentType() + '; charset=utf-8');
+                }
+                else
+                {
+                    this.xmlhttp.setRequestHeader('Content-Type',this.request.getContentType() + '; charset=utf-8');
+                }
+            }
             this.xmlhttp.onreadystatechange = function() { self._readyStateChangeCallback(); }
-
-            this.xmlhttp.setRequestHeader('Content-Type',this.request.getContentType());
             var payload = this.request.getSerializedPayload();
             if (payload) {
                 this.xmlhttp.setRequestHeader('Content-Length', payload.length);
             }
             this.xmlhttp.send(payload);
+
+            if (!this.request.isAsync) {
+                if ( this.xmlhttp.status == 200 ) {
+                    HTML_AJAX.requestComplete(this.request);
+                    if (this.request.Load) {
+                        this.request.Load();
+                    } else if (HTML_AJAX.Load) {
+                        HTML_AJAX.Load(this.request);
+                    }
+                        
+                    return this._decodeResponse();
+                } else {
+                    var e = new Error('['+this.xmlhttp.status +'] '+this.xmlhttp.statusText);
+                    e.headers = this.xmlhttp.getAllResponseHeaders();
+                    this._handleError(e);
+                }
+            }
+            else {
+                // setup timeout
+                var self = this;
+                this._timeoutId = window.setTimeout(function() { self.abort(true); },this.request.timeout);
+            }
         } catch (e) {
             this._handleError(e);
         }
-
-		if (!this.request.isAsync) {
-            if ( this.xmlhttp.status == 200 ) {
-                HTML_AJAX.requestComplete(this.request);
-                if (this.request.onLoad) {
-                    this.request.onLoad();
-                } else if (HTML_AJAX.onLoad) {
-                    HTML_AJAX.onLoad(this.request);
-                }
-                    
-                return this._decodeResponse();
-            } else {
-                var e = new Error('['+this.xmlhttp.status +'] '+this.xmlhttp.statusText);
-                e.headers = this.xmlhttp.getAllResponseHeaders();
-                this._handleError(e);
-            }
-		}
-        else {
-            // setup timeout
-            var self = this;
-            this._timeoutId = window.setTimeout(function() { self.abort(true); },this.request.timeout);
-        }
-	},
-	
+    },
+    
     // abort an inprogress request
     abort: function (automatic) 
     {
@@ -116,13 +138,14 @@ HTML_AJAX_HttpClient.prototype = {
             this.xmlhttp.abort();
 
             if (automatic) {
-                this._handleError(new Error('Request Timed Out'));
+                HTML_AJAX.requestComplete(this.request);
+                this._handleError(new Error('Request Timed Out: time out was '+this.request.timeout+'ms'));
             }
         }
     },
 
-	// internal method used to handle ready state changes
-	_readyStateChangeCallback:function() 
+    // internal method used to handle ready state changes
+    _readyStateChangeCallback:function() 
     {
         try {
             switch(this.xmlhttp.readyState) {
@@ -131,30 +154,30 @@ HTML_AJAX_HttpClient.prototype = {
                     break;
                 // XMLHTTPRequest.send() has just been called
                 case 2:
-                    if (this.request.onSend) {
-                        this.request.onSend();
-                    } else if (HTML_AJAX.onSend) {
-                        HTML_AJAX.onSend(this.request);
+                    if (this.request.Send) {
+                        this.request.Send();
+                    } else if (HTML_AJAX.Send) {
+                        HTML_AJAX.Send(this.request);
                     }
                     break;
                 // Fetching response from server in progress
                 case 3:
-                    if (this.request.onProgress) {
-                        this.request.onProgress();
-                    } else if (HTML_AJAX.onProgress ) {
-                        HTML_AJAX.onProgress(this.request);
+                    if (this.request.Progress) {
+                        this.request.Progress();
+                    } else if (HTML_AJAX.Progress ) {
+                        HTML_AJAX.Progress(this.request);
                     }
                 break;
                 // Download complete
                 case 4:
-                    window.clearTimeout(this._timeout_id);
+                    window.clearTimeout(this._timeoutId);
 
                     if (this.xmlhttp.status == 200) {
                         HTML_AJAX.requestComplete(this.request);
-                        if (this.request.onLoad) {
-                            this.request.onLoad();
-                        } else if (HTML_AJAX.onLoad ) {
-                            HTML_AJAX.onLoad(this.request);
+                        if (this.request.Load) {
+                            this.request.Load();
+                        } else if (HTML_AJAX.Load ) {
+                            HTML_AJAX.Load(this.request);
                         }
 
                         if (this.request.callback) {
@@ -171,12 +194,26 @@ HTML_AJAX_HttpClient.prototype = {
         } catch (e) {
                 this._handleError(e);
         }
-	},
+    },
 
     // decode response as needed
     _decodeResponse: function() {
-        var unserializer = HTML_AJAX.serializerForEncoding(this.xmlhttp.getResponseHeader('Content-Type'));
-        //alert(this.xmlhttp.responseText); // some sort of debug hook is needed here
+        //try for x-Content-Type first
+        var content = null;
+        try {
+            content = this.xmlhttp.getResponseHeader('X-Content-Type');
+        } catch(e) {}
+        if(!content || content == null)
+        {
+            content = this.xmlhttp.getResponseHeader('Content-Type');
+        }
+        //strip anything after ;
+        if(content.indexOf(';') != -1)
+        {
+            content = content.substring(0, content.indexOf(';'));
+        }
+        var unserializer = HTML_AJAX.serializerForEncoding(content);
+        //alert(this.xmlhttp.getAllResponseHeaders()); // some sort of debug hook is needed here
 
         // some sort of sane way for a serializer to ask for XML needs to be added
         return unserializer.unserialize(this.xmlhttp.responseText);

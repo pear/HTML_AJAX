@@ -15,7 +15,7 @@ if (isset($argv[2]) && $argv[2] == 'strip') {
 	$strip = true;
 }
 
-$source = array('Main.js','Dispatcher.js','HttpClient.js','Request.js','JSON.js','Loading.js','util.js','behavior.js','cssQuery-p.js');
+$source = array('Main.js','priorityQueue.js', 'clientPool.js',  'IframeXHR.js', 'serializer/UrlSerializer.js','serializer/phpSerializer.js','Dispatcher.js','HttpClient.js','Request.js','serializer/JSON.js','serializer/haSerializer.js','Loading.js','util.js','behavior/behavior.js','behavior/cssQuery-p.js');
 
 $stripPregs = array(
 	'/^\s+$/',

@@ -2,13 +2,123 @@
 /**
  * JavaScript library for use with HTML_AJAX
  *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to:
+ * Free Software Foundation, Inc.,
+ * 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+ *
  * @category   HTML
  * @package    Ajax
  * @author     Joshua Eichorn <josh@bluga.net>
- * @copyright  2005 Joshua Eichorn
+ * @author     Arpad Ray <arpad@php.net>
+ * @author     David Coallier <davidc@php.net>
+ * @author     Elizabeth Smith <auroraeosrose@gmail.com>
+ * @copyright  2005 Joshua Eichorn, Arpad Ray, David Coallier, Elizabeth Smith
  * @license    http://www.opensource.org/licenses/lgpl-license.php  LGPL
  */
 
+/**
+ *  Functions for compatibility with older browsers
+ */
+if (!String.fromCharCode && !String.prototype.fromCharCode) {
+    String.prototype.fromCharCode = function(code)
+    {
+        var h = code.toString(16);
+        if (h.length == 1) {
+            h = '0' + h;
+        }
+        return unescape('%' + h);
+    }
+}
+if (!String.charCodeAt && !String.prototype.charCodeAt) {
+    String.prototype.charCodeAt = function(index)
+    {
+        var c = this.charAt(index);
+        for (i = 1; i < 256; i++) {
+            if (String.fromCharCode(i) == c) {
+                return i;
+            }
+        } 
+    }
+}
+// http://www.crockford.com/javascript/remedial.html
+if (!Array.splice && !Array.prototype.splice) {
+    Array.prototype.splice = function(s, d)
+    {
+        var max = Math.max,
+        min = Math.min,
+        a = [], // The return value array
+        e,  // element
+        i = max(arguments.length - 2, 0),   // insert count
+        k = 0,
+        l = this.length,
+        n,  // new length
+        v,  // delta
+        x;  // shift count
+
+        s = s || 0;
+        if (s < 0) {
+            s += l;
+        }
+        s = max(min(s, l), 0);  // start point
+        d = max(min(typeof d == 'number' ? d : l, l - s), 0);    // delete count
+        v = i - d;
+        n = l + v;
+        while (k < d) {
+            e = this[s + k];
+            if (!e) {
+                a[k] = e;
+            }
+            k += 1;
+        }
+        x = l - s - d;
+        if (v < 0) {
+            k = s + i;
+            while (x) {
+                this[k] = this[k - v];
+                k += 1;
+                x -= 1;
+            }
+            this.length = n;
+        } else if (v > 0) {
+            k = 1;
+            while (x) {
+                this[n - k] = this[l - k];
+                k += 1;
+                x -= 1;
+            }
+        }
+        for (k = 0; k < i; ++k) {
+            this[s + k] = arguments[k + 2];
+        }
+        return a;
+    }
+}
+if (!Array.push && !Array.prototype.push) {
+    Array.prototype.push = function()
+    {
+        for (var i = 0, startLength = this.length; i < arguments.length; i++) {
+            this[startLength + i] = arguments[i];
+        }
+        return this.length;
+    }
+}
+if (!Array.pop && !Array.prototype.pop) {
+    Array.prototype.pop = function()
+    {
+        return this.splice(this.length - 1, 1)[0];
+    }
+}
 
 /**
  * HTML_AJAX static methods, this is the main proxyless api, it also handles global error and event handling
@@ -17,9 +127,15 @@ var HTML_AJAX = {
 	defaultServerUrl: false,
 	defaultEncoding: 'Null',
     queues: false,
-    // get an HttpClient, at some point this might be actually smart
-    httpClient: function() {
-        return new HTML_AJAX_HttpClient();
+    clientPools: {},
+    // get an HttpClient, supply a name to use the pool of that name or the default if it isn't found
+    httpClient: function(name) {
+        if (name) {
+            if (this.clientPools[name]) {
+                return this.clientPools[name].getClient();
+            }
+        }
+        return this.clientPools['default'].getClient();
     },
     // Pushing the given request to queue specified by it, in default operation this will immediately make a request
     // request might be delayed or never happen depending on the queue setup
@@ -52,7 +168,7 @@ var HTML_AJAX = {
         }
         return new HTML_AJAX_Serialize_Null();
     },
-	fullcall: function(url,encoding,className,method,callback,args) {
+	fullcall: function(url,encoding,className,method,callback,args, customHeaders, grab) {
         var serializer = HTML_AJAX.serializerForEncoding(encoding);
 
         var request = new HTML_AJAX_Request(serializer);
@@ -64,6 +180,15 @@ var HTML_AJAX = {
         request.methodName = method;
         request.callback = callback;
         request.args = args;
+        if (customHeaders) {
+            request.customHeaders = customHeaders;
+        }
+        if (grab) {
+            request.grab = true;
+            if (!args || !args.length) {
+                request.requestType = 'GET';
+            }
+        }
 
         return HTML_AJAX.makeRequest(request);
 	},
@@ -75,7 +200,7 @@ var HTML_AJAX = {
 		return HTML_AJAX.fullcall(HTML_AJAX.defaultServerUrl,HTML_AJAX.defaultEncoding,className,method,callback,args);
 	},
 	grab: function(url,callback) {
-		return HTML_AJAX.fullcall(url,'Null',false,null,callback,{});
+		return HTML_AJAX.fullcall(url,'Null',false,null,callback, '', false, true);
 	},
 	replace: function(id) {
         var callback = function(result) {
@@ -91,7 +216,7 @@ var HTML_AJAX = {
 			for(var i = 3; i < arguments.length; i++) {
 				args.push(arguments[i]);
 			}
-			HTML_AJAX.fullcall(HTML_AJAX.defaultServerUrl,HTML_AJAX.defaultEncoding,arguments[1],arguments[2],callback,args);
+			HTML_AJAX.fullcall(HTML_AJAX.defaultServerUrl,HTML_AJAX.defaultEncoding,arguments[1],arguments[2],callback,args, false, true);
 		}
 	},
     append: function(id) {
@@ -108,9 +233,15 @@ var HTML_AJAX = {
             for(var i = 3; i < arguments.length; i++) {
                 args.push(arguments[i]);
             }
-            HTML_AJAX.fullcall(HTML_AJAX.defaultServerUrl,HTML_AJAX.defaultEncoding,arguments[1],arguments[2],callback,args);
+            HTML_AJAX.fullcall(HTML_AJAX.defaultServerUrl,HTML_AJAX.defaultEncoding,arguments[1],arguments[2],callback,args, false, true);
         }
     }, 
+    // override to add top level loading notification (start)
+    Open: function(request) {
+    },
+    // override to add top level loading notification (finish)
+    Load: function(request) {
+    },
     /*
     // A really basic error handler 
     onError: function(e) {
@@ -122,8 +253,15 @@ var HTML_AJAX = {
     },
     */
     // Class postfix to content-type map
-    contentTypeMap: {'JSON':'application/json','Null':'text/plain','Error':'application/error'},
-    // used internally to make queues work, override onLoad or onError to perform custom events when a request is complete
+        contentTypeMap: {
+        'JSON':         'application/json',
+        'Null':         'text/plain',
+        'Error':        'application/error',
+        'PHP':          'application/php-serialized',
+		'HA' :           'application/html_ajax_action',
+        'Urlencoded':   'application/x-www-form-urlencoded'
+    },
+    // used internally to make queues work, override Load or onError to perform custom events when a request is complete
     // fires on success and error
     requestComplete: function(request,error) {
         for(var i in HTML_AJAX.queues) {
@@ -131,7 +269,111 @@ var HTML_AJAX = {
                 HTML_AJAX.queues[i].requestComplete(request,error);
             }
         }
-    }
+    },
+    // submits a form through ajax. both arguments can be either DOM nodes or IDs, if the target is omitted then the form is set to be the target
+    formSubmit: function (form, target, customRequest)
+    {
+        if (typeof form == 'string') {
+            form = document.getElementById(form);
+            if (!form) {
+                // let the submit be processed normally
+                return false;
+            }
+        }
+        if (typeof target == 'string') {
+            target = document.getElementById('target');
+        }
+        if (!target) {
+            target = form;
+        }
+        var action = form.action;
+        var el, type, value, name, nameParts, useValue = true;
+        var out = '', tags = form.elements;
+        childLoop:
+        for (i in tags) {
+            el = tags[i];
+            if (!el || !el.getAttribute) {
+                continue;
+            }
+            name = el.getAttribute('name');
+            if (!name) {
+                // no element name so skip
+                continue;
+            }
+            // find the element value
+            type = el.nodeName.toLowerCase();
+            switch (type) {
+            case 'input':
+                var inpType = el.getAttribute('type');
+                switch (inpType) {
+                case 'submit':
+                    type = 'button';
+                    break;
+                case 'checkbox':
+                case 'radio':
+                    if (el.checked) {
+                        value = 'checked';
+                        useValue = false;
+                        break;
+                    }
+                    // unchecked radios/checkboxes don't get submitted
+                    continue childLoop;
+                case 'text':
+                default:
+                    type = 'text';
+                    // continue for value
+                    break;
+                }
+                break;
+            case 'button':
+            case 'textarea':
+            case 'select':
+                break;
+            default:
+                // unknown element
+                continue childLoop;
+            }
+            if (useValue) {
+                value = el.value;
+            }
+            // add element to output array
+            out += escape(name) + '=' + escape(value) + '&';
+            useValue = true;
+        } // end childLoop
+        var callback = function(result) {
+            target.innerHTML = result;
+        }
+
+        var serializer = HTML_AJAX.serializerForEncoding('Null');
+        var request = new HTML_AJAX_Request(serializer);
+        request.isAsync = true;
+        request.callback = callback;
+
+        switch (form.method.toLowerCase()) {
+        case 'post':
+            var headers = {};
+            headers['Content-Type'] = 'application/x-www-form-urlencoded';
+            request.customHeaders = headers;
+            request.requestType = 'POST';
+            request.requestUrl = action;
+            request.args = out;
+            break;
+        default:
+            if (action.indexOf('?') == -1) {
+                out = '?' + out.substr(0, out.length - 1);
+            }
+            request.requestUrl = action+out;
+            request.requestType = 'GET';
+        }
+
+        if(customRequest) {
+            for(var i in customRequest) {
+                request[i] = customRequest[i];
+            }
+        }
+        HTML_AJAX.makeRequest(request);
+        return true;
+    } // end formSubmit()
 }
 
 
@@ -167,30 +409,6 @@ HTML_AJAX_Serialize_JSON.prototype = {
         }
 	}
 }
-function HTML_AJAX_Serialize_Urlencoded() {}
-HTML_AJAX_Serialize_Urlencoded.prototype = {
-    contentType: 'application/x-www-form-urlencoded; charset=UTF-8',
-    serialize: function(input) {
-        var newURL  = '';	
-        for (var i in input) {
-	        input[i] = escape(input[i]);
-        	newURL = newURL + i + '=' + input[i] + '&';
-        }
-        newURL = encodeURI(newURL.substr(0, (newURL.length-1)));
-        return newURL;
-    },
-
-    unserialize: function(input) {
-        var newURL  = '';
-        for (var i in input) {
-        	input[i] = escape(input[i]);
-        	newURL = newURL + i + '=' + input[i] + '&';
-        }
-        newURL = decodeURI(newURL.substr(0, (newURL.length-1)));
-        return newURL;	
-    }
-}
-
 
 function HTML_AJAX_Serialize_Error() {}
 HTML_AJAX_Serialize_Error.prototype = {
@@ -271,6 +489,808 @@ HTML_AJAX.queues = new Object();
 HTML_AJAX.queues['default'] = new HTML_AJAX_Queue_Immediate();
 
 /* vim: set expandtab tabstop=4 shiftwidth=4 softtabstop=4: */
+// priorityQueue.js
+/**
+ * Priority queue
+ *
+ * @category   HTML
+ * @package    AJAX
+ * @author     Arpad Ray <arpad@rajeczy.com>
+ * @copyright  2005 Arpad Ray
+ * @license    http://www.opensource.org/licenses/lgpl-license.php  LGPL
+ */
+
+function HTML_AJAX_Queue_Priority_Item(item, time) {
+    this.item = item;
+    this.time = time;
+}
+HTML_AJAX_Queue_Priority_Item.prototype = {
+    compareTo: function (other) {
+        var ret = this.item.compareTo(other.item);
+        if (ret == 0) {
+            ret = this.time - other.time;
+        }
+        return ret;
+    }
+}
+
+function HTML_AJAX_Queue_Priority_Simple(interval) {
+    this.interval = interval;   
+    this.idleMax = 10;            // keep the interval going with an empty queue for 10 intervals
+    this.requestTimeout = 5;      // retry uncompleted requests after 5 seconds
+    this.checkRetryChance = 0.1;  // check for uncompleted requests to retry on 10% of intervals
+    this._intervalId = 0;
+    this._requests = [];
+    this._removed = [];
+    this._len = 0;
+    this._removedLen = 0;
+    this._idle = 0;
+}
+HTML_AJAX_Queue_Priority_Simple.prototype = {
+    isEmpty: function () {
+        return this._len == 0;
+    },
+    addRequest: function (request) {
+        request = new HTML_AJAX_Queue_Priority_Item(request, new Date().getTime());
+        ++this._len;
+        if (this.isEmpty()) {
+            this._requests[0] = request;
+            return;
+        }
+        for (i = 0; i < this._len - 1; i++) {
+            if (request.compareTo(this._requests[i]) < 0) {
+                this._requests.splice(i, 1, request, this._requests[i]);
+                return;
+            }
+        }
+        this._requests.push(request);
+    },
+    peek: function () {
+        return (this.isEmpty() ? false : this._requests[0]);
+    },
+    requestComplete: function (request) {
+        for (i = 0; i < this._removedLen; i++) {
+            if (this._removed[i].item == request) {
+                this._removed.splice(i, 1);
+                --this._removedLen;
+                out('removed from _removed');
+                return true;
+            }
+        }
+        return false;
+    },
+    processRequest: function() {
+        if (!this._intervalId) {
+            this._runInterval();
+            this._start();
+        }
+        this._idle = 0;
+    },
+    _runInterval: function() {
+        if (Math.random() < this.checkRetryChance) {
+            this._doRetries();
+        }
+        if (this.isEmpty()) {
+            if (++this._idle > this.idleMax) {
+                this._stop();
+            }
+            return;
+        }
+        var client = HTML_AJAX.httpClient();
+        if (!client) {
+            return;
+        }
+        var request = this.peek();
+        if (!request) {
+            this._requests.splice(0, 1);
+            return;
+        }
+        client.request = request.item;
+        client.makeRequest();
+        this._requests.splice(0, 1);
+        --this._len;
+        this._removed[this._removedLen++] = new HTML_AJAX_Queue_Priority_Item(request, new Date().getTime());
+    },
+    _doRetries: function () {
+        for (i = 0; i < this._removedLen; i++) {
+            if (this._removed[i].time + this._requestTimeout < new Date().getTime()) {
+                this.addRequest(request.item);
+                this._removed.splice(i, 1);
+                --this._removedLen;
+                return true;
+            }
+        }
+    },
+    _start: function() {
+        var self = this;
+        this._intervalId = setInterval(function() { self._runInterval() }, this.interval);
+    },
+    _stop: function() {
+        clearInterval(this._intervalId);
+        this._intervalId = 0;
+    }
+};// clientPool.js
+HTML_AJAX_Client_Pool = function(maxClients, startingClients)
+{
+    this.maxClients = maxClients;
+    this._clients = [];
+    this._len = 0;
+    while (--startingClients > 0) {
+        this.addClient();
+    }
+}
+
+HTML_AJAX_Client_Pool.prototype = {
+    isEmpty: function()
+    {
+        return this._len == 0;
+    },
+    addClient: function()
+    {
+        if (this.maxClients != 0 && this._len > this.maxClients) {
+            return false;
+        }
+        var key = this._len++;
+        this._clients[key] = new HTML_AJAX_HttpClient();
+        return this._clients[key];
+    },
+    getClient: function ()
+    {
+        for (i = 0; i < this._len; i++) {
+            if (!this._clients[i].callInProgress()) {
+                return this._clients[i];
+            }
+        }
+        var client = this.addClient();
+        if (client) {
+            return client;
+        }
+        return false;
+    },
+    removeClient: function (client)
+    {
+        for (i = 0; i < this._len; i++) {
+            if (!this._clients[i] == client) {
+                this._clients.splice(i, 1);
+                return true;
+            }
+        }
+        return false;
+    },
+    clear: function ()
+    {
+        this._clients = [];
+        this._len = 0;
+    }
+};
+
+// create a default client pool with unlimited clients
+HTML_AJAX.clientPools['default'] = new HTML_AJAX_Client_Pool(0);// IframeXHR.js
+/**
+ * XMLHttpRequest Iframe fallback
+ *
+ * http://lxr.mozilla.org/seamonkey/source/extensions/xmlextras/tests/ - should work with these
+ *
+ * @category   HTML
+ * @package    AJAX
+ * @author     Elizabeth Smith <auroraeosrose@gmail.com>
+ * @copyright  2005 Elizabeth Smith
+ * @license    http://www.opensource.org/licenses/lgpl-license.php  LGPL
+ */
+HTML_AJAX_IframeXHR_instances = new Object();
+function HTML_AJAX_IframeXHR()
+{
+    this._id = 'HAXHR_iframe_' + new Date().getTime();
+    HTML_AJAX_IframeXHR_instances[this._id] = this;
+}
+HTML_AJAX_IframeXHR.prototype = {
+// Data not sent with text/xml Content-Type will only be available via the responseText property
+
+    // properties available in safari/mozilla/IE xmlhttprequest object
+    onreadystatechange: null, // Event handler for an event that fires at every state change
+    readyState: 0, // Object status integer: 0 = uninitialized 1 = loading 2 = loaded 3 = interactive 4 = complete
+    responseText: '', // String version of data returned from server process
+    responseXML: null, // DOM-compatible document object of data returned from server process
+    status: 0, // Numeric code returned by server, such as 404 for "Not Found" or 200 for "OK"
+    statusText: '', // String message accompanying the status code
+    iframe: true, // flag for iframe
+
+    //these are private properties used internally to keep track of stuff
+    _id: null, // iframe id, unique to object(hopefully)
+    _url: null, // url sent by open
+    _method: null, // get or post
+    _async: null, // sync or async sent by open
+    _headers: new Object(), //request headers to send, actually sent as form vars
+    _response: new Object(), //response headers received
+    _phpclass: null, //class to send
+    _phpmethod: null, //method to send
+    _history: null, // opera has to have history munging
+
+    // Stops the current request
+    abort: function()
+    {
+        var iframe = document.getElementById(this._id);
+        if (iframe) {
+            document.body.removeChild(iframe);
+        }
+        if (this._timeout) {
+            window.clearTimeout(this._timeout);
+        }
+        this.readyState = 1;
+        if (typeof(this.onreadystatechange) == "function") {
+            this.onreadystatechange();
+        }
+    },
+
+    // This will send all headers in this._response and will include lastModified and contentType if not already set
+    getAllResponseHeaders: function()
+    {
+        var string = '';
+        for (i in this._response) {
+            string += i + ' : ' + this._response[i] + "\n";
+        }
+        return string;
+    },
+
+    // This will use lastModified and contentType if they're not set
+    getResponseHeader: function(header)
+    {
+        return (this._response[header] ? this._response[header] : null);
+    },
+
+    // Assigns a label/value pair to the header to be sent with a request
+    setRequestHeader: function(label, value) {
+        this._headers[label] = value;
+        return; },
+
+    // Assigns destination URL, method, and other optional attributes of a pending request
+    open: function(method, url, async, username, password)
+    {
+        if (!document.body) {
+            throw('CANNOT_OPEN_SEND_IN_DOCUMENT_HEAD');
+        }
+        //exceptions for not enough arguments
+        if (!method || !url) {
+            throw('NOT_ENOUGH_ARGUMENTS:METHOD_URL_REQUIRED');
+        }
+        //get and post are only methods accepted
+        this._method = (method.toUpperCase() == 'POST' ? 'POST' : 'GET');
+        this._decodeUrl(url);
+        this._async = async;
+        if(!this._async && document.readyState && !window.opera) {
+            throw('IE_DOES_NOT_SUPPORT_SYNC_WITH_IFRAMEXHR');
+        }
+        //set status to loading and call onreadystatechange
+        this.readyState = 1;
+        if(typeof(this.onreadystatechange) == "function") {
+            this.onreadystatechange();
+        }
+    },
+
+    // Transmits the request, optionally with postable string or DOM object data
+    send: function(content)
+    {
+        //attempt opera history munging
+        if (window.opera) {
+            this._history = window.history.length;
+        }
+        //create a "form" for the contents of the iframe
+        var form = '<html><body><form method="'
+            + (this._url.indexOf('px=') < 0 ? this._method : 'post')
+            + '" action="' + this._url + '">';
+        //tell iframe unwrapper this IS an iframe
+        form += '<input name="Iframe_XHR" value="1" />';
+        //class and method
+        if (this._phpclass != null) {
+            form += '<input name="Iframe_XHR_class" value="' + this._phpclass + '" />';
+        }
+        if (this._phpmethod != null) {
+            form += '<input name="Iframe_XHR_method" value="' + this._phpmethod + '" />';
+        }
+        // fake headers
+        for (label in this._headers) {
+            form += '<textarea name="Iframe_XHR_headers[]">' + label +':'+ this._headers[label] + '</textarea>';
+        }
+        // add id
+        form += '<textarea name="Iframe_XHR_id">' + this._id + '</textarea>';
+        if (content != null && content.length > 0) {
+            form += '<textarea name="Iframe_XHR_data">' + content + '</textarea>';
+        }
+        form += '<input name="Iframe_XHR_HTTP_method" value="' + this._method + '" />';
+        form += '<s'+'cript>document.forms[0].submit();</s'+'cript></form></body></html>';
+        form = "javascript:document.write('" + form.replace(/\'/g,"\\'") + "');void(0);";
+        this.readyState = 2;
+        if (typeof(this.onreadystatechange) == "function") {
+            this.onreadystatechange();
+        }
+        // try to create an iframe with createElement and append node
+        try {
+            var iframe = document.createElement('iframe');
+            iframe.id = this._id;
+            // display: none will fail on some browsers
+            iframe.style.visibility = 'hidden';
+            // for old browsers with crappy css
+            iframe.style.border = '0';
+            iframe.style.width = '0';
+            iframe.style.height = '0';
+            
+            if (document.all) {
+                // MSIE, opera
+                iframe.src = form;
+                document.body.appendChild(iframe);
+            } else {
+                document.body.appendChild(iframe);
+                iframe.src = form;
+            }
+        } catch(exception) {
+            // dom failed, write the sucker manually
+            var html = '<iframe src="' + form +'" id="' + this._id + '" style="visibility:hidden;border:0;height:0;width:0;"></iframe>';
+            document.body.innerHTML += html;
+        }
+        if (this._async == true) {
+            //avoid race state if onload is called first
+            if (this.readyState < 3) {
+                this.readyState = 3;
+                if(typeof(this.onreadystatechange) == "function") {
+                    this.onreadystatechange();
+                }
+            }
+        } else {
+            //we force a while loop for sync, it's ugly but hopefully it works
+            while (this.readyState != 4) {
+                //just check to see if we can up readyState
+                if (this.readyState < 3) {
+                    this.readyState = 3;
+                    if(typeof(this.onreadystatechange) == "function") {
+                        this.onreadystatechange();
+                    }
+                }
+            }
+        }
+    },
+
+    // attached as an onload function to the iframe to trigger when we're done
+    isLoaded: function(headers, data)
+    {
+        this.readyState = 4;
+        //set responseText, Status, StatusText
+        this.status = 200;
+        this.statusText = 'OK';
+        this.responseText = data;
+        this._response = headers;
+        if (!this._response['Last-Modified']) {
+            string += 'Last-Modified : ' + document.getElementById(this._id).lastModified + "\n";
+        }
+        if (!this._response['Content-Type']) {
+            string += 'Content-Type : ' + document.getElementById(this._id).contentType + "\n";
+        }
+        //attempt opera history munging in opera 8+ - this is a REGRESSION IN OPERA
+        if (window.opera && window.opera.version) {
+            //go back current history - old history
+            window.history.go(this._history - window.history.length);
+        }
+        if (typeof(this.onreadystatechange) == "function") {
+            this.onreadystatechange();
+        }
+        document.body.removeChild(document.getElementById(this._id));
+    },
+
+    // strip off the c and m from the url send...yuck
+    _decodeUrl: function(querystring)
+    {
+        //opera 7 is too stupid to do a relative url...go figure
+        var url = unescape(location.href);
+        url = url.substring(0, url.lastIndexOf("/") + 1);
+        var item = querystring.split('?');
+        //rip off any path info and append to path above <-  relative paths (../) WILL screw this
+        this._url = url + item[0].substring(item[0].lastIndexOf("/") + 1,item[0].length);
+        if(item[1]) {
+            item = item[1].split('&');
+            for (i in item) {
+                var v = item[i].split('=');
+                if (v[0] == 'c') {
+                    this._phpclass = v[1];
+                } else if (v[0] == 'm') {
+                    this._phpmethod = v[1];
+                }
+            }
+        }
+        if (!this._phpclass || !this._phpmethod) {
+            var cloc = window.location.href;
+            this._url = cloc + (cloc.indexOf('?') >= 0 ? '&' : '?') + 'px=' + escape(HTML_AJAX_Util.absoluteURL(querystring));
+        }
+    }
+}
+// serializer/UrlSerializer.js
+// {{{ HTML_AJAX_Serialize_Urlencoded
+/**
+ * URL-encoding serializer
+ *
+ * This class can be used to serialize and unserialize data in a
+ * format compatible with PHP's handling of HTTP query strings.
+ * Due to limitations of the format, all input is serialized as an
+ * array or a string. See examples/serialize.url.examples.php
+ *
+ * @version     0.0.1
+ * @copyright   2005 Arpad Ray <arpad@php.net>
+ * @license     http://www.opensource.org/licenses/lgpl-license.php  LGPL
+ *
+ * See Main.js for Author/license details
+ */
+function HTML_AJAX_Serialize_Urlencoded() {}
+HTML_AJAX_Serialize_Urlencoded.prototype = {
+    contentType: 'application/x-www-form-urlencoded; charset=UTF-8',
+    base: '_HTML_AJAX',
+    _keys: [],
+    error: false,
+    message: "",
+    cont: "",
+    // {{{ serialize
+    /**
+     *  Serializes a variable
+     *
+     *  @param     mixed  inp the variable to serialize
+     *  @return    string   a string representation of the input, 
+     *                      which can be reconstructed by unserialize()
+     */
+    serialize: function(input, _internal) {
+        if (typeof input == 'undefined') {
+            return '';
+        }
+        if (!_internal) {
+            this._keys = [];
+        }
+        var ret = '', first = true;
+        for (i = 0; i < this._keys.length; i++) {
+            ret += (first ? escape(this._keys[i]) : '[' + escape(this._keys[i]) + ']');
+            first = false;
+        }
+        ret += '=';
+        switch (HTML_AJAX_Util.getType(input)) {
+            case 'string': 
+            case 'number':
+                ret += escape(input.toString());
+                break;
+            case 'boolean':
+                ret += (input ? '1' : '0');
+                break;
+            case 'array':
+            case 'object':
+                ret = '';
+                for (i in input) {
+                    this._keys.push(i);
+                    ret += this.serialize(input[i], true) + '&';
+                    this._keys.pop();
+                }
+                ret = ret.substr(0, ret.length - 1);
+        }
+        return ret;
+    },
+    // }}}
+    // {{{ unserialize
+    /**
+     *  Reconstructs a serialized variable
+     *
+     *  @param    string inp the string to reconstruct
+     *  @return   array an array containing the variable represented by the input string, or void on failure
+     */
+    unserialize: function(input) {
+        if (!input.length || input.length == 0) {
+            // null
+            return;
+        }
+        if (!/^(\w+(\[[^\[\]]*\])*=[^&]*(&|$))+$/.test(input)) {
+            this.raiseError("invalidly formed input", input);
+            return;
+        }
+        input = input.split("&");
+        var pos, key, keys, val, _HTML_AJAX = [];
+        if (input.length == 1) {
+            return unescape(input[0].substr(this.base.length + 1));
+        }
+        for (var i in input) {
+            pos = input[i].indexOf("=");
+            if (pos < 1 || input[i].length - pos - 1 < 1) {
+                this.raiseError("input is too short", input[i]);
+                return;
+            }
+            key = unescape(input[i].substr(0, pos));
+            val = unescape(input[i].substr(pos + 1));
+            key = key.replace(/\[((\d*\D+)+)\]/g, '["$1"]');
+            keys = key.split(']');
+            for (j in keys) {
+                if (!keys[j].length || keys[j].length == 0) {
+                    continue;
+                }
+                try {
+                    if (eval('typeof ' + keys[j] + ']') == 'undefined') {
+                        var ev = keys[j] + ']=[];';
+                        eval(ev);
+                    }
+                } catch (e) {
+                    this.raiseError("error evaluating key", ev);
+                    return; 
+                }
+            }
+            try {
+                eval(key + '="' + val + '";');
+            } catch (e) {
+                this.raiseError("error evaluating value", input);
+                return; 
+            }
+        }
+        return _HTML_AJAX;
+    },
+    // }}}
+    // {{{ getError
+    /**
+    *  Gets the last error message
+    *
+    *  @return    string   the last error message from unserialize()
+    */    
+    getError: function() {
+        return this.message + "\n" + this.cont;
+    },
+    // }}}
+    // {{{ raiseError
+    /**
+    *  Raises an eror (called by unserialize().)
+    *
+    *  @param    string    message    the error message
+    *  @param    string    cont       the remaining unserialized content
+    */    
+    raiseError: function(message, cont) {
+        this.error = 1;
+        this.message = message;
+        this.cont = cont;
+    }
+    // }}}
+}
+// }}}
+// serializer/phpSerializer.js
+// {{{ HTML_AJAX_Serialize_PHP
+/**
+ * PHP serializer
+ *
+ * This class can be used to serialize and unserialize data in a
+ * format compatible with PHP's native serialization functions.
+ *
+ * @version     0.0.3
+ * @copyright   2005 Arpad Ray <arpad@php.net>
+ * @license     http://www.opensource.org/licenses/lgpl-license.php  LGPL
+ *
+ * See Main.js for Author/license details
+ */
+function HTML_AJAX_Serialize_PHP() {}
+HTML_AJAX_Serialize_PHP.prototype = {
+    error: false,
+    message: "",
+    cont: "",
+    defaultEncoding: 'UTF-8',
+    contentType: 'application/php-serialized; charset: UTF-8',
+    // {{{ serialize
+    /**
+    *  Serializes a variable
+    *
+    *  @param     mixed  inp the variable to serialize
+    *  @return    string   a string representation of the input, 
+    *                      which can be reconstructed by unserialize()
+    *  @author Arpad Ray <arpad@rajeczy.com>
+    *  @author David Coallier <davidc@php.net>
+    */
+    serialize: function(inp) {
+        var type = HTML_AJAX_Util.getType(inp);
+        var val;
+        switch (type) {
+            case "undefined":
+                val = "N";
+                break;
+            case "boolean":
+                val = "b:" + (inp ? "1" : "0");
+                break;
+            case "number":
+                val = (Math.round(inp) == inp ? "i" : "d") + ":" + inp;
+                break;
+            case "string":
+                val = "s:" + inp.length + ":\"" + inp + "\"";
+                break;
+            case "array":
+                val = "a";
+            case "object":
+                if (type == "object") {
+                    var objname = inp.constructor.toString().match(/(\w+)\(\)/);
+                    if (objname == undefined) {
+                        return;
+                    }
+                    objname[1] = this.serialize(objname[1]);
+                    val = "O" + objname[1].substring(1, objname[1].length - 1);
+                }
+                var count = 0;
+                var vals = "";
+                var okey;
+                for (key in inp) {
+                    okey = (key.match(/^[0-9]+$/) ? parseInt(key) : key);
+                    vals += this.serialize(okey) + 
+                            this.serialize(inp[key]);
+                    count++;
+                }
+                val += ":" + count + ":{" + vals + "}";
+                break;
+        }
+        if (type != "object" && type != "array") val += ";";
+        return val;
+    },
+    // }}} 
+    // {{{ unserialize
+    /**
+     *  Reconstructs a serialized variable
+     *
+     *  @param    string inp the string to reconstruct
+     *  @return   mixed the variable represented by the input string, or void on failure
+     */
+    unserialize: function(inp) {
+        this.error = 0;
+        if (inp == "" || inp.length < 2) {
+            this.raiseError("input is too short");
+            return;
+        }
+        var val, kret, vret, cval;
+        var type = inp.charAt(0);
+        var cont = inp.substring(2);
+        var size = 0, divpos = 0, endcont = 0, rest = "", next = "";
+
+        switch (type) {
+        case "N": // null
+            if (inp.charAt(1) != ";") {
+                this.raiseError("missing ; for null", cont);
+            }
+            // leave val undefined
+            rest = cont;
+            break;
+        case "b": // boolean
+            if (!/[01];/.test(cont.substring(0,2))) {
+                this.raiseError("value not 0 or 1, or missing ; for boolean", cont);
+            }
+            val = (cont.charAt(0) == "1");
+            rest = cont.substring(1);
+            break;
+        case "s": // string
+            val = "";
+            divpos = cont.indexOf(":");
+            if (divpos == -1) {
+                this.raiseError("missing : for string", cont);
+                break;
+            }
+            size = parseInt(cont.substring(0, divpos));
+            if (size == 0) {
+                if (cont.length - divpos < 4) {
+                    this.raiseError("string is too short", cont);
+                    break;
+                }
+                rest = cont.substring(divpos + 4);
+                break;
+            }
+            if ((cont.length - divpos - size) < 4) {
+                this.raiseError("string is too short", cont);
+                break;
+            }
+            if (cont.substring(divpos + 2 + size, divpos + 4 + size) != "\";") {
+                this.raiseError("string is too long, or missing \";", cont);
+            }
+            val = cont.substring(divpos + 2, divpos + 2 + size);
+            rest = cont.substring(divpos + 4 + size);
+            break;
+        case "i": // integer
+        case "d": // float
+            var dotfound = 0;
+            for (var i = 0; i < cont.length; i++) {
+                cval = cont.charAt(i);
+                if (isNaN(parseInt(cval)) && !(type == "d" && cval == "." && !dotfound++)) {
+                    endcont = i;
+                    break;
+                }
+            }
+            if (!endcont || cont.charAt(endcont) != ";") {
+                this.raiseError("missing or invalid value, or missing ; for int/float", cont);
+            }
+            val = cont.substring(0, endcont);
+            val = (type == "i" ? parseInt(val) : parseFloat(val));
+            rest = cont.substring(endcont + 1);
+            break;
+        case "a": // array
+            if (cont.length < 4) {
+                this.raiseError("array is too short", cont);
+                return;
+            }
+            divpos = cont.indexOf(":", 1);
+            if (divpos == -1) {
+                this.raiseError("missing : for array", cont);
+                return;
+            }
+            size = parseInt(cont.substring(1, divpos - 1));
+            cont = cont.substring(divpos + 2);
+            val = new Array();
+            if (cont.length < 1) {
+                this.raiseError("array is too short", cont);
+                return;
+            }
+            for (var i = 0; i + 1 < size * 2; i += 2) {
+                kret = this.unserialize(cont, 1);
+                if (this.error || kret[0] == undefined || kret[1] == "") {
+                    this.raiseError("missing or invalid key, or missing value for array", cont);
+                    return;
+                }
+                vret = this.unserialize(kret[1], 1);
+                if (this.error) {
+                    this.raiseError("invalid value for array", cont);
+                    return;
+                }
+                val[kret[0]] = vret[0];
+                cont = vret[1];
+            }
+            if (cont.charAt(0) != "}") {
+                this.raiseError("missing ending }, or too many values for array", cont);
+                return; 
+            }
+            rest = cont.substring(1);
+            break;
+        case "O": // object
+            divpos = cont.indexOf(":");
+            if (divpos == -1) {
+                this.raiseError("missing : for object", cont);
+                return;
+            }
+            size = parseInt(cont.substring(0, divpos));
+            var objname = cont.substring(divpos + 2, divpos + 2 + size);
+            if (cont.substring(divpos + 2 + size, divpos + 4 + size) != "\":") {
+                this.raiseError("object name is too long, or missing \":", cont);
+                return;
+            }
+            var objprops = this.unserialize("a:" + cont.substring(divpos + 4 + size), 1);
+            if (this.error) {
+                this.raiseError("invalid object properties", cont);
+                return;
+            }
+            rest = objprops[1];
+            var objout = "function " + objname + "(){";
+            for (key in objprops[0]) {
+                objout += "this." + key + "=objprops[0]['" + key + "'];";
+            }
+            objout += "}val=new " + objname + "();";
+            eval(objout);
+            break;
+        default:
+            this.raiseError("invalid input type", cont);
+        }
+        return (arguments.length == 1 ? val : [val, rest]);
+    },
+    // }}}
+    // {{{ getError
+    /**
+    *  Gets the last error message
+    *
+    *  @return    string   the last error message from unserialize()
+    */    
+    getError: function() {
+        return this.message + "\n" + this.cont;
+    },
+    // }}}
+    // {{{ raiseError
+    /**
+    *  Raises an eror (called by unserialize().)
+    *
+    *  @param    string    message    the error message
+    *  @param    string    cont       the remaining unserialized content
+    */    
+    raiseError: function(message, cont) {
+        this.error = 1;
+        this.message = message;
+        this.cont = cont;
+    }
+    // }}}
+}
+// }}}
+
 // Dispatcher.js
 /**
  * Class that is used by generated stubs to make actual AJAX calls
@@ -306,7 +1326,12 @@ HTML_AJAX_Dispatcher.prototype = {
      * Timeout for async calls
      */
 	timeout: 20000,
-
+ 
+    /**
+     * Default request priority
+     */
+    priority: 0,
+    
     /**
      * Make an ajax call
      *
@@ -323,6 +1348,7 @@ HTML_AJAX_Dispatcher.prototype = {
         request.contentType = this.contentType;
         request.serializer = eval('new HTML_AJAX_Serialize_'+this.serializerType);
         request.queue = this.queue;
+        request.priority = this.priority;
         
 		for(var i=0; i < args.length; i++) {
 		    request.addArg(i,args[i]);
@@ -368,38 +1394,45 @@ HTML_AJAX_Dispatcher.prototype = {
  */
 function HTML_AJAX_HttpClient() { }
 HTML_AJAX_HttpClient.prototype = {
-	// request object
-	request: null,
+    // request object
+    request: null,
 
     // timeout id
     _timeoutId: null,
-	
-	// method to initialize an xmlhttpclient
-	init:function() 
+    
+    // method to initialize an xmlhttpclient
+    init:function() 
     {
-		try {
-		    // Mozilla / Safari
-		    this.xmlhttp = new XMLHttpRequest();
-		} catch (e) {
-			// IE
-			var XMLHTTP_IDS = new Array(
-			'MSXML2.XMLHTTP.5.0',
-			'MSXML2.XMLHTTP.4.0',
-			'MSXML2.XMLHTTP.3.0',
-			'MSXML2.XMLHTTP',
-			'Microsoft.XMLHTTP' );
-			var success = false;
-			for (var i=0;i < XMLHTTP_IDS.length && !success; i++) {
-				try {
-					this.xmlhttp = new ActiveXObject(XMLHTTP_IDS[i]);
-					success = true;
-				} catch (e) {}
-			}
-			if (!success) {
-				throw new Error('Unable to create XMLHttpRequest.');
-			}
-		}
-	},
+        try {
+            // Mozilla / Safari
+            //this.xmlhttp = new HTML_AJAX_IframeXHR(); //uncomment these two lines to test iframe
+            //return;
+            this.xmlhttp = new XMLHttpRequest();
+        } catch (e) {
+            // IE
+            var XMLHTTP_IDS = new Array(
+            'MSXML2.XMLHTTP.5.0',
+            'MSXML2.XMLHTTP.4.0',
+            'MSXML2.XMLHTTP.3.0',
+            'MSXML2.XMLHTTP',
+            'Microsoft.XMLHTTP' );
+            var success = false;
+            for (var i=0;i < XMLHTTP_IDS.length && !success; i++) {
+                try {
+                    this.xmlhttp = new ActiveXObject(XMLHTTP_IDS[i]);
+                    success = true;
+                } catch (e) {}
+            }
+            if (!success) {
+                try{
+                    this.xmlhttp = new HTML_AJAX_IframeXHR();
+                    this.request.iframe = true;
+                } catch(e) {
+                    throw new Error('Unable to create XMLHttpRequest.');
+                }
+            }
+        }
+    },
 
     // check if there is a call in progress
     callInProgress: function() 
@@ -416,59 +1449,74 @@ HTML_AJAX_HttpClient.prototype = {
         }
     },
 
-	// make the request defined in the request object
-	makeRequest: function() 
+    // make the request defined in the request object
+    makeRequest: function() 
     {
-		if (!this.xmlhttp) {
-			this.init();
-		}
+        if (!this.xmlhttp) {
+            this.init();
+        }
 
         try {
-            if (this.request.onOpen) {
-                this.request.onOpen();
+            if (this.request.Open) {
+                this.request.Open();
             }
-            else if (HTML_AJAX.onOpen) {
-                HTML_AJAX.onOpen(this.request);
+            else if (HTML_AJAX.Open) {
+                HTML_AJAX.Open(this.request);
             }
-		    this.xmlhttp.open(this.request.requestType,this.request.completeUrl(),this.request.isAsync);
 
             // set onreadystatechange here since it will be reset after a completed call in Mozilla
             var self = this;
+            this.xmlhttp.open(this.request.requestType,this.request.completeUrl(),this.request.isAsync);
+            if (this.request.customHeaders) {
+                for (i in this.request.customHeaders) {
+                    this.xmlhttp.setRequestHeader(i, this.request.customHeaders[i]);
+                }
+            }
+            if (this.request.customHeaders && !this.request.customHeaders['Content-Type']) {
+                //opera is stupid!!
+                if(window.opera)
+                {
+                    this.xmlhttp.setRequestHeader('Content-Type','text/plain; charset=utf-8');
+                    this.xmlhttp.setRequestHeader('x-Content-Type',this.request.getContentType() + '; charset=utf-8');
+                }
+                else
+                {
+                    this.xmlhttp.setRequestHeader('Content-Type',this.request.getContentType() + '; charset=utf-8');
+                }
+            }
             this.xmlhttp.onreadystatechange = function() { self._readyStateChangeCallback(); }
-
-            this.xmlhttp.setRequestHeader('Content-Type',this.request.getContentType());
             var payload = this.request.getSerializedPayload();
             if (payload) {
                 this.xmlhttp.setRequestHeader('Content-Length', payload.length);
             }
             this.xmlhttp.send(payload);
+
+            if (!this.request.isAsync) {
+                if ( this.xmlhttp.status == 200 ) {
+                    HTML_AJAX.requestComplete(this.request);
+                    if (this.request.Load) {
+                        this.request.Load();
+                    } else if (HTML_AJAX.Load) {
+                        HTML_AJAX.Load(this.request);
+                    }
+                        
+                    return this._decodeResponse();
+                } else {
+                    var e = new Error('['+this.xmlhttp.status +'] '+this.xmlhttp.statusText);
+                    e.headers = this.xmlhttp.getAllResponseHeaders();
+                    this._handleError(e);
+                }
+            }
+            else {
+                // setup timeout
+                var self = this;
+                this._timeoutId = window.setTimeout(function() { self.abort(true); },this.request.timeout);
+            }
         } catch (e) {
             this._handleError(e);
         }
-
-		if (!this.request.isAsync) {
-            if ( this.xmlhttp.status == 200 ) {
-                HTML_AJAX.requestComplete(this.request);
-                if (this.request.onLoad) {
-                    this.request.onLoad();
-                } else if (HTML_AJAX.onLoad) {
-                    HTML_AJAX.onLoad(this.request);
-                }
-                    
-                return this._decodeResponse();
-            } else {
-                var e = new Error('['+this.xmlhttp.status +'] '+this.xmlhttp.statusText);
-                e.headers = this.xmlhttp.getAllResponseHeaders();
-                this._handleError(e);
-            }
-		}
-        else {
-            // setup timeout
-            var self = this;
-            this._timeoutId = window.setTimeout(function() { self.abort(true); },this.request.timeout);
-        }
-	},
-	
+    },
+    
     // abort an inprogress request
     abort: function (automatic) 
     {
@@ -476,13 +1524,14 @@ HTML_AJAX_HttpClient.prototype = {
             this.xmlhttp.abort();
 
             if (automatic) {
-                this._handleError(new Error('Request Timed Out'));
+                HTML_AJAX.requestComplete(this.request);
+                this._handleError(new Error('Request Timed Out: time out was '+this.request.timeout+'ms'));
             }
         }
     },
 
-	// internal method used to handle ready state changes
-	_readyStateChangeCallback:function() 
+    // internal method used to handle ready state changes
+    _readyStateChangeCallback:function() 
     {
         try {
             switch(this.xmlhttp.readyState) {
@@ -491,30 +1540,30 @@ HTML_AJAX_HttpClient.prototype = {
                     break;
                 // XMLHTTPRequest.send() has just been called
                 case 2:
-                    if (this.request.onSend) {
-                        this.request.onSend();
-                    } else if (HTML_AJAX.onSend) {
-                        HTML_AJAX.onSend(this.request);
+                    if (this.request.Send) {
+                        this.request.Send();
+                    } else if (HTML_AJAX.Send) {
+                        HTML_AJAX.Send(this.request);
                     }
                     break;
                 // Fetching response from server in progress
                 case 3:
-                    if (this.request.onProgress) {
-                        this.request.onProgress();
-                    } else if (HTML_AJAX.onProgress ) {
-                        HTML_AJAX.onProgress(this.request);
+                    if (this.request.Progress) {
+                        this.request.Progress();
+                    } else if (HTML_AJAX.Progress ) {
+                        HTML_AJAX.Progress(this.request);
                     }
                 break;
                 // Download complete
                 case 4:
-                    window.clearTimeout(this._timeout_id);
+                    window.clearTimeout(this._timeoutId);
 
                     if (this.xmlhttp.status == 200) {
                         HTML_AJAX.requestComplete(this.request);
-                        if (this.request.onLoad) {
-                            this.request.onLoad();
-                        } else if (HTML_AJAX.onLoad ) {
-                            HTML_AJAX.onLoad(this.request);
+                        if (this.request.Load) {
+                            this.request.Load();
+                        } else if (HTML_AJAX.Load ) {
+                            HTML_AJAX.Load(this.request);
                         }
 
                         if (this.request.callback) {
@@ -531,12 +1580,26 @@ HTML_AJAX_HttpClient.prototype = {
         } catch (e) {
                 this._handleError(e);
         }
-	},
+    },
 
     // decode response as needed
     _decodeResponse: function() {
-        var unserializer = HTML_AJAX.serializerForEncoding(this.xmlhttp.getResponseHeader('Content-Type'));
-        //alert(this.xmlhttp.responseText); // some sort of debug hook is needed here
+        //try for x-Content-Type first
+        var content = null;
+        try {
+            content = this.xmlhttp.getResponseHeader('X-Content-Type');
+        } catch(e) {}
+        if(!content || content == null)
+        {
+            content = this.xmlhttp.getResponseHeader('Content-Type');
+        }
+        //strip anything after ;
+        if(content.indexOf(';') != -1)
+        {
+            content = content.substring(0, content.indexOf(';'));
+        }
+        var unserializer = HTML_AJAX.serializerForEncoding(content);
+        //alert(this.xmlhttp.getAllResponseHeaders()); // some sort of debug hook is needed here
 
         // some sort of sane way for a serializer to ask for XML needs to be added
         return unserializer.unserialize(this.xmlhttp.responseText);
@@ -574,6 +1637,8 @@ HTML_AJAX_HttpClient.prototype = {
  * @author     Joshua Eichorn <josh@bluga.net>
  * @copyright  2005 Joshua Eichorn
  * @license    http://www.opensource.org/licenses/lgpl-license.php  LGPL
+ *
+ * See Main.js for author/license details
  */
 function HTML_AJAX_Request(serializer) {
     this.serializer = serializer;
@@ -609,7 +1674,19 @@ HTML_AJAX_Request.prototype = {
 
     // Queue to push this request too
     queue: 'default',
+    
+    // default priority
+    priority: 0,
+    
+    // a hash of headers to add to add to this request
+    customHeaders: {},
 
+    // true if this request will be sent using iframes
+    iframe: false,
+    
+    // is this a grab request? if so we need to proxy for iframes
+    grab: false,
+    
     /**
      * Add an argument for the remote method
      * @param string argument name
@@ -656,10 +1733,20 @@ HTML_AJAX_Request.prototype = {
             url += delimiter+'c='+escape(this.className)+'&m='+escape(this.methodName);
         }
         return url;
+    },
+    
+    /**
+     * Compare to another request by priority
+     */
+    compareTo: function(other) {
+        if (this.priority == other.priority) {
+            return 0;
+        }
+        return (this.priority > other.priority ? 1 : -1);
     }
 }
 /* vim: set expandtab tabstop=4 shiftwidth=4 softtabstop=4: */
-// JSON.js
+// serializer/JSON.js
 /*
 Copyright (c) 2005 JSON.org
 
@@ -1001,35 +2088,297 @@ outer:          while (next()) {
     }
 };
 /* vim: set expandtab tabstop=4 shiftwidth=4 softtabstop=4: */
+// serializer/haSerializer.js
+/**
+ * HTML_AJAX_Serialize_HA  - custom serialization
+ *
+ * This class is used with the JSON serializer and the HTML_AJAX_Action php class
+ * to allow users to easily write data handling and dom manipulation related to
+ * ajax actions directly from their php code
+ *
+ * See Main.js for Author/license details
+ */
+function HTML_AJAX_Serialize_HA() {}
+HTML_AJAX_Serialize_HA.prototype =
+{
+    /**
+     *  Takes data from JSON - which should be parseable into a nice array
+     *  reads the action to take and pipes it to the right method
+     *
+     *  @param    string payload incoming data from php
+     *  @return   true on success, false on failure
+     */
+    unserialize: function(payload)
+    {
+        var actions = eval(payload);
+        for(var i = 0; i < actions.length; i++)
+        {
+            var action = actions[i];
+            switch(action.action)
+            {
+                case 'prepend':
+                    this._prependAttr(action.id, action.attributes);
+                    break;
+                case 'append':
+                    this._appendAttr(action.id, action.attributes);
+                    break;
+                case 'assign':
+                    this._assignAttr(action.id, action.attributes);
+                    break;
+                case 'clear':
+                    this._clearAttr(action.id, action.attributes);
+                    break;
+                case 'create':
+                    this._createNode(action.id, action.tag, action.attributes, action.type);
+                    break;
+                case 'replace':
+                    this._replaceNode(action.id, action.tag, action.attributes);
+                    break;
+                case 'remove':
+                    this._removeNode(action.id);
+                    break;
+                case 'script':
+                    this._insertScript(action.data);
+                    break;
+                case 'alert':
+                    this._insertAlert(action.data);
+                    break;
+            }
+        }
+    },
+	_prependAttr: function(id, attributes)
+	{
+		var node = document.getElementById(id);
+        for (var i in attributes)
+        {
+            //innerHTML hack bailout
+            if(i == 'innerHTML')
+            {
+                node.innerHTML = attributes[i] + node.innerHTML;
+            }
+            //value hack
+            else if(i == 'value')
+            {
+                node.value = attributes[i];
+            }
+            //I'd use hasAttribute but IE is stupid stupid stupid
+            else
+            {
+                var value = node.getAttribute(i);
+                if(value)
+                {
+                    node.setAttribute(i, attributes[i] + value);
+                }
+                else
+                {
+                    node.setAttribute(i, attributes[i]);
+                }
+            }
+        }
+	},
+	_appendAttr: function(id, attributes)
+	{
+		var node = document.getElementById(id);
+        for (var i in attributes)
+        {
+            //innerHTML hack bailout
+            if(i == 'innerHTML')
+            {
+                node.innerHTML += attributes[i];
+            }
+            //value hack
+            else if(i == 'value')
+            {
+                node.value = attributes[i];
+            }
+            //I'd use hasAttribute but IE is stupid stupid stupid
+            else
+            {
+                var value = node.getAttribute(i);
+                if(value)
+                {
+                    node.setAttribute(i, value + attributes[i]);
+                }
+                else
+                {
+                    node.setAttribute(i, attributes[i]);
+                }
+            }
+        }
+	},
+	_assignAttr: function(id, attributes)
+	{
+		var node = document.getElementById(id);
+        for (var i in attributes)
+        {
+            //innerHTML hack bailout
+            if(i == 'innerHTML')
+            {
+                node.innerHTML = attributes[i];
+            }
+            //value hack
+            else if(i == 'value')
+            {
+                node.value = attributes[i];
+            }
+            //I'd use hasAttribute but IE is stupid stupid stupid
+            else
+            {
+                //node.setAttribute(i, attributes[i]);
+		node[i] = attributes[i];
+            }
+        }
+	},
+	_clearAttr: function(id, attributes)
+	{
+		var node = document.getElementById(id);
+        for(var i = 0; i < attributes.length; i++)
+        {
+            //innerHTML hack bailout
+            if(attributes[i] == 'innerHTML')
+            {
+                node.innerHTML = '';
+            }
+            //value hack
+            else if(attributes[i] == 'value')
+            {
+                node.value = '';
+            }
+            //I'd use hasAttribute but IE is stupid stupid stupid
+            else
+            {
+                node.removeAttribute(attributes[i]);
+            }
+        }
+	},
+    _createNode: function(id, tag, attributes, type)
+    {
+        var newnode = document.createElement(tag);
+        for (var i in attributes)
+        {
+            //innerHTML hack bailout
+            if(i == 'innerHTML')
+            {
+                newnode.innerHTML = attributes[i];
+            }
+            //value hack
+            else if(i == 'value')
+            {
+                newnode.value = attributes[i];
+            }
+            //I'd use hasAttribute but IE is stupid stupid stupid
+            else
+            {
+                newnode.setAttribute(i, attributes[i]);
+            }
+        }
+        switch(type)
+        {
+            case 'append':
+                document.getElementById(id).appendChild(newnode);
+                break
+            case 'prepend':
+                var parent = document.getElementById(id);
+                var sibling = parent.firstChild;
+                parent.insertBefore(newnode, sibling);
+                break;
+            case 'insertBefore':
+                var sibling = document.getElementById(id);
+                var parent = sibling.parentNode;
+                parent.insertBefore(newnode, sibling);
+                break;
+            //this one is tricky, if it's the last one we use append child...ewww
+            case 'insertAfter':
+                var sibling = document.getElementById(id);
+                var parent = sibling.parentNode;
+                var next = sibling.nextSibling;
+                if(next == null)
+                {
+                    parent.appendChild(newnode);
+                }
+                else
+                {
+                    parent.insertBefore(newnode, next);
+                }
+                break;
+        }
+	},
+    _replaceNode: function(id, tag, attributes)
+    {
+		var node = document.getElementById(id);
+		var parent = node.parentNode;
+        var newnode = document.createElement(tag);
+		for (var i in attributes)
+        {
+            //innerHTML hack bailout
+            if(i == 'innerHTML')
+            {
+                newnode.innerHTML = attributes[i];
+            }
+            //value hack
+            else if(i == 'value')
+            {
+                newnode.value = attributes[i];
+            }
+        }
+        parent.replaceChild(newnode, node);
+	},
+	_removeNode: function(id)
+	{
+		var node = document.getElementById(id);
+        if(node)
+        {
+            var parent = node.parentNode;
+            parent.removeChild(node);
+        }
+	},
+    _insertScript: function(data)
+    {
+        eval(data);
+    },
+    _insertAlert: function(data)
+    {
+        alert(data);
+    }
+}
+
 // Loading.js
 /**
  * Default loading implementation
  *
  * @category   HTML
  * @package    Ajax
- * @author     Joshua Eichorn <josh@bluga.net>
- * @copyright  2005 Joshua Eichorn
  * @license    http://www.opensource.org/licenses/lgpl-license.php  LGPL
+ * @copyright  2005 Joshua Eichorn
+ * see Main.js for license Author details
  */
-
-HTML_AJAX.onOpen = function(request) {
+HTML_AJAX.Open = function(request) {
     var loading = document.getElementById('HTML_AJAX_LOADING');
     if (!loading) {
         loading = document.createElement('div');
         loading.id = 'HTML_AJAX_LOADING';
         loading.innerHTML = 'Loading...';
-        loading.style.position = 'absolute';
-        loading.style.top = 0;
-        loading.style.right = 0;
-        loading.style.backgroundColor = 'red';
-        loading.style.width = '80px';
-        loading.style.padding = '4px';
+        
+        loading.style.color           = '#fff';
+        loading.style.position        = 'absolute';
+        loading.style.top             = 0;
+        loading.style.right           = 0;
+        loading.style.backgroundColor = '#f00';
+        loading.style.border          = '1px solid #f99';
+        loading.style.width           = '80px';
+        loading.style.padding         = '4px';
+        loading.style.fontFamily      = 'Arial, Helvetica, sans';
     
         document.body.insertBefore(loading,document.body.firstChild);
     }
-    HTML_AJAX.onOpen_Timeout = window.setTimeout(function() { loading.style.display = 'block'; },500);
+    if (request.isAsync) {
+        HTML_AJAX.onOpen_Timeout = window.setTimeout(function() { loading.style.display = 'block'; },500);
+    }
+    else {
+        loading.style.display = 'block';
+    }
 }
-HTML_AJAX.onLoad = function(request) {
+HTML_AJAX.Load = function(request) {
     if (HTML_AJAX.onOpen_Timeout) {
         window.clearTimeout(HTML_AJAX.onOpen_Timeout);
         HTML_AJAX.onOpen_Timeout = false;
@@ -1046,9 +2395,9 @@ HTML_AJAX.onLoad = function(request) {
  *
  * @category   HTML
  * @package    Ajax
- * @author     David Coallier <davidc@php.net>
- * @copyright  2005 David Coallier
  * @license    http://www.opensource.org/licenses/lgpl-license.php  LGPL
+ *
+ * See Main.js for author/license details
  */
 // {{{ HTML_AJAX_Util
 /**
@@ -1056,10 +2405,11 @@ HTML_AJAX.onLoad = function(request) {
  */
 var HTML_AJAX_Util = {
     // Set the element event
-    setElementEvent: function(id, event, handler) {
-        var element = document.getElementById(id);
+    registerEvent: function(element, event, handler) 
+    {
+        //var element = document.getElementById(id);
         if (typeof element.addEventListener != "undefined") {   //Dom2
-           element.addEventListener(event, handler, false);
+            element.addEventListener(event, handler, false);
         } else if (typeof element.attachEvent != "undefined") { //IE 5+
             element.attachEvent("on" + event, handler);
         } else {
@@ -1074,19 +2424,236 @@ var HTML_AJAX_Util = {
             }
         }
     },
-    // simple non recursive variable dumper, don't rely on its output staying the same, its just for debugging and will get smarter at some point
-    varDump: function(input) {
-        var r = "";
-        for(var i in input) {
-            r += i+':'+input[i]+"\n";
+    // get the target of an event, automatically checks window.event for ie
+    eventTarget: function(event) 
+    {
+        if (!event) var event = window.event;
+        if (event.target) return event.target; // w3c
+        if (event.srcElement) return event.srcElement; // ie 5
+    },
+    // gets the type of a variable or its primitive equivalent as a string
+    getType: function(inp) 
+    {
+        var type = typeof inp, match;
+        if(type == 'object' && !inp)
+        {
+            return 'null';
         }
-        return r;
+        if (type == "object") {
+            if(!inp.constructor)
+            {
+                return 'object';
+            }
+            var cons = inp.constructor.toString();
+            if (match = cons.match(/(\w+)\(/)) {
+                cons = match[1].toLowerCase();
+            }
+            var types = ["boolean", "number", "string", "array"];
+            for (key in types) {
+                if (cons == types[key]) {
+                    type = types[key];
+                    break;
+                }
+            }
+        }
+        return type;
+    },
+    // repeats the input string the number of times given by multiplier. exactly like PHP's str_repeat()
+    strRepeat: function(inp, multiplier) {
+        var ret = "";
+        while (--multiplier > 0) ret += inp;
+        return ret;
+    },
+    // recursive variable dumper similar in output to PHP's var_dump(), the differences being: this function displays JS types and type names; JS doesn't provide an object number like PHP does
+    varDump: function(inp, printFuncs, _indent, _recursionLevel)
+    {
+        if (!_recursionLevel) _recursionLevel = 0;
+        if (!_indent) _indent = 1;
+        var tab = this.strRepeat("  ", ++_indent);    
+        var type = this.getType(inp), out = type;
+        var consrx = /(\w+)\(/;
+        consrx.compile();
+        if (++_recursionLevel > 6) {
+            return tab + inp + "Loop Detected\n";
+        }
+        switch (type) {
+            case "boolean":
+            case "number":
+                out += "(" + inp.toString() + ")";
+                break;
+            case "string":
+                out += "(" + inp.length + ") \"" + inp + "\"";
+                break;
+            case "function":
+                if (printFuncs) {
+                    out += inp.toString().replace(/\n/g, "\n" + tab);
+                }
+                break;
+            case "array":
+            case "object":
+                var atts = "", attc = 0;
+                try {
+                    for (k in inp) {
+                        atts += tab + "[" + (/\D/.test(k) ? "\"" + k + "\"" : k)
+                            + "]=>\n" + tab + this.varDump(inp[k], printFuncs, _indent, _recursionLevel);
+                        ++attc;
+                    }
+                } catch (e) {}
+                if (type == "object") {
+                    var objname, objstr = inp.toString();
+                    if (objname = objstr.match(/^\[object (\w+)\]$/)) {
+                        objname = objname[1];
+                    } else {
+                        try {
+                            objname = inp.constructor.toString().match(consrx)[1];
+                        } catch (e) {
+                            objname = 'unknown';
+                        }
+                    }
+                    out += "(" + objname + ") ";
+                }
+                out += "(" + attc + ") {\n" + atts + this.strRepeat("  ", _indent - 1) +"}";
+                break;
+        }
+        return out + "\n";
+    },
+    quickPrint: function(input) {
+        var ret = "";
+        for(var i in input) {
+            ret += i+':'+input[i]+"\n";
+        }
+        return ret;
+    },
+    //compat function for stupid browsers in which getElementsByTag with a * dunna work
+    getAllElements: function(parentElement)
+    {
+        //check for idiot browsers
+        if( document.all)
+        {
+            if(!parentElement) {
+                var allElements = document.all;
+            }
+            else
+            {
+                var allElements = [], rightName = new RegExp( parentElement, 'i' ), i;
+                for( i=0; i<document.all.length; i++ ) {
+                    if( rightName.test( document.all[i].parentElement ) )
+                    allElements.push( document.all[i] );
+                }
+            }
+            return allElements;
+        }
+        //real browsers just do this
+        else
+        {
+            if (!parentElement) { parentElement = document.body; }
+            return parentElement.getElementsByTagName('*');
+        }
+    },
+    getElementsByClassName: function(className, parentElement) {
+        var allElements = HTML_AJAX_Util.getAllElements(parentElement);
+        var items = [];
+        var exp = new RegExp('(^| )' + className + '( |$)');
+        for(var i=0,j=allElements.length; i<j; i++)
+        {
+            if(exp.test(allElements[i].className))
+            {
+                items.push(allElements[i]);
+            }
+        }
+        return items;
+    },
+    htmlEscape: function(inp) {
+        var rxp, chars = [
+            ['&', '&amp;'],
+            ['<', '&lt;'],
+            ['>', '&gt;']
+        ];
+        for (i in chars) {
+            inp.replace(new RegExp(chars[i][0]), chars[i][1]);
+        }
+        return inp;
+    },
+    // return the base of the given absolute url
+    baseURL: function(absolute) {
+        var qPos = absolute.indexOf('?');
+        if (qPos >= 0) {
+            absolute = absolute.substr(0, qPos);
+        }
+        var slashPos = absolute.lastIndexOf('/');
+        if (slashPos < 0) {
+            return absolute;
+        }
+        return absolute.substr(0, slashPos + 1);
+    },
+    // return the query string from a url
+    queryString: function(url) {
+        var qPos = url.indexOf('?');
+        if (qPos >= 0) {
+            return url.substr(qPos+1);
+        }
+    },
+    // return the absolute path to the given relative url
+    absoluteURL: function(rel, absolute) {
+        if (/^https?:\/\//i.test(rel)) {
+            return rel;
+        }
+        if (!absolute) {
+            var bases = document.getElementsByTagName('base');
+            for (i in bases) {
+                if (bases[i].href) {
+                    absolute = bases[i].href;
+                    break;
+                }
+            }
+            if (!absolute) {
+                absolute = window.location.href;
+            }
+        }
+        if (rel == '') {
+            return absolute;
+        }
+        if (rel.substr(0, 2) == '//') {
+            // starts with '//', replace everything but the protocol
+            var slashesPos = absolute.indexOf('//');
+            if (slashesPos < 0) {
+                return 'http:' + rel;
+            }
+            return absolute.substr(0, slashesPos) + rel;
+        }
+        var base = this.baseURL(absolute);
+        var absParts = base.substr(0, base.length - 1).split('/');
+        var absHost = absParts.slice(0, 3).join('/') + '/';
+        if (rel.substr(0, 1) == '/') {
+            // starts with '/', append it to the host
+            return absHost + rel;
+        }
+        if (rel.substr(0, 1) == '.' && rel.substr(1, 1) != '.') {
+            // starts with '.', append it to the base
+            return base + rel.substr(1);
+        }
+        // remove everything upto the path and beyond 
+        absParts.splice(0, 3);
+        var relParts = rel.split('/');
+        var loopStart = relParts.length - 1;
+        relParts = absParts.concat(relParts);
+        for (i = loopStart; i < relParts.length;) {
+            if (relParts[i] == '..') {
+                if (i == 0) {
+                    return absolute;
+                }
+                relParts.splice(i - 1, 2);
+                --i;
+                continue;
+            }
+            i++;
+        }
+        return absHost + relParts.join('/');
     }
-
 }
 // }}}
 /* vim: set expandtab tabstop=4 shiftwidth=4 softtabstop=4: */
-// behavior.js
+// behavior/behavior.js
 /**
 
 ModifiedBehavior v1.0 by Ron Lancaster based on Ben Nolan's Behaviour, June 2005 implementation.
@@ -1187,7 +2754,7 @@ function BehaviorRule(selector, from, action) {
 	this.action = action;
 }
 
-Behavior.start();// cssQuery-p.js
+Behavior.start();// behavior/cssQuery-p.js
 /*
 	cssQuery, version 2.0.2 (2005-08-19)
 	Copyright: 2004-2005, Dean Edwards (http://dean.edwards.name/)

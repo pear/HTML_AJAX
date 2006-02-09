@@ -14,6 +14,8 @@
  * @author     Joshua Eichorn <josh@bluga.net>
  * @copyright  2005 Joshua Eichorn
  * @license    http://www.opensource.org/licenses/lgpl-license.php  LGPL
+ *
+ * See Main.js for author/license details
  */
 function HTML_AJAX_Request(serializer) {
     this.serializer = serializer;
@@ -49,7 +51,19 @@ HTML_AJAX_Request.prototype = {
 
     // Queue to push this request too
     queue: 'default',
+    
+    // default priority
+    priority: 0,
+    
+    // a hash of headers to add to add to this request
+    customHeaders: {},
 
+    // true if this request will be sent using iframes
+    iframe: false,
+    
+    // is this a grab request? if so we need to proxy for iframes
+    grab: false,
+    
     /**
      * Add an argument for the remote method
      * @param string argument name
@@ -96,6 +110,16 @@ HTML_AJAX_Request.prototype = {
             url += delimiter+'c='+escape(this.className)+'&m='+escape(this.methodName);
         }
         return url;
+    },
+    
+    /**
+     * Compare to another request by priority
+     */
+    compareTo: function(other) {
+        if (this.priority == other.priority) {
+            return 0;
+        }
+        return (this.priority > other.priority ? 1 : -1);
     }
 }
 /* vim: set expandtab tabstop=4 shiftwidth=4 softtabstop=4: */

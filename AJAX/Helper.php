@@ -33,7 +33,12 @@ class HTML_AJAX_Helper
 	 *
 	 * @var	array
 	 */
-	var $jsLibraries = array('Util','Main','Request','HttpClient','Dispatcher','Behavior','Loading','JSON');
+	var $jsLibraries = array('Util','Main','Request','HttpClient','Dispatcher','Behavior','Loading','JSON','iframe');
+
+	/**
+	 * Remote class stubs to include
+	 */
+	var $stubs = array();
 
 	/**
 	 * Include all needed libraries, stubs, and set defaultServer
@@ -42,8 +47,26 @@ class HTML_AJAX_Helper
 	 */
 	function setupAJAX() 
 	{
-		$libs = implode(',',$this->jsLibraries);
-		$ret = "<script type='text/javascript' src='{$this->serverUrl}?client={$libs}'></script>\n";
+		$libs = array(0=>array());
+		foreach($this->jsLibraries as $library) {
+			if (is_array($library)) {
+				$libs[] = implode(',',$library);
+			}
+			else {
+				$libs[0][] = $library;
+			}
+		}
+		$libs[0] = implode(',',$libs[0]);
+
+		$ret = '';
+		foreach($libs as $list) {
+			$ret .= "<script type='text/javascript' src='{$this->serverUrl}?client={$list}'></script>\n";
+		}
+
+		if (count($this->stubs) > 0) {
+			$stubs = implode(',',$this->stubs);
+			$ret .= "<script type='text/javascript' src='{$this->serverUrl}?stub={$stubs}'></script>\n";
+		}
 		$ret .= $this->encloseInScript('HTML_AJAX.defaultServerUrl = '.$this->escape($this->serverUrl));
 		return $ret;
 	}
@@ -56,7 +79,7 @@ class HTML_AJAX_Helper
 	 * @param string	$style	style tag of the loading div
 	 */
 	function loadingMessage($body, $class = 'HTML_AJAX_Loading', 
-			$style = 'position: absolute; top: 0; right: 0; backgroundColor: red; width: 80px; padding: 4px; display: none') 
+			$style = 'position: absolute; top: 0; right: 0; background-color: red; width: 80px; padding: 4px; display: none') 
 	{
 		return "<div id='HTML_AJAX_LOADING' class='{$class}' style=\"{$style}\">{$body}</div>\n";
 	}

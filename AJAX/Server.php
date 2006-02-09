@@ -104,15 +104,20 @@ class HTML_AJAX_Server
         'all'           =>  'HTML_AJAX.js',
         'html_ajax'     =>  'HTML_AJAX.js',
         'html_ajax_lite'=>  'HTML_AJAX_lite.js',
-        'json'          =>  'JSON.js',
+        'json'          =>  'serializer/JSON.js',
         'request'       =>  'Request.js',
-        'main'          =>  'Main.js',
+        'main'          =>  array('Main.js','clientPool.js'),
         'httpclient'    =>  'HttpClient.js',
         'dispatcher'    =>  'Dispatcher.js',
         'util'          =>  'util.js',
         'loading'       =>  'Loading.js',
-        'phpserializer' =>  'serialize.js',
-        'behavior'      =>  array('behavior.js','cssQuery-p.js')
+        'phpserializer' =>  'serializer/phpSerializer.js',
+        'urlserializer' =>  'serializer/UrlSerializer.js',
+        'haserializer'  =>  'serializer/haSerializer.js',
+        'priorityqueue' =>  'priorityQueue.js',
+        'clientpool'    =>  'clientPool.js',
+        'iframe'        =>  'IframeXHR.js',
+        'behavior'      =>  array('behavior/behavior.js','behavior/cssQuery-p.js')
     );
 
     /**
@@ -134,14 +139,22 @@ class HTML_AJAX_Server
 
     /**
      * Constructor creates the HTML_AJAX instance
-     *
-     * @todo: verify that PHP_SELF always does what we want
      */
     function HTML_AJAX_Server() 
     {
         $this->ajax =& new HTML_AJAX();
-        $this->ajax->serverUrl = $_SERVER['PHP_SELF'];
 
+        // parameters for HTML::AJAX
+        $parameters = array('stub', 'client');
+
+        // keep in the query string all the parameters that don't belong to AJAX
+        // we remove all string like "parameter=something&". Final '&' can also
+        // be '&amp;' (to be sure) and is optional. '=something' is optional too.
+        $querystring = preg_replace('/(' . join('|', $parameters) . ')(?:=[^&]*(?:&(?:amp;)?|$))?/', '', $_SERVER['QUERY_STRING']);
+
+        // call the server with this query string
+        $this->ajax->serverUrl = htmlentities($_SERVER['PHP_SELF']) .'?'. htmlentities($querystring);
+        
         $methods = get_class_methods($this);
         foreach($methods as $method) {
             if (preg_match('/^init([a-zA-Z0-9_]+)$/',$method,$match)) {
@@ -153,15 +166,18 @@ class HTML_AJAX_Server
     /**
      * Handle a client request, either generating a client or having HTML_AJAX handle the request
      *
-     * @return  string generated client or ajax response
+     * @return boolean true if request was handled, false otherwise
      */
     function handleRequest() 
     {
         if ($this->options == true) {
             $this->_loadOptions();
         }
+        //basically a hook for iframe but allows processing of data earlier
+        $this->ajax->populatePayload();
         if (!isset($_GET['c']) && (count($this->options['client']) > 0 || count($this->options['stub']) > 0) ) {
-            return $this->generateClient();
+            $this->generateClient();
+            return true;
         } else {
             $this->_init($this->_cleanIdentifier($_GET['c']));
             return $this->ajax->handleRequest();
@@ -200,10 +216,11 @@ class HTML_AJAX_Server
      * @param object    $instance an external class with initClassName methods
      */
     function registerInitObject(&$instance) {
+        $instance->server =& $this;
         $methods = get_class_methods($instance);
         foreach($methods as $method) {
             if (preg_match('/^init([a-zA-Z0-9_]+)$/',$method,$match)) {
-                $this->_initLookup[$match[1]] = array(&$instance,$method);
+                $this->_initLookup[strtolower($match[1])] = array(&$instance,$method);
             }
         }
     }
@@ -216,6 +233,7 @@ class HTML_AJAX_Server
     function generateClient() 
     {
         $headers = array();
+
         ob_start();
 
         // create a list list of js files were going to need to output
@@ -349,12 +367,14 @@ class HTML_AJAX_Server
 
         // were outputting content, add our length header and send the output
         $length = ob_get_length();
-        if ($length > 0) {
+        $output = ob_get_contents();
+        ob_end_clean();
+        if ($length > 0 && $this->ajax->_sendContentLength()) { 
             $headers['Content-Length'] = $length;
         }
         $headers['Content-Type'] = 'text/javascript; charset=utf-8';
-        call_user_func($this->ajax->_callbacks['headers'],$headers);
-        ob_end_flush();
+        call_user_func($this->ajax->_callbacks['headers'], $headers);
+        echo($output);
     }
 
     /**
@@ -383,7 +403,12 @@ class HTML_AJAX_Server
     function clientJsLocation() 
     {
         if (!$this->clientJsLocation) {
-            return '@data-dir@'.DIRECTORY_SEPARATOR.'HTML_AJAX'.DIRECTORY_SEPARATOR.'js'.DIRECTORY_SEPARATOR;
+            $path = '@data-dir@'.DIRECTORY_SEPARATOR.'HTML_AJAX'.DIRECTORY_SEPARATOR.'js'.DIRECTORY_SEPARATOR;
+            if(strpos($path, '@'.'data-dir@') === 0)
+            {
+                $path = realpath(dirname(__FILE__).DIRECTORY_SEPARATOR.'..'.DIRECTORY_SEPARATOR.'js').DIRECTORY_SEPARATOR;
+            }
+            return $path;
         } else {
             return $this->clientJsLocation;
         }

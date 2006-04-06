@@ -52,7 +52,7 @@ if (!empty($_POST)) {
         <div id="target">
             <?php show_messages(); ?>
         </div>
-        <form action="shoutbox" method="post" onsubmit="return !HTML_AJAX.formSubmit(this, 'target')">
+        <form action="shoutbox.php" method="post" onsubmit="return !HTML_AJAX.formSubmit(this, 'target')">
             <label>
                 Name:
                 <input type="text" name="name" id="name" />

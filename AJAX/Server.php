@@ -115,8 +115,10 @@ class HTML_AJAX_Server
         'urlserializer' =>  'serializer/UrlSerializer.js',
         'haserializer'  =>  'serializer/haSerializer.js',
         'priorityqueue' =>  'priorityQueue.js',
+        'orderedqueue'  =>  'orderedQueue.js',
         'clientpool'    =>  'clientPool.js',
         'iframe'        =>  'IframeXHR.js',
+        'alias'         =>  'Alias.js',
         'behavior'      =>  array('behavior/behavior.js','behavior/cssQuery-p.js')
     );
 
@@ -150,7 +152,10 @@ class HTML_AJAX_Server
         // keep in the query string all the parameters that don't belong to AJAX
         // we remove all string like "parameter=something&". Final '&' can also
         // be '&amp;' (to be sure) and is optional. '=something' is optional too.
-        $querystring = preg_replace('/(' . join('|', $parameters) . ')(?:=[^&]*(?:&(?:amp;)?|$))?/', '', $_SERVER['QUERY_STRING']);
+        $querystring = '';
+        if (isset($_SERVER['QUERY_STRING'])) {
+            $querystring = preg_replace('/(' . join('|', $parameters) . ')(?:=[^&]*(?:&(?:amp;)?|$))?/', '', $_SERVER['QUERY_STRING']);
+        }
 
         // call the server with this query string
         $this->ajax->serverUrl = htmlentities($_SERVER['PHP_SELF']) .'?'. htmlentities($querystring);
@@ -179,7 +184,9 @@ class HTML_AJAX_Server
             $this->generateClient();
             return true;
         } else {
-            $this->_init($this->_cleanIdentifier($_GET['c']));
+            if (!empty($_GET['c'])) {
+                $this->_init($this->_cleanIdentifier($_GET['c']));
+            }
             return $this->ajax->handleRequest();
         }
     }
@@ -223,6 +230,29 @@ class HTML_AJAX_Server
                 $this->_initLookup[strtolower($match[1])] = array(&$instance,$method);
             }
         }
+    }
+
+    /**
+     * Register a callback to be exported to the client
+     *
+     * This function uses the PHP callback pseudo-type
+     *
+     */
+    function registerPhpCallback($callback)
+    {
+        if (!is_callable($callback)) {
+            // invalid callback
+            return false;
+        }
+        
+        if (is_array($callback) && is_object($callback[0])) {
+            // object method
+            $this->registerClass($callback[0], false, array($callback[1]));
+            return true;
+        }
+        
+        // static callback
+        $this->ajax->registerPhpCallback($callback);
     }
 
     /**
@@ -423,13 +453,7 @@ class HTML_AJAX_Server
     {
         $this->options = array('client'=>array(),'stub'=>array());
         if (isset($_GET['client'])) {
-            $this->options['client'] = array();
-             if (strstr($_GET['client'],',')) {
-                $clients = explode(',',$_GET['client']);
-            } else {
-                $clients = array($_GET['client']);
-            }
-            
+            $clients = explode(',',$_GET['client']);
             $client = array();
             foreach($clients as $val) {
                 $cleanVal = $this->_cleanIdentifier($val);
@@ -443,11 +467,7 @@ class HTML_AJAX_Server
             }
         }
         if (isset($_GET['stub'])) {
-            if (strstr($_GET['stub'],',')) {
-                $stubs = explode(',',$_GET['stub']);
-            } else {
-                $stubs = array($_GET['stub']);
-            }
+            $stubs = explode(',',$_GET['stub']);
             $stub = array();
             foreach($stubs as $val) {
                 $cleanVal = $this->_cleanIdentifier($val);
@@ -495,6 +515,7 @@ class HTML_AJAX_Server
      */
     function _init($className) 
     {
+        $className = strtolower($className);
         if ($this->initMethods) {
             if (isset($this->_initLookup[$className])) {
                 $method =& $this->_initLookup[$className];

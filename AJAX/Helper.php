@@ -132,5 +132,18 @@ class HTML_AJAX_Helper
 	function encloseInScript($input) {
 		return '<script type="text/javascript">'.$input."</script>\n";
 	}
+
+	/**
+	 * Generate a JSON String
+	 *
+	 * @param string	$input
+	 * @return string
+	 */
+	function jsonEncode($input) {
+		require_once 'HTML/AJAX/Serializer/JSON.php';
+
+		$s = new HTML_AJAX_Serializer_JSON();
+		return $s->serialize($input);
+	}
 }
 ?>

@@ -15,8 +15,10 @@ var HTML_AJAX_Util = {
     // Set the element event
     registerEvent: function(element, event, handler) 
     {
-        //var element = document.getElementById(id);
-        if (typeof element.addEventListener != "undefined") {   //Dom2
+		if (typeof element == 'string')	{
+			element = document.getElementById(element);
+		}
+		if (typeof element.addEventListener != "undefined") {   //Dom2
             element.addEventListener(event, handler, false);
         } else if (typeof element.attachEvent != "undefined") { //IE 5+
             element.attachEvent("on" + event, handler);
@@ -125,12 +127,28 @@ var HTML_AJAX_Util = {
         }
         return out + "\n";
     },
-    quickPrint: function(input) {
-        var ret = "";
-        for(var i in input) {
-            ret += i+':'+input[i]+"\n";
+    // non resursive simple debug printer
+    quickPrint: function(input,sep) {
+        if (!sep) {
+            var sep = "\n";
         }
-        return ret;
+        var type = HTML_AJAX_Util.getType(input);
+        switch (type) {
+            case 'string':
+                return input;
+            case 'array':
+                var ret = "";
+                for(var i = 0; i < input.length; i++) {
+                    ret += i+':'+input[i]+sep;
+                }
+                return ret;
+            default:
+                var ret = "";
+                for(var i in input) {
+                    ret += i+':'+input[i]+sep;
+                }
+                return ret;
+        }
     },
     //compat function for stupid browsers in which getElementsByTag with a * dunna work
     getAllElements: function(parentElement)
@@ -158,41 +176,44 @@ var HTML_AJAX_Util = {
             return parentElement.getElementsByTagName('*');
         }
     },
-    getElementsByClassName: function(className, parentElement) {
+    getElementsByProperty: function(property, regex, parentElement) {
         var allElements = HTML_AJAX_Util.getAllElements(parentElement);
         var items = [];
-        var exp = new RegExp('(^| )' + className + '( |$)');
         for(var i=0,j=allElements.length; i<j; i++)
         {
-            if(exp.test(allElements[i].className))
+            if(regex.test(allElements[i][property]))
             {
                 items.push(allElements[i]);
             }
         }
         return items;
     },
-    htmlEscape: function(inp) {
-        var rxp, chars = [
-            ['&', '&amp;'],
-            ['<', '&lt;'],
-            ['>', '&gt;']
-        ];
-        for (i in chars) {
-            inp.replace(new RegExp(chars[i][0]), chars[i][1]);
-        }
-        return inp;
+    getElementsByClassName: function(className, parentElement) {
+        return HTML_AJAX_Util.getElementsByProperty('className',new RegExp('(^| )' + className + '( |$)'),parentElement);
     },
-    // return the base of the given absolute url
-    baseURL: function(absolute) {
+    getElementsById: function(id, parentElement) {
+        return HTML_AJAX_Util.getElementsByProperty('id',new RegExp(id),parentElement);
+    },
+    getElementsByCssSelector: function(selector,parentElement) {
+        return cssQuery(selector,parentElement);
+    },
+    htmlEscape: function(inp) {
+        var div = document.createElement('div');
+        var text = document.createTextNode(inp);
+        div.appendChild(text);
+        return div.innerHTML;
+    },
+    // return the base of the given absolute url, or the filename if the second argument is true
+    baseURL: function(absolute, filename) {
         var qPos = absolute.indexOf('?');
         if (qPos >= 0) {
             absolute = absolute.substr(0, qPos);
         }
-        var slashPos = absolute.lastIndexOf('/');
+        var slashPos = Math.max(absolute.lastIndexOf('/'), absolute.lastIndexOf('\\'));
         if (slashPos < 0) {
             return absolute;
         }
-        return absolute.substr(0, slashPos + 1);
+        return (filename ? absolute.substr(slashPos + 1) : absolute.substr(0, slashPos + 1));
     },
     // return the query string from a url
     queryString: function(url) {
@@ -257,6 +278,125 @@ var HTML_AJAX_Util = {
             i++;
         }
         return absHost + relParts.join('/');
+    },
+    // sets the innerHTML of an element. the third param decides how to write, it replaces by default, others are append|prepend
+    setInnerHTML: function(node, innerHTML, type)
+    {
+        if (HTML_AJAX_Util.getType(node) == 'string') {
+            var node = document.getElementById(node);
+        }
+        
+        if (type != 'append') {
+            if (type == 'prepend') {
+                var oldHtml = node.innerHTML;
+            }
+            node.innerHTML = '';
+        }
+        var good_browser = (window.opera || navigator.product == 'Gecko');
+        var regex = /^([\s\S]*?)<script([\s\S]*?)>([\s\S]*?)<\/script>([\s\S]*)$/i;
+        var regex_src = /src=["'](.*?)["']/i;
+        var matches, id, script, output = '', subject = innerHTML;
+        var scripts = [];
+        
+        while (true) {
+            matches = regex.exec(subject);
+            if (matches && matches[0]) {
+                subject = matches[4];
+                id = 'ih_' + Math.round(Math.random()*9999) + '_' + Math.round(Math.random()*9999);
+
+                var startLen = matches[3].length;
+                script = matches[3].replace(/document\.write\(([\s\S]*?)\)/ig, 
+                    'document.getElementById("' + id + '").innerHTML+=$1');
+
+                output += matches[1];
+                if (startLen != script.length) {
+                        output += '<span id="' + id + '"></span>';
+                }
+                
+                output += '<script' + matches[2] + '>' + script + '</script>';
+                if (good_browser) {
+                    continue;
+                }
+                if (script) {
+                    scripts.push(script);
+                }
+                if (regex_src.test(matches[2])) {
+                    var script_el = document.createElement("SCRIPT");
+                    var atts_regex = /(\w+)=["'](.*?)["']([\s\S]*)$/;
+                    var atts = matches[2];
+                    for (var i = 0; i < 5; i++) { 
+                        var atts_matches = atts_regex.exec(atts);
+                        if (atts_matches && atts_matches[0]) {
+                            script_el.setAttribute(atts_matches[1], atts_matches[2]);
+                            atts = atts_matches[3];
+                        } else {
+                            break;
+                        }
+                    }
+                    scripts.push(script_el);
+                }
+            } else {
+                output += subject;
+                break;
+            }
+        }
+        innerHTML = output;
+
+        if (good_browser) {
+            var el = document.createElement('span');
+            el.innerHTML = innerHTML;
+
+            for(var i = 0; i < el.childNodes.length; i++) {
+                node.appendChild(el.childNodes[i].cloneNode(true));
+            }
+        }
+        else {
+            node.innerHTML = innerHTML;
+        }
+
+        if (oldHtml) {
+            node.innerHTML += oldHtml;
+        }
+
+        if (!good_browser) {
+            for(var i = 0; i < scripts.length; i++) {
+                if (HTML_AJAX_Util.getType(scripts[i]) == 'string') {
+                    window.eval(scripts[i]);
+                }
+                else {
+                    node.appendChild(scripts[i]);
+                }
+            }
+        }
+        return;
+    },
+    classSep: '(^|$| )',
+    hasClass: function(o, className) {
+        var o = this.getElement(o);
+        var regex = new RegExp(this.classSEP + className + this.classSEP);
+        return regex.test(o.className);
+    },
+    addClass: function(o, className) {
+        var object = this.getElement(object);
+        if(!this.hasClass(o, className)) {
+            o.className += " " + className;
+        }
+    },
+    removeClass: function(o, className) {
+        var object = this.getElement(object);
+        var regex = new RegExp(this.classSEP + className + this.classSEP);
+        o.className = o.className.replace(regex, " ");
+    },
+    replaceClass: function(o, oldClass, newClass) {
+        var o = this.getElement(o);
+        var regex = new RegExp(this.classSEP + oldClass + this.classSEP);
+        o.className = o.className.replace(regex, newClass);
+    },
+    getElement: function(el) {
+        if (typeof el == 'string') {
+            return document.getElementById(el);
+        }
+        return el;
     }
 }
 // }}}

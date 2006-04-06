@@ -1,6 +1,39 @@
 <?php
-// {{{ class HTML_AJAX_SErialize_Urlencoded
 // $Id$
+
+// {{{ http_build_query
+/**
+ * Replacement for http_build_query()
+ *
+ * @link   http://php.net/function.http-build-query
+ * @author vlad_mustafin@ukr.net
+ * @author Arpad Ray <arpad@php.net>
+ */
+if (!function_exists('http_build_query')) {
+    function http_build_query($formdata, $numeric_prefix = null, $key = null) 
+    {
+        $res = array();
+        foreach ((array)$formdata as $k => $v) {
+            if (is_resource($v)) {
+                return null;
+            }
+            $tmp_key = urlencode(is_int($k) ? $numeric_prefix . $k : $k);
+            if (!is_null($key)) {
+                $tmp_key = $key . '[' . $tmp_key . ']';
+            }
+            $res[] = (is_scalar($v))
+                ? $tmp_key . '=' . urlencode($v)
+                : http_build_query($v, null , $tmp_key);
+        }
+        $separator = ini_get('arg_separator.output');
+        if (strlen($separator) == 0) {
+            $separator = '&';
+        }
+        return implode($separator, $res);
+    }
+}
+// }}}
+// {{{ class HTML_AJAX_Serialize_Urlencoded
 /**
  * URL Encoding Serializer
  *
@@ -13,16 +46,12 @@
  * @version    Release: @package_version@
  * @link       http://pear.php.net/package/HTML_AJAX
  */
-class HTML_AJAX_Serialize_Urlencoded
+class HTML_AJAX_Serializer_Urlencoded
 {
     // {{{ serialize
     function serialize($input) 
     {
-        if (!function_exists('http_build_query')) {
-            return $this->local_build_query(array('_HTML_AJAX' => $input));
-        }
         return http_build_query(array('_HTML_AJAX' => $input));
-        //return http_build_query($input);
     }
     // }}}
     // {{{ unserialize
@@ -30,42 +59,6 @@ class HTML_AJAX_Serialize_Urlencoded
     {
         parse_str($input, $ret);
         return (isset($ret['_HTML_AJAX']) ? $ret['_HTML_AJAX'] : $ret);
-    }
-    // }}}
-    // {{{ local_build_query
-    /**
-     * This function will be called when the function
-     * http_build_query doesn't exist.
-     *
-     * @access public
-     * @credit vlad_mustafin@ukr.net
-     * @param  array $datum    The data to aggregate
-     * @param  string $numeric_prefix
-     * @param  string $key
-     * @return array Imploaded values, a built url query.
-     */
-    function local_build_query($formdata, 
-                               $numeric_prefix = null, 
-                               $key = null ) 
-    {
-        $res = array();
-
-        foreach ((array)$formdata as $k=>$v) {
-            $tmp_key = urlencode(is_int($k) ? $numeric_prefix.$k : $k);
-            if ($key) {
-               $tmp_key = $key.'['.$tmp_key.']';
-            }
-            
-            if (is_array($v) || is_object($v)) {
-                $res[] = $this->local_build_query($v, null ,$tmp_key);
-            } else {
-                $res[] = $tmp_key."=".urlencode($v);
-            } 
-        }
-        $separator = ini_get('arg_separator.output') ? 
-                            ini_get('arg_separator.output') : 
-                            '&';
-        return implode($separator, $res);
     }
     // }}}
 }

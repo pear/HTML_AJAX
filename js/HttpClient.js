@@ -78,6 +78,14 @@ HTML_AJAX_HttpClient.prototype = {
                 HTML_AJAX.Open(this.request);
             }
 
+            if (this.request.multipart) {
+                if (document.all) {
+                    this.iframe = true;
+                } else {
+                    this.xmlhttp.multipart = true;
+                }
+            }
+    
             // set onreadystatechange here since it will be reset after a completed call in Mozilla
             var self = this;
             this.xmlhttp.open(this.request.requestType,this.request.completeUrl(),this.request.isAsync);
@@ -98,7 +106,10 @@ HTML_AJAX_HttpClient.prototype = {
                     this.xmlhttp.setRequestHeader('Content-Type',this.request.getContentType() + '; charset=utf-8');
                 }
             }
-            this.xmlhttp.onreadystatechange = function() { self._readyStateChangeCallback(); }
+
+            if (this.request.isAsync) {
+                this.xmlhttp.onreadystatechange = function() { self._readyStateChangeCallback(); }
+            }
             var payload = this.request.getSerializedPayload();
             if (payload) {
                 this.xmlhttp.setRequestHeader('Content-Length', payload.length);
@@ -180,8 +191,10 @@ HTML_AJAX_HttpClient.prototype = {
                             HTML_AJAX.Load(this.request);
                         }
 
+                        var response = this._decodeResponse();
+
                         if (this.request.callback) {
-                            this.request.callback(this._decodeResponse());
+                            this.request.callback(response);
                         }
                     }
 

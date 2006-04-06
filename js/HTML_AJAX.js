@@ -125,7 +125,7 @@ if (!Array.pop && !Array.prototype.pop) {
  */
 var HTML_AJAX = {
 	defaultServerUrl: false,
-	defaultEncoding: 'Null',
+	defaultEncoding: 'JSON',
     queues: false,
     clientPools: {},
     // get an HttpClient, supply a name to use the pool of that name or the default if it isn't found
@@ -168,7 +168,7 @@ var HTML_AJAX = {
         }
         return new HTML_AJAX_Serialize_Null();
     },
-	fullcall: function(url,encoding,className,method,callback,args, customHeaders, grab) {
+	fullcall: function(url,encoding,className,method,callback,args, options) {
         var serializer = HTML_AJAX.serializerForEncoding(encoding);
 
         var request = new HTML_AJAX_Request(serializer);
@@ -180,18 +180,23 @@ var HTML_AJAX = {
         request.methodName = method;
         request.callback = callback;
         request.args = args;
-        if (customHeaders) {
-            request.customHeaders = customHeaders;
-        }
-        if (grab) {
-            request.grab = true;
-            if (!args || !args.length) {
-                request.requestType = 'GET';
+        if (options) {
+            for(var i in options) {
+                request[i] = options[i];
+            }
+            if (options.grab) {
+                if (!request.args || !request.args.length) {
+                    request.requestType = 'GET';
+                }
             }
         }
 
         return HTML_AJAX.makeRequest(request);
 	},
+    phpCallback: function(callee, callback) {
+        HTML_AJAX.fullcall(HTML_AJAX.defaultServerUrl, HTML_AJAX.defaultEncoding,
+            false, false, callback, arguments.slice(2), {phpCallback: callee});
+    },
 	call: function(className,method,callback) {
         var args = new Array();
         for(var i = 3; i < arguments.length; i++) {
@@ -199,12 +204,18 @@ var HTML_AJAX = {
         }
 		return HTML_AJAX.fullcall(HTML_AJAX.defaultServerUrl,HTML_AJAX.defaultEncoding,className,method,callback,args);
 	},
-	grab: function(url,callback) {
-		return HTML_AJAX.fullcall(url,'Null',false,null,callback, '', false, true);
+	grab: function(url,callback,options) {
+        if (!options) {
+            options = {grab:true};
+        }
+        else {
+            options['grab'] = true;
+        }
+		return HTML_AJAX.fullcall(url,'Null',false,null,callback, '', options);
 	},
 	replace: function(id) {
         var callback = function(result) {
-            document.getElementById(id).innerHTML = result;
+            HTML_AJAX_Util.setInnerHTML(document.getElementById(id),result);
         }
 		if (arguments.length == 2) {
 			// grab replacement
@@ -216,12 +227,12 @@ var HTML_AJAX = {
 			for(var i = 3; i < arguments.length; i++) {
 				args.push(arguments[i]);
 			}
-			HTML_AJAX.fullcall(HTML_AJAX.defaultServerUrl,HTML_AJAX.defaultEncoding,arguments[1],arguments[2],callback,args, false, true);
+			HTML_AJAX.fullcall(HTML_AJAX.defaultServerUrl,HTML_AJAX.defaultEncoding,arguments[1],arguments[2],callback,args, {grab:true});
 		}
 	},
     append: function(id) {
         var callback = function(result) {
-            document.getElementById(id).innerHTML += result;
+            HTML_AJAX_Util.setInnerHTML(document.getElementById(id),result,'append');
         }
         if (arguments.length == 2) {
             // grab replacement
@@ -233,7 +244,7 @@ var HTML_AJAX = {
             for(var i = 3; i < arguments.length; i++) {
                 args.push(arguments[i]);
             }
-            HTML_AJAX.fullcall(HTML_AJAX.defaultServerUrl,HTML_AJAX.defaultEncoding,arguments[1],arguments[2],callback,args, false, true);
+            HTML_AJAX.fullcall(HTML_AJAX.defaultServerUrl,HTML_AJAX.defaultEncoding,arguments[1],arguments[2],callback,args, {grab:true});
         }
     }, 
     // override to add top level loading notification (start)
@@ -253,7 +264,7 @@ var HTML_AJAX = {
     },
     */
     // Class postfix to content-type map
-        contentTypeMap: {
+    contentTypeMap: {
         'JSON':         'application/json',
         'Null':         'text/plain',
         'Error':        'application/error',
@@ -270,78 +281,138 @@ var HTML_AJAX = {
             }
         }
     },
+    
+    // turns a form into a urlencoded string
+    formEncode: function(form, array_format) {
+        if (HTML_AJAX_Util.getType(form) == 'string') {
+            form = document.getElementById(form);
+        }
+        var el, inpType, value, name, escName;
+        var out = (array_format) ? {} : '';
+		var inputTags = form.getElementsByTagName('INPUT');
+		var selectTags = form.getElementsByTagName('SELECT');
+		var buttonTags = form.getElementsByTagName('BUTTON');
+		var textareaTags = form.getElementsByTagName('TEXTAREA');
+        var arrayRegex = /.+\[\]/;
+
+        var validElement = function (element) {
+            if (!element || !element.getAttribute) {
+                return false;
+            }
+            el = element;
+            name = el.getAttribute('name');
+            if (!name) {
+                // no element name so skip
+                return false;
+            }
+            escName = escape(name);
+            value = escape(el.value);
+            inpType = el.getAttribute('type');
+            return true;
+        }
+        
+        inputLoop:
+        for (var i=0; i < inputTags.length; i++) {
+            if (!validElement(inputTags[i])) {
+                continue;
+            }
+            if (inpType == 'checkbox' || inpType == 'radio') {
+                if (!el.checked) {
+                    // unchecked radios/checkboxes don't get submitted
+                    continue inputLoop;
+                }
+                if (array_format && arrayRegex.test(name)) {
+                    if (!out[escName]) {
+                        out[escName] = new Array();
+                    }
+                    out[escName].push(value);
+                    continue inputLoop;
+                }
+            }
+            // add element to output array
+			if (array_format) {
+				out[escName] = value;
+			} else {
+				out += escName + '=' + value + '&';
+			}
+        } // end inputLoop
+
+        selectLoop:
+        for (var i=0; i<selectTags.length; i++) {
+            if (!validElement(selectTags[i])) {
+                continue selectLoop;
+            }
+            var options = el.options;
+            for (var z=0; z<options.length; z++){
+                var option=options[z];
+                if(option.selected){
+                    if (array_format) {
+                        if (el.type == 'select-one') {
+                            out[escName] = escape(option.value);
+                            //only one item can be selected
+                            continue selectLoop;
+                        } else {
+                            if (!out[escName]) {
+                                out[name] = new Array();
+                            }
+                            out[escName].push(escape(option.value));
+                        }
+                    } else {
+                        out += escName + '=' + escape(option.value) + '&';
+                    }
+                }
+            }
+        } // end selectLoop
+
+        buttonLoop:
+        for (var i=0; i<buttonTags.length; i++) {
+            if (!validElement(buttonTags[i])) {
+                continue;
+            }
+            // add element to output array
+			if (array_format) {
+				out[escName] = value;
+			} else {
+				out += escName + '=' + value + '&';
+			}
+        } // end buttonLoop
+
+        textareaLoop:
+        for (var i=0; i<textareaTags.length; i++) {
+            if (!validElement(textareaTags[i])) {
+                continue;
+            }
+            // add element to output array
+			if (array_format) {
+				out[escName] = value;
+			} else {
+				out += escName + '=' + value + '&';
+			}
+        } // end textareaLoop
+        
+        return out;
+    },
     // submits a form through ajax. both arguments can be either DOM nodes or IDs, if the target is omitted then the form is set to be the target
-    formSubmit: function (form, target, customRequest)
+    formSubmit: function (form, target, options)
     {
-        if (typeof form == 'string') {
+        if (HTML_AJAX_Util.getType(form) == 'string') {
             form = document.getElementById(form);
             if (!form) {
                 // let the submit be processed normally
                 return false;
             }
         }
-        if (typeof target == 'string') {
-            target = document.getElementById('target');
+
+        var out = HTML_AJAX.formEncode(form);
+        if (HTML_AJAX_Util.getType(target) == 'string') {
+            target = document.getElementById(target);
         }
         if (!target) {
             target = form;
         }
-        var action = form.action;
-        var el, type, value, name, nameParts, useValue = true;
-        var out = '', tags = form.elements;
-        childLoop:
-        for (i in tags) {
-            el = tags[i];
-            if (!el || !el.getAttribute) {
-                continue;
-            }
-            name = el.getAttribute('name');
-            if (!name) {
-                // no element name so skip
-                continue;
-            }
-            // find the element value
-            type = el.nodeName.toLowerCase();
-            switch (type) {
-            case 'input':
-                var inpType = el.getAttribute('type');
-                switch (inpType) {
-                case 'submit':
-                    type = 'button';
-                    break;
-                case 'checkbox':
-                case 'radio':
-                    if (el.checked) {
-                        value = 'checked';
-                        useValue = false;
-                        break;
-                    }
-                    // unchecked radios/checkboxes don't get submitted
-                    continue childLoop;
-                case 'text':
-                default:
-                    type = 'text';
-                    // continue for value
-                    break;
-                }
-                break;
-            case 'button':
-            case 'textarea':
-            case 'select':
-                break;
-            default:
-                // unknown element
-                continue childLoop;
-            }
-            if (useValue) {
-                value = el.value;
-            }
-            // add element to output array
-            out += escape(name) + '=' + escape(value) + '&';
-            useValue = true;
-        } // end childLoop
+        var action = form.getAttribute('action');
         var callback = function(result) {
-            target.innerHTML = result;
+            HTML_AJAX_Util.setInnerHTML(target,result);
         }
 
         var serializer = HTML_AJAX.serializerForEncoding('Null');
@@ -349,7 +420,7 @@ var HTML_AJAX = {
         request.isAsync = true;
         request.callback = callback;
 
-        switch (form.method.toLowerCase()) {
+        switch (form.getAttribute('method').toLowerCase()) {
         case 'post':
             var headers = {};
             headers['Content-Type'] = 'application/x-www-form-urlencoded';
@@ -366,14 +437,43 @@ var HTML_AJAX = {
             request.requestType = 'GET';
         }
 
-        if(customRequest) {
-            for(var i in customRequest) {
-                request[i] = customRequest[i];
+        if(options) {
+            for(var i in options) {
+                request[i] = options[i];
             }
         }
         HTML_AJAX.makeRequest(request);
         return true;
-    } // end formSubmit()
+    }, // end formSubmit()
+    makeFormAJAX: function(form,target,options) {
+        if (HTML_AJAX_Util.getType(form) == 'string') {
+            var form = document.getElementById(form);
+        }
+        var preSubmit = false;
+        if(form.onsubmit) {
+            preSubmit = form.onsubmit;
+            form.onsubmit = function() {};
+        }
+        form.HAOptions = options;
+        var handler = function(e) {
+            var form = HTML_AJAX_Util.eventTarget(e);
+
+            var valid = true;
+            if (preSubmit) {
+                valid = preSubmit();
+            }
+		    if (valid) {
+			    HTML_AJAX.formSubmit(form,target,form.HAOptions);
+			}
+            // cancel submission in IE
+            e.returnValue = false;
+            // cancel submission in FF
+            if (e.preventDefault) {
+                e.preventDefault();
+            }
+        }
+		HTML_AJAX_Util.registerEvent(form,'submit',handler);
+    }
 }
 
 
@@ -383,7 +483,7 @@ var HTML_AJAX = {
 
 function HTML_AJAX_Serialize_Null() {}
 HTML_AJAX_Serialize_Null.prototype = {
-	contentType: 'text/plain; charset=UTF-8;',
+	contentType: 'text/plain; charset=utf-8',
 	serialize: function(input) {
 		return new String(input).valueOf();
 	},
@@ -396,7 +496,7 @@ HTML_AJAX_Serialize_Null.prototype = {
 // serialization class for JSON, wrapper for JSON.stringify in json.js
 function HTML_AJAX_Serialize_JSON() {}
 HTML_AJAX_Serialize_JSON.prototype = {
-	contentType: 'application/json; charset=UTF-8',
+	contentType: 'application/json; charset=utf-8',
 	serialize: function(input) {
 		return HTML_AJAX_JSON.stringify(input);
 	},
@@ -412,7 +512,7 @@ HTML_AJAX_Serialize_JSON.prototype = {
 
 function HTML_AJAX_Serialize_Error() {}
 HTML_AJAX_Serialize_Error.prototype = {
-	contentType: 'application/error; charset=UTF-8',
+	contentType: 'application/error; charset=utf-8',
 	serialize: function(input) {
         var ser = new HTML_AJAX_Serialize_JSON();
         return ser.serialize(input);
@@ -495,7 +595,7 @@ HTML_AJAX.queues['default'] = new HTML_AJAX_Queue_Immediate();
  *
  * @category   HTML
  * @package    AJAX
- * @author     Arpad Ray <arpad@rajeczy.com>
+ * @author     Arpad Ray <arpad@php.net>
  * @copyright  2005 Arpad Ray
  * @license    http://www.opensource.org/licenses/lgpl-license.php  LGPL
  */
@@ -1464,6 +1564,14 @@ HTML_AJAX_HttpClient.prototype = {
                 HTML_AJAX.Open(this.request);
             }
 
+            if (this.request.multipart) {
+                if (document.all) {
+                    this.iframe = true;
+                } else {
+                    this.xmlhttp.multipart = true;
+                }
+            }
+    
             // set onreadystatechange here since it will be reset after a completed call in Mozilla
             var self = this;
             this.xmlhttp.open(this.request.requestType,this.request.completeUrl(),this.request.isAsync);
@@ -1484,7 +1592,10 @@ HTML_AJAX_HttpClient.prototype = {
                     this.xmlhttp.setRequestHeader('Content-Type',this.request.getContentType() + '; charset=utf-8');
                 }
             }
-            this.xmlhttp.onreadystatechange = function() { self._readyStateChangeCallback(); }
+
+            if (this.request.isAsync) {
+                this.xmlhttp.onreadystatechange = function() { self._readyStateChangeCallback(); }
+            }
             var payload = this.request.getSerializedPayload();
             if (payload) {
                 this.xmlhttp.setRequestHeader('Content-Length', payload.length);
@@ -1566,8 +1677,10 @@ HTML_AJAX_HttpClient.prototype = {
                             HTML_AJAX.Load(this.request);
                         }
 
+                        var response = this._decodeResponse();
+
                         if (this.request.callback) {
-                            this.request.callback(this._decodeResponse());
+                            this.request.callback(response);
                         }
                     }
 
@@ -1629,7 +1742,7 @@ HTML_AJAX_HttpClient.prototype = {
  *    The payload, unserialized
  *    The timeout for async calls
  *    The callback method
- *    Optional event handlers: onError, onLoad, onSend
+ *    Optional event handlers: onError, Load, Send
  *    A serializer instance
  *
  * @category   HTML
@@ -1687,6 +1800,12 @@ HTML_AJAX_Request.prototype = {
     // is this a grab request? if so we need to proxy for iframes
     grab: false,
     
+    // true if this request should expect a multipart response
+    multipart: false,
+
+    // remote callback
+    phpCallback: false,
+    
     /**
      * Add an argument for the remote method
      * @param string argument name
@@ -1724,15 +1843,20 @@ HTML_AJAX_Request.prototype = {
      * Get the complete url, adding in any needed get params for rpc
      */
     completeUrl: function() {
-        var url = new String(this.requestUrl);
-        var delimiter = '?';
-        if (url.indexOf('?') >= 0) {
-            delimiter = '&';
-        }
         if (this.className || this.methodName) {
-            url += delimiter+'c='+escape(this.className)+'&m='+escape(this.methodName);
+            this.addGet('c', this.className);
+            this.addGet('m', this.methodName);
         }
-        return url;
+        if (this.phpCallback) {
+            if (HTML_AJAX_Util.getType(this.phpCallback) == 'array') {
+                this.phpCallback = this.phpCallback.join('.');
+            }
+            this.addGet('cb', this.phpCallback);
+        }
+        if (this.multipart) {
+            this.addGet('multipart', '1');
+        }
+        return this.requestUrl;
     },
     
     /**
@@ -1743,6 +1867,15 @@ HTML_AJAX_Request.prototype = {
             return 0;
         }
         return (this.priority > other.priority ? 1 : -1);
+    },
+
+    /**
+     * Add a GET argument
+     */
+    addGet: function(name, value) {
+        var url = new String(this.requestUrl);
+        url += (url.indexOf('?') < 0 ? '?' : '&') + escape(name) + '=' + escape(value);
+        this.requestUrl = url;
     }
 }
 /* vim: set expandtab tabstop=4 shiftwidth=4 softtabstop=4: */
@@ -2098,7 +2231,7 @@ outer:          while (next()) {
  *
  * See Main.js for Author/license details
  */
-function HTML_AJAX_Serialize_HA() {}
+function HTML_AJAX_Serialize_HA() { }
 HTML_AJAX_Serialize_HA.prototype =
 {
     /**
@@ -2221,14 +2354,44 @@ HTML_AJAX_Serialize_HA.prototype =
             {
                 node.value = attributes[i];
             }
-            //I'd use hasAttribute but IE is stupid stupid stupid
+            //IE doesn't support setAttribute on style so we need to break it out and set each property individually
+            else if(i == 'style')
+            {
+		var styles = [];
+		if (attributes[i].indexOf(';')) {
+			styles = attributes[i].split(';');
+		}
+		else {
+			styles.push(attributes[i]);
+		}
+		for(var i = 0; i < styles.length; i++) {
+			var r = styles[i].match(/^\s*(.+)\s*:\s*(.+)\s*$/);
+			if(r) {
+				node.style[this._camelize(r[1])] = r[2];
+			}
+		}
+            }
+            //no special rules know for this node so lets try our best
             else
             {
-                //node.setAttribute(i, attributes[i]);
-		node[i] = attributes[i];
+		try {
+			node[i] = attributes[i];
+		} catch(e) {
+		}
+		node.setAttribute(i, attributes[i]);
             }
         }
 	},
+    // should we move this to HTML_AJAX_Util???, just does the - case which we need for style
+    _camelize: function(instr)
+    {
+        var p = instr.split('-');
+        var out = p[0];
+        for(var i = 1; i < p.length; i++) {
+            out += p[i].charAt(0).toUpperCase()+p[i].substring(1);
+        }
+        return out;
+    },
 	_clearAttr: function(id, attributes)
 	{
 		var node = document.getElementById(id);
@@ -2341,7 +2504,7 @@ HTML_AJAX_Serialize_HA.prototype =
         alert(data);
     }
 }
-
+/* vim: set expandtab tabstop=4 shiftwidth=4 softtabstop=4: */
 // Loading.js
 /**
  * Default loading implementation
@@ -2368,23 +2531,31 @@ HTML_AJAX.Open = function(request) {
         loading.style.width           = '80px';
         loading.style.padding         = '4px';
         loading.style.fontFamily      = 'Arial, Helvetica, sans';
+        loading.count = 0;
     
         document.body.insertBefore(loading,document.body.firstChild);
     }
+    else {
+        if (loading.count == undefined) {
+            loading.count = 0;
+        }
+    }
+    loading.count++;
     if (request.isAsync) {
-        HTML_AJAX.onOpen_Timeout = window.setTimeout(function() { loading.style.display = 'block'; },500);
+        request.loadingId = window.setTimeout(function() { loading.style.display = 'block'; },500);
     }
     else {
         loading.style.display = 'block';
     }
 }
 HTML_AJAX.Load = function(request) {
-    if (HTML_AJAX.onOpen_Timeout) {
-        window.clearTimeout(HTML_AJAX.onOpen_Timeout);
-        HTML_AJAX.onOpen_Timeout = false;
+    if (request.loadingId) {
+        window.clearTimeout(request.loadingId);
     }
     var loading = document.getElementById('HTML_AJAX_LOADING');
-    if (loading) {
+    loading.count--;
+
+    if (loading.count == 0) {
         loading.style.display = 'none';
     }
 }
@@ -2407,8 +2578,10 @@ var HTML_AJAX_Util = {
     // Set the element event
     registerEvent: function(element, event, handler) 
     {
-        //var element = document.getElementById(id);
-        if (typeof element.addEventListener != "undefined") {   //Dom2
+		if (typeof element == 'string')	{
+			element = document.getElementById(element);
+		}
+		if (typeof element.addEventListener != "undefined") {   //Dom2
             element.addEventListener(event, handler, false);
         } else if (typeof element.attachEvent != "undefined") { //IE 5+
             element.attachEvent("on" + event, handler);
@@ -2517,12 +2690,28 @@ var HTML_AJAX_Util = {
         }
         return out + "\n";
     },
-    quickPrint: function(input) {
-        var ret = "";
-        for(var i in input) {
-            ret += i+':'+input[i]+"\n";
+    // non resursive simple debug printer
+    quickPrint: function(input,sep) {
+        if (!sep) {
+            var sep = "\n";
         }
-        return ret;
+        var type = HTML_AJAX_Util.getType(input);
+        switch (type) {
+            case 'string':
+                return input;
+            case 'array':
+                var ret = "";
+                for(var i = 0; i < input.length; i++) {
+                    ret += i+':'+input[i]+sep;
+                }
+                return ret;
+            default:
+                var ret = "";
+                for(var i in input) {
+                    ret += i+':'+input[i]+sep;
+                }
+                return ret;
+        }
     },
     //compat function for stupid browsers in which getElementsByTag with a * dunna work
     getAllElements: function(parentElement)
@@ -2550,41 +2739,44 @@ var HTML_AJAX_Util = {
             return parentElement.getElementsByTagName('*');
         }
     },
-    getElementsByClassName: function(className, parentElement) {
+    getElementsByProperty: function(property, regex, parentElement) {
         var allElements = HTML_AJAX_Util.getAllElements(parentElement);
         var items = [];
-        var exp = new RegExp('(^| )' + className + '( |$)');
         for(var i=0,j=allElements.length; i<j; i++)
         {
-            if(exp.test(allElements[i].className))
+            if(regex.test(allElements[i][property]))
             {
                 items.push(allElements[i]);
             }
         }
         return items;
     },
-    htmlEscape: function(inp) {
-        var rxp, chars = [
-            ['&', '&amp;'],
-            ['<', '&lt;'],
-            ['>', '&gt;']
-        ];
-        for (i in chars) {
-            inp.replace(new RegExp(chars[i][0]), chars[i][1]);
-        }
-        return inp;
+    getElementsByClassName: function(className, parentElement) {
+        return HTML_AJAX_Util.getElementsByProperty('className',new RegExp('(^| )' + className + '( |$)'),parentElement);
     },
-    // return the base of the given absolute url
-    baseURL: function(absolute) {
+    getElementsById: function(id, parentElement) {
+        return HTML_AJAX_Util.getElementsByProperty('id',new RegExp(id),parentElement);
+    },
+    getElementsByCssSelector: function(selector,parentElement) {
+        return cssQuery(selector,parentElement);
+    },
+    htmlEscape: function(inp) {
+        var div = document.createElement('div');
+        var text = document.createTextNode(inp);
+        div.appendChild(text);
+        return div.innerHTML;
+    },
+    // return the base of the given absolute url, or the filename if the second argument is true
+    baseURL: function(absolute, filename) {
         var qPos = absolute.indexOf('?');
         if (qPos >= 0) {
             absolute = absolute.substr(0, qPos);
         }
-        var slashPos = absolute.lastIndexOf('/');
+        var slashPos = Math.max(absolute.lastIndexOf('/'), absolute.lastIndexOf('\\'));
         if (slashPos < 0) {
             return absolute;
         }
-        return absolute.substr(0, slashPos + 1);
+        return (filename ? absolute.substr(slashPos + 1) : absolute.substr(0, slashPos + 1));
     },
     // return the query string from a url
     queryString: function(url) {
@@ -2649,6 +2841,125 @@ var HTML_AJAX_Util = {
             i++;
         }
         return absHost + relParts.join('/');
+    },
+    // sets the innerHTML of an element. the third param decides how to write, it replaces by default, others are append|prepend
+    setInnerHTML: function(node, innerHTML, type)
+    {
+        if (HTML_AJAX_Util.getType(node) == 'string') {
+            var node = document.getElementById(node);
+        }
+        
+        if (type != 'append') {
+            if (type == 'prepend') {
+                var oldHtml = node.innerHTML;
+            }
+            node.innerHTML = '';
+        }
+        var good_browser = (window.opera || navigator.product == 'Gecko');
+        var regex = /^([\s\S]*?)<script([\s\S]*?)>([\s\S]*?)<\/script>([\s\S]*)$/i;
+        var regex_src = /src=["'](.*?)["']/i;
+        var matches, id, script, output = '', subject = innerHTML;
+        var scripts = [];
+        
+        while (true) {
+            matches = regex.exec(subject);
+            if (matches && matches[0]) {
+                subject = matches[4];
+                id = 'ih_' + Math.round(Math.random()*9999) + '_' + Math.round(Math.random()*9999);
+
+                var startLen = matches[3].length;
+                script = matches[3].replace(/document\.write\(([\s\S]*?)\)/ig, 
+                    'document.getElementById("' + id + '").innerHTML+=$1');
+
+                output += matches[1];
+                if (startLen != script.length) {
+                        output += '<span id="' + id + '"></span>';
+                }
+                
+                output += '<script' + matches[2] + '>' + script + '</script>';
+                if (good_browser) {
+                    continue;
+                }
+                if (script) {
+                    scripts.push(script);
+                }
+                if (regex_src.test(matches[2])) {
+                    var script_el = document.createElement("SCRIPT");
+                    var atts_regex = /(\w+)=["'](.*?)["']([\s\S]*)$/;
+                    var atts = matches[2];
+                    for (var i = 0; i < 5; i++) { 
+                        var atts_matches = atts_regex.exec(atts);
+                        if (atts_matches && atts_matches[0]) {
+                            script_el.setAttribute(atts_matches[1], atts_matches[2]);
+                            atts = atts_matches[3];
+                        } else {
+                            break;
+                        }
+                    }
+                    scripts.push(script_el);
+                }
+            } else {
+                output += subject;
+                break;
+            }
+        }
+        innerHTML = output;
+
+        if (good_browser) {
+            var el = document.createElement('span');
+            el.innerHTML = innerHTML;
+
+            for(var i = 0; i < el.childNodes.length; i++) {
+                node.appendChild(el.childNodes[i].cloneNode(true));
+            }
+        }
+        else {
+            node.innerHTML = innerHTML;
+        }
+
+        if (oldHtml) {
+            node.innerHTML += oldHtml;
+        }
+
+        if (!good_browser) {
+            for(var i = 0; i < scripts.length; i++) {
+                if (HTML_AJAX_Util.getType(scripts[i]) == 'string') {
+                    window.eval(scripts[i]);
+                }
+                else {
+                    node.appendChild(scripts[i]);
+                }
+            }
+        }
+        return;
+    },
+    classSep: '(^|$| )',
+    hasClass: function(o, className) {
+        var o = this.getElement(o);
+        var regex = new RegExp(this.classSEP + className + this.classSEP);
+        return regex.test(o.className);
+    },
+    addClass: function(o, className) {
+        var object = this.getElement(object);
+        if(!this.hasClass(o, className)) {
+            o.className += " " + className;
+        }
+    },
+    removeClass: function(o, className) {
+        var object = this.getElement(object);
+        var regex = new RegExp(this.classSEP + className + this.classSEP);
+        o.className = o.className.replace(regex, " ");
+    },
+    replaceClass: function(o, oldClass, newClass) {
+        var o = this.getElement(o);
+        var regex = new RegExp(this.classSEP + oldClass + this.classSEP);
+        o.className = o.className.replace(regex, newClass);
+    },
+    getElement: function(el) {
+        if (typeof el == 'string') {
+            return document.getElementById(el);
+        }
+        return el;
     }
 }
 // }}}

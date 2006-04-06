@@ -34,6 +34,7 @@ Front end files for examples, you can actually run these and see some example ou
 <li><a href='proxy_usage_inline_javascript.php'>proxy_usage_inline_javascript.php</a> - Single file proxy style usage</li>
 <li><a href='proxy_usage_server.php'>proxy_usage_server.php</a> - Multi-file proxy usage, either server file could be used with this example</li>
 <li><a href='queue_usage.php'>queue_usage.php</a> - An example of using a queue to manage ajax calls, a simple live search example</li>
+<li><a href='slow_livesearch.php'>slow_livesearch.php</a> - An example showing how the ordered queue can be used to manage high latency</li>
 <li><a href='helper_usage.php'>helper_usage.php</a> - An example showing the basics of the helper api</li>
 <li><a href='form.php'>form.php</a> - Basic AJAX form submission example</a></li>
 </ul>
@@ -73,6 +74,7 @@ Other Example files:
 <li><a href='tests/test_priority.php'>test_priority.php</a> - A basic test showing how Priority queue works</li>
 <li><a href='tests/serialize.php.examples.php'>serialize.php.examples.php</a>	- Internal tests for the php serialize format serializer</li>
 <li><a href='tests/serialize.url.examples.php'>serialize.url.examples.php</a>	- Internal tests for the urlencoded format serializer</li>
+<li><a href='tests/setInnerHTML.php'>setInnerHTML.php</a>	- Tests used to verify the operation of HTML_AJAX_Util.setInnerHTML</li>
 </ul>
 
 <p>

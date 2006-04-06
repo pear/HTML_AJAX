@@ -23,23 +23,31 @@ HTML_AJAX.Open = function(request) {
         loading.style.width           = '80px';
         loading.style.padding         = '4px';
         loading.style.fontFamily      = 'Arial, Helvetica, sans';
+        loading.count = 0;
     
         document.body.insertBefore(loading,document.body.firstChild);
     }
+    else {
+        if (loading.count == undefined) {
+            loading.count = 0;
+        }
+    }
+    loading.count++;
     if (request.isAsync) {
-        HTML_AJAX.onOpen_Timeout = window.setTimeout(function() { loading.style.display = 'block'; },500);
+        request.loadingId = window.setTimeout(function() { loading.style.display = 'block'; },500);
     }
     else {
         loading.style.display = 'block';
     }
 }
 HTML_AJAX.Load = function(request) {
-    if (HTML_AJAX.onOpen_Timeout) {
-        window.clearTimeout(HTML_AJAX.onOpen_Timeout);
-        HTML_AJAX.onOpen_Timeout = false;
+    if (request.loadingId) {
+        window.clearTimeout(request.loadingId);
     }
     var loading = document.getElementById('HTML_AJAX_LOADING');
-    if (loading) {
+    loading.count--;
+
+    if (loading.count == 0) {
         loading.style.display = 'none';
     }
 }

@@ -7,7 +7,7 @@
  *
  * See Main.js for Author/license details
  */
-function HTML_AJAX_Serialize_HA() {}
+function HTML_AJAX_Serialize_HA() { }
 HTML_AJAX_Serialize_HA.prototype =
 {
     /**
@@ -130,14 +130,44 @@ HTML_AJAX_Serialize_HA.prototype =
             {
                 node.value = attributes[i];
             }
-            //I'd use hasAttribute but IE is stupid stupid stupid
+            //IE doesn't support setAttribute on style so we need to break it out and set each property individually
+            else if(i == 'style')
+            {
+		var styles = [];
+		if (attributes[i].indexOf(';')) {
+			styles = attributes[i].split(';');
+		}
+		else {
+			styles.push(attributes[i]);
+		}
+		for(var i = 0; i < styles.length; i++) {
+			var r = styles[i].match(/^\s*(.+)\s*:\s*(.+)\s*$/);
+			if(r) {
+				node.style[this._camelize(r[1])] = r[2];
+			}
+		}
+            }
+            //no special rules know for this node so lets try our best
             else
             {
-                //node.setAttribute(i, attributes[i]);
-		node[i] = attributes[i];
+		try {
+			node[i] = attributes[i];
+		} catch(e) {
+		}
+		node.setAttribute(i, attributes[i]);
             }
         }
 	},
+    // should we move this to HTML_AJAX_Util???, just does the - case which we need for style
+    _camelize: function(instr)
+    {
+        var p = instr.split('-');
+        var out = p[0];
+        for(var i = 1; i < p.length; i++) {
+            out += p[i].charAt(0).toUpperCase()+p[i].substring(1);
+        }
+        return out;
+    },
 	_clearAttr: function(id, attributes)
 	{
 		var node = document.getElementById(id);
@@ -250,4 +280,4 @@ HTML_AJAX_Serialize_HA.prototype =
         alert(data);
     }
 }
-
+/* vim: set expandtab tabstop=4 shiftwidth=4 softtabstop=4: */

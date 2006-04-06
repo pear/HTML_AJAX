@@ -20,6 +20,20 @@ class livesearch {
 		'Pear',
 		'Banana',
 		'Blueberry',
+		'Fig',
+		'Apricot',
+		'Cherry',
+		'Peach',
+		'Plum',
+		'Nectarine',
+		'Boysenberry',
+		'Cranberry',
+		'Blackberry',
+		'Clementine',
+		'Grapefruit',
+		'Lemon',
+		'Lime',
+		'Tangerine'
 		);
 	
 	/**
@@ -27,8 +41,14 @@ class livesearch {
 	 *
 	 * @return array
 	 */
-	function search($input) {
+	function search($input="") {
 		$ret = array();
+		if(empty($input)) {
+			return $ret;
+		}
+		if (isset($_SESSION['sleep'])) {
+			$ret['Latency Added'] = $_SESSION['sleep'];
+		}
 		foreach($this->livesearch as $key => $value) {
 			if (stristr($value,$input)) {
 				$ret[$key] = $value;

@@ -88,7 +88,7 @@ return this.splice(this.length - 1, 1)[0];
 }
 var HTML_AJAX = {
 defaultServerUrl: false,
-defaultEncoding: 'Null',
+defaultEncoding: 'JSON',
 queues: false,
 clientPools: {},
 httpClient: function(name) {
@@ -125,7 +125,7 @@ return eval("new HTML_AJAX_Serialize_"+i+";");
 }
 return new HTML_AJAX_Serialize_Null();
 },
-fullcall: function(url,encoding,className,method,callback,args, customHeaders, grab) {
+fullcall: function(url,encoding,className,method,callback,args, options) {
 var serializer = HTML_AJAX.serializerForEncoding(encoding);
 var request = new HTML_AJAX_Request(serializer);
 if (callback) {
@@ -136,16 +136,21 @@ request.className = className;
 request.methodName = method;
 request.callback = callback;
 request.args = args;
-if (customHeaders) {
-request.customHeaders = customHeaders;
+if (options) {
+for(var i in options) {
+request[i] = options[i];
 }
-if (grab) {
-request.grab = true;
-if (!args || !args.length) {
+if (options.grab) {
+if (!request.args || !request.args.length) {
 request.requestType = 'GET';
 }
 }
+}
 return HTML_AJAX.makeRequest(request);
+},
+phpCallback: function(callee, callback) {
+HTML_AJAX.fullcall(HTML_AJAX.defaultServerUrl, HTML_AJAX.defaultEncoding,
+false, false, callback, arguments.slice(2), {phpCallback: callee});
 },
 call: function(className,method,callback) {
 var args = new Array();
@@ -154,12 +159,18 @@ args.push(arguments[i]);
 }
 return HTML_AJAX.fullcall(HTML_AJAX.defaultServerUrl,HTML_AJAX.defaultEncoding,className,method,callback,args);
 },
-grab: function(url,callback) {
-return HTML_AJAX.fullcall(url,'Null',false,null,callback, '', false, true);
+grab: function(url,callback,options) {
+if (!options) {
+options = {grab:true};
+}
+else {
+options['grab'] = true;
+}
+return HTML_AJAX.fullcall(url,'Null',false,null,callback, '', options);
 },
 replace: function(id) {
 var callback = function(result) {
-document.getElementById(id).innerHTML = result;
+HTML_AJAX_Util.setInnerHTML(document.getElementById(id),result);
 }
 if (arguments.length == 2) {
 HTML_AJAX.grab(arguments[1],callback);
@@ -169,12 +180,12 @@ var args = new Array();
 for(var i = 3; i < arguments.length; i++) {
 args.push(arguments[i]);
 }
-HTML_AJAX.fullcall(HTML_AJAX.defaultServerUrl,HTML_AJAX.defaultEncoding,arguments[1],arguments[2],callback,args, false, true);
+HTML_AJAX.fullcall(HTML_AJAX.defaultServerUrl,HTML_AJAX.defaultEncoding,arguments[1],arguments[2],callback,args, {grab:true});
 }
 },
 append: function(id) {
 var callback = function(result) {
-document.getElementById(id).innerHTML += result;
+HTML_AJAX_Util.setInnerHTML(document.getElementById(id),result,'append');
 }
 if (arguments.length == 2) {
 HTML_AJAX.grab(arguments[1],callback);
@@ -184,7 +195,7 @@ var args = new Array();
 for(var i = 3; i < arguments.length; i++) {
 args.push(arguments[i]);
 }
-HTML_AJAX.fullcall(HTML_AJAX.defaultServerUrl,HTML_AJAX.defaultEncoding,arguments[1],arguments[2],callback,args, false, true);
+HTML_AJAX.fullcall(HTML_AJAX.defaultServerUrl,HTML_AJAX.defaultEncoding,arguments[1],arguments[2],callback,args, {grab:true});
 }
 },
 Open: function(request) {
@@ -206,76 +217,127 @@ HTML_AJAX.queues[i].requestComplete(request,error);
 }
 }
 },
-formSubmit: function (form, target, customRequest)
+formEncode: function(form, array_format) {
+if (HTML_AJAX_Util.getType(form) == 'string') {
+form = document.getElementById(form);
+}
+var el, inpType, value, name, escName;
+var out = (array_format) ? {} : '';
+var inputTags = form.getElementsByTagName('INPUT');
+var selectTags = form.getElementsByTagName('SELECT');
+var buttonTags = form.getElementsByTagName('BUTTON');
+var textareaTags = form.getElementsByTagName('TEXTAREA');
+var arrayRegex = /.+\[\]/;
+var validElement = function (element) {
+if (!element || !element.getAttribute) {
+return false;
+}
+el = element;
+name = el.getAttribute('name');
+if (!name) {
+return false;
+}
+escName = escape(name);
+value = escape(el.value);
+inpType = el.getAttribute('type');
+return true;
+}
+inputLoop:
+for (var i=0; i < inputTags.length; i++) {
+if (!validElement(inputTags[i])) {
+continue;
+}
+if (inpType == 'checkbox' || inpType == 'radio') {
+if (!el.checked) {
+continue inputLoop;
+}
+if (array_format && arrayRegex.test(name)) {
+if (!out[escName]) {
+out[escName] = new Array();
+}
+out[escName].push(value);
+continue inputLoop;
+}
+}
+if (array_format) {
+out[escName] = value;
+} else {
+out += escName + '=' + value + '&';
+}
+} // end inputLoop
+selectLoop:
+for (var i=0; i<selectTags.length; i++) {
+if (!validElement(selectTags[i])) {
+continue selectLoop;
+}
+var options = el.options;
+for (var z=0; z<options.length; z++){
+var option=options[z];
+if(option.selected){
+if (array_format) {
+if (el.type == 'select-one') {
+out[escName] = escape(option.value);
+continue selectLoop;
+} else {
+if (!out[escName]) {
+out[name] = new Array();
+}
+out[escName].push(escape(option.value));
+}
+} else {
+out += escName + '=' + escape(option.value) + '&';
+}
+}
+}
+} // end selectLoop
+buttonLoop:
+for (var i=0; i<buttonTags.length; i++) {
+if (!validElement(buttonTags[i])) {
+continue;
+}
+if (array_format) {
+out[escName] = value;
+} else {
+out += escName + '=' + value + '&';
+}
+} // end buttonLoop
+textareaLoop:
+for (var i=0; i<textareaTags.length; i++) {
+if (!validElement(textareaTags[i])) {
+continue;
+}
+if (array_format) {
+out[escName] = value;
+} else {
+out += escName + '=' + value + '&';
+}
+} // end textareaLoop
+return out;
+},
+formSubmit: function (form, target, options)
 {
-if (typeof form == 'string') {
+if (HTML_AJAX_Util.getType(form) == 'string') {
 form = document.getElementById(form);
 if (!form) {
 return false;
 }
 }
-if (typeof target == 'string') {
-target = document.getElementById('target');
+var out = HTML_AJAX.formEncode(form);
+if (HTML_AJAX_Util.getType(target) == 'string') {
+target = document.getElementById(target);
 }
 if (!target) {
 target = form;
 }
-var action = form.action;
-var el, type, value, name, nameParts, useValue = true;
-var out = '', tags = form.elements;
-childLoop:
-for (i in tags) {
-el = tags[i];
-if (!el || !el.getAttribute) {
-continue;
-}
-name = el.getAttribute('name');
-if (!name) {
-continue;
-}
-type = el.nodeName.toLowerCase();
-switch (type) {
-case 'input':
-var inpType = el.getAttribute('type');
-switch (inpType) {
-case 'submit':
-type = 'button';
-break;
-case 'checkbox':
-case 'radio':
-if (el.checked) {
-value = 'checked';
-useValue = false;
-break;
-}
-continue childLoop;
-case 'text':
-default:
-type = 'text';
-break;
-}
-break;
-case 'button':
-case 'textarea':
-case 'select':
-break;
-default:
-continue childLoop;
-}
-if (useValue) {
-value = el.value;
-}
-out += escape(name) + '=' + escape(value) + '&';
-useValue = true;
-} // end childLoop
+var action = form.getAttribute('action');
 var callback = function(result) {
-target.innerHTML = result;
+HTML_AJAX_Util.setInnerHTML(target,result);
 }
 var serializer = HTML_AJAX.serializerForEncoding('Null');
 var request = new HTML_AJAX_Request(serializer);
 request.isAsync = true;
 request.callback = callback;
-switch (form.method.toLowerCase()) {
+switch (form.getAttribute('method').toLowerCase()) {
 case 'post':
 var headers = {};
 headers['Content-Type'] = 'application/x-www-form-urlencoded';
@@ -291,18 +353,44 @@ out = '?' + out.substr(0, out.length - 1);
 request.requestUrl = action+out;
 request.requestType = 'GET';
 }
-if(customRequest) {
-for(var i in customRequest) {
-request[i] = customRequest[i];
+if(options) {
+for(var i in options) {
+request[i] = options[i];
 }
 }
 HTML_AJAX.makeRequest(request);
 return true;
-} // end formSubmit()
+}, // end formSubmit()
+makeFormAJAX: function(form,target,options) {
+if (HTML_AJAX_Util.getType(form) == 'string') {
+var form = document.getElementById(form);
+}
+var preSubmit = false;
+if(form.onsubmit) {
+preSubmit = form.onsubmit;
+form.onsubmit = function() {};
+}
+form.HAOptions = options;
+var handler = function(e) {
+var form = HTML_AJAX_Util.eventTarget(e);
+var valid = true;
+if (preSubmit) {
+valid = preSubmit();
+}
+if (valid) {
+HTML_AJAX.formSubmit(form,target,form.HAOptions);
+}
+e.returnValue = false;
+if (e.preventDefault) {
+e.preventDefault();
+}
+}
+HTML_AJAX_Util.registerEvent(form,'submit',handler);
+}
 }
 function HTML_AJAX_Serialize_Null() {}
 HTML_AJAX_Serialize_Null.prototype = {
-contentType: 'text/plain; charset=UTF-8;',
+contentType: 'text/plain; charset=utf-8',
 serialize: function(input) {
 return new String(input).valueOf();
 },
@@ -312,7 +400,7 @@ return new String(input).valueOf();
 }
 function HTML_AJAX_Serialize_JSON() {}
 HTML_AJAX_Serialize_JSON.prototype = {
-contentType: 'application/json; charset=UTF-8',
+contentType: 'application/json; charset=utf-8',
 serialize: function(input) {
 return HTML_AJAX_JSON.stringify(input);
 },
@@ -326,7 +414,7 @@ return HTML_AJAX_JSON.parse(input);
 }
 function HTML_AJAX_Serialize_Error() {}
 HTML_AJAX_Serialize_Error.prototype = {
-contentType: 'application/error; charset=UTF-8',
+contentType: 'application/error; charset=utf-8',
 serialize: function(input) {
 var ser = new HTML_AJAX_Serialize_JSON();
 return ser.serialize(input);
@@ -1134,6 +1222,13 @@ this.request.Open();
 else if (HTML_AJAX.Open) {
 HTML_AJAX.Open(this.request);
 }
+if (this.request.multipart) {
+if (document.all) {
+this.iframe = true;
+} else {
+this.xmlhttp.multipart = true;
+}
+}
 var self = this;
 this.xmlhttp.open(this.request.requestType,this.request.completeUrl(),this.request.isAsync);
 if (this.request.customHeaders) {
@@ -1152,7 +1247,9 @@ else
 this.xmlhttp.setRequestHeader('Content-Type',this.request.getContentType() + '; charset=utf-8');
 }
 }
+if (this.request.isAsync) {
 this.xmlhttp.onreadystatechange = function() { self._readyStateChangeCallback(); }
+}
 var payload = this.request.getSerializedPayload();
 if (payload) {
 this.xmlhttp.setRequestHeader('Content-Length', payload.length);
@@ -1220,8 +1317,9 @@ this.request.Load();
 } else if (HTML_AJAX.Load ) {
 HTML_AJAX.Load(this.request);
 }
+var response = this._decodeResponse();
 if (this.request.callback) {
-this.request.callback(this._decodeResponse());
+this.request.callback(response);
 }
 }
 else {
@@ -1282,6 +1380,8 @@ priority: 0,
 customHeaders: {},
 iframe: false,
 grab: false,
+multipart: false,
+phpCallback: false,
 addArg: function(name, value)
 {
 if ( !this.args ) {
@@ -1300,21 +1400,31 @@ getContentType: function() {
 return this.serializer.contentType;
 },
 completeUrl: function() {
-var url = new String(this.requestUrl);
-var delimiter = '?';
-if (url.indexOf('?') >= 0) {
-delimiter = '&';
-}
 if (this.className || this.methodName) {
-url += delimiter+'c='+escape(this.className)+'&m='+escape(this.methodName);
+this.addGet('c', this.className);
+this.addGet('m', this.methodName);
 }
-return url;
+if (this.phpCallback) {
+if (HTML_AJAX_Util.getType(this.phpCallback) == 'array') {
+this.phpCallback = this.phpCallback.join('.');
+}
+this.addGet('cb', this.phpCallback);
+}
+if (this.multipart) {
+this.addGet('multipart', '1');
+}
+return this.requestUrl;
 },
 compareTo: function(other) {
 if (this.priority == other.priority) {
 return 0;
 }
 return (this.priority > other.priority ? 1 : -1);
+},
+addGet: function(name, value) {
+var url = new String(this.requestUrl);
+url += (url.indexOf('?') < 0 ? '?' : '&') + escape(name) + '=' + escape(value);
+this.requestUrl = url;
 }
 }
 // serializer/JSON.js
@@ -1621,7 +1731,7 @@ return value();
 }
 };
 // serializer/haSerializer.js
-function HTML_AJAX_Serialize_HA() {}
+function HTML_AJAX_Serialize_HA() { }
 HTML_AJAX_Serialize_HA.prototype =
 {
 unserialize: function(payload)
@@ -1729,11 +1839,40 @@ else if(i == 'value')
 {
 node.value = attributes[i];
 }
+else if(i == 'style')
+{
+var styles = [];
+if (attributes[i].indexOf(';')) {
+styles = attributes[i].split(';');
+}
+else {
+styles.push(attributes[i]);
+}
+for(var i = 0; i < styles.length; i++) {
+var r = styles[i].match(/^\s*(.+)\s*:\s*(.+)\s*$/);
+if(r) {
+node.style[this._camelize(r[1])] = r[2];
+}
+}
+}
 else
 {
+try {
 node[i] = attributes[i];
+} catch(e) {
+}
+node.setAttribute(i, attributes[i]);
 }
 }
+},
+_camelize: function(instr)
+{
+var p = instr.split('-');
+var out = p[0];
+for(var i = 1; i < p.length; i++) {
+out += p[i].charAt(0).toUpperCase()+p[i].substring(1);
+}
+return out;
 },
 _clearAttr: function(id, attributes)
 {
@@ -1854,22 +1993,29 @@ loading.style.border          = '1px solid #f99';
 loading.style.width           = '80px';
 loading.style.padding         = '4px';
 loading.style.fontFamily      = 'Arial, Helvetica, sans';
+loading.count = 0;
 document.body.insertBefore(loading,document.body.firstChild);
 }
+else {
+if (loading.count == undefined) {
+loading.count = 0;
+}
+}
+loading.count++;
 if (request.isAsync) {
-HTML_AJAX.onOpen_Timeout = window.setTimeout(function() { loading.style.display = 'block'; },500);
+request.loadingId = window.setTimeout(function() { loading.style.display = 'block'; },500);
 }
 else {
 loading.style.display = 'block';
 }
 }
 HTML_AJAX.Load = function(request) {
-if (HTML_AJAX.onOpen_Timeout) {
-window.clearTimeout(HTML_AJAX.onOpen_Timeout);
-HTML_AJAX.onOpen_Timeout = false;
+if (request.loadingId) {
+window.clearTimeout(request.loadingId);
 }
 var loading = document.getElementById('HTML_AJAX_LOADING');
-if (loading) {
+loading.count--;
+if (loading.count == 0) {
 loading.style.display = 'none';
 }
 }
@@ -1877,6 +2023,9 @@ loading.style.display = 'none';
 var HTML_AJAX_Util = {
 registerEvent: function(element, event, handler)
 {
+if (typeof element == 'string')	{
+element = document.getElementById(element);
+}
 if (typeof element.addEventListener != "undefined") {   //Dom2
 element.addEventListener(event, handler, false);
 } else if (typeof element.attachEvent != "undefined") { //IE 5+
@@ -1982,12 +2131,27 @@ break;
 }
 return out + "\n";
 },
-quickPrint: function(input) {
+quickPrint: function(input,sep) {
+if (!sep) {
+var sep = "\n";
+}
+var type = HTML_AJAX_Util.getType(input);
+switch (type) {
+case 'string':
+return input;
+case 'array':
 var ret = "";
-for(var i in input) {
-ret += i+':'+input[i]+"\n";
+for(var i = 0; i < input.length; i++) {
+ret += i+':'+input[i]+sep;
 }
 return ret;
+default:
+var ret = "";
+for(var i in input) {
+ret += i+':'+input[i]+sep;
+}
+return ret;
+}
 },
 getAllElements: function(parentElement)
 {
@@ -2012,40 +2176,43 @@ if (!parentElement) { parentElement = document.body; }
 return parentElement.getElementsByTagName('*');
 }
 },
-getElementsByClassName: function(className, parentElement) {
+getElementsByProperty: function(property, regex, parentElement) {
 var allElements = HTML_AJAX_Util.getAllElements(parentElement);
 var items = [];
-var exp = new RegExp('(^| )' + className + '( |$)');
 for(var i=0,j=allElements.length; i<j; i++)
 {
-if(exp.test(allElements[i].className))
+if(regex.test(allElements[i][property]))
 {
 items.push(allElements[i]);
 }
 }
 return items;
 },
-htmlEscape: function(inp) {
-var rxp, chars = [
-['&', '&amp;'],
-['<', '&lt;'],
-['>', '&gt;']
-];
-for (i in chars) {
-inp.replace(new RegExp(chars[i][0]), chars[i][1]);
-}
-return inp;
+getElementsByClassName: function(className, parentElement) {
+return HTML_AJAX_Util.getElementsByProperty('className',new RegExp('(^| )' + className + '( |$)'),parentElement);
 },
-baseURL: function(absolute) {
+getElementsById: function(id, parentElement) {
+return HTML_AJAX_Util.getElementsByProperty('id',new RegExp(id),parentElement);
+},
+getElementsByCssSelector: function(selector,parentElement) {
+return cssQuery(selector,parentElement);
+},
+htmlEscape: function(inp) {
+var div = document.createElement('div');
+var text = document.createTextNode(inp);
+div.appendChild(text);
+return div.innerHTML;
+},
+baseURL: function(absolute, filename) {
 var qPos = absolute.indexOf('?');
 if (qPos >= 0) {
 absolute = absolute.substr(0, qPos);
 }
-var slashPos = absolute.lastIndexOf('/');
+var slashPos = Math.max(absolute.lastIndexOf('/'), absolute.lastIndexOf('\\'));
 if (slashPos < 0) {
 return absolute;
 }
-return absolute.substr(0, slashPos + 1);
+return (filename ? absolute.substr(slashPos + 1) : absolute.substr(0, slashPos + 1));
 },
 queryString: function(url) {
 var qPos = url.indexOf('?');
@@ -2104,6 +2271,115 @@ continue;
 i++;
 }
 return absHost + relParts.join('/');
+},
+setInnerHTML: function(node, innerHTML, type)
+{
+if (HTML_AJAX_Util.getType(node) == 'string') {
+var node = document.getElementById(node);
+}
+if (type != 'append') {
+if (type == 'prepend') {
+var oldHtml = node.innerHTML;
+}
+node.innerHTML = '';
+}
+var good_browser = (window.opera || navigator.product == 'Gecko');
+var regex = /^([\s\S]*?)<script([\s\S]*?)>([\s\S]*?)<\/script>([\s\S]*)$/i;
+var regex_src = /src=["'](.*?)["']/i;
+var matches, id, script, output = '', subject = innerHTML;
+var scripts = [];
+while (true) {
+matches = regex.exec(subject);
+if (matches && matches[0]) {
+subject = matches[4];
+id = 'ih_' + Math.round(Math.random()*9999) + '_' + Math.round(Math.random()*9999);
+var startLen = matches[3].length;
+script = matches[3].replace(/document\.write\(([\s\S]*?)\)/ig,
+'document.getElementById("' + id + '").innerHTML+=$1');
+output += matches[1];
+if (startLen != script.length) {
+output += '<span id="' + id + '"></span>';
+}
+output += '<script' + matches[2] + '>' + script + '</script>';
+if (good_browser) {
+continue;
+}
+if (script) {
+scripts.push(script);
+}
+if (regex_src.test(matches[2])) {
+var script_el = document.createElement("SCRIPT");
+var atts_regex = /(\w+)=["'](.*?)["']([\s\S]*)$/;
+var atts = matches[2];
+for (var i = 0; i < 5; i++) {
+var atts_matches = atts_regex.exec(atts);
+if (atts_matches && atts_matches[0]) {
+script_el.setAttribute(atts_matches[1], atts_matches[2]);
+atts = atts_matches[3];
+} else {
+break;
+}
+}
+scripts.push(script_el);
+}
+} else {
+output += subject;
+break;
+}
+}
+innerHTML = output;
+if (good_browser) {
+var el = document.createElement('span');
+el.innerHTML = innerHTML;
+for(var i = 0; i < el.childNodes.length; i++) {
+node.appendChild(el.childNodes[i].cloneNode(true));
+}
+}
+else {
+node.innerHTML = innerHTML;
+}
+if (oldHtml) {
+node.innerHTML += oldHtml;
+}
+if (!good_browser) {
+for(var i = 0; i < scripts.length; i++) {
+if (HTML_AJAX_Util.getType(scripts[i]) == 'string') {
+window.eval(scripts[i]);
+}
+else {
+node.appendChild(scripts[i]);
+}
+}
+}
+return;
+},
+classSep: '(^|$| )',
+hasClass: function(o, className) {
+var o = this.getElement(o);
+var regex = new RegExp(this.classSEP + className + this.classSEP);
+return regex.test(o.className);
+},
+addClass: function(o, className) {
+var object = this.getElement(object);
+if(!this.hasClass(o, className)) {
+o.className += " " + className;
+}
+},
+removeClass: function(o, className) {
+var object = this.getElement(object);
+var regex = new RegExp(this.classSEP + className + this.classSEP);
+o.className = o.className.replace(regex, " ");
+},
+replaceClass: function(o, oldClass, newClass) {
+var o = this.getElement(o);
+var regex = new RegExp(this.classSEP + oldClass + this.classSEP);
+o.className = o.className.replace(regex, newClass);
+},
+getElement: function(el) {
+if (typeof el == 'string') {
+return document.getElementById(el);
+}
+return el;
 }
 }
 // behavior/behavior.js

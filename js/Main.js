@@ -124,7 +124,7 @@ if (!Array.pop && !Array.prototype.pop) {
  */
 var HTML_AJAX = {
 	defaultServerUrl: false,
-	defaultEncoding: 'Null',
+	defaultEncoding: 'JSON',
     queues: false,
     clientPools: {},
     // get an HttpClient, supply a name to use the pool of that name or the default if it isn't found
@@ -167,7 +167,7 @@ var HTML_AJAX = {
         }
         return new HTML_AJAX_Serialize_Null();
     },
-	fullcall: function(url,encoding,className,method,callback,args, customHeaders, grab) {
+	fullcall: function(url,encoding,className,method,callback,args, options) {
         var serializer = HTML_AJAX.serializerForEncoding(encoding);
 
         var request = new HTML_AJAX_Request(serializer);
@@ -179,18 +179,23 @@ var HTML_AJAX = {
         request.methodName = method;
         request.callback = callback;
         request.args = args;
-        if (customHeaders) {
-            request.customHeaders = customHeaders;
-        }
-        if (grab) {
-            request.grab = true;
-            if (!args || !args.length) {
-                request.requestType = 'GET';
+        if (options) {
+            for(var i in options) {
+                request[i] = options[i];
+            }
+            if (options.grab) {
+                if (!request.args || !request.args.length) {
+                    request.requestType = 'GET';
+                }
             }
         }
 
         return HTML_AJAX.makeRequest(request);
 	},
+    phpCallback: function(callee, callback) {
+        HTML_AJAX.fullcall(HTML_AJAX.defaultServerUrl, HTML_AJAX.defaultEncoding,
+            false, false, callback, arguments.slice(2), {phpCallback: callee});
+    },
 	call: function(className,method,callback) {
         var args = new Array();
         for(var i = 3; i < arguments.length; i++) {
@@ -198,12 +203,18 @@ var HTML_AJAX = {
         }
 		return HTML_AJAX.fullcall(HTML_AJAX.defaultServerUrl,HTML_AJAX.defaultEncoding,className,method,callback,args);
 	},
-	grab: function(url,callback) {
-		return HTML_AJAX.fullcall(url,'Null',false,null,callback, '', false, true);
+	grab: function(url,callback,options) {
+        if (!options) {
+            options = {grab:true};
+        }
+        else {
+            options['grab'] = true;
+        }
+		return HTML_AJAX.fullcall(url,'Null',false,null,callback, '', options);
 	},
 	replace: function(id) {
         var callback = function(result) {
-            document.getElementById(id).innerHTML = result;
+            HTML_AJAX_Util.setInnerHTML(document.getElementById(id),result);
         }
 		if (arguments.length == 2) {
 			// grab replacement
@@ -215,12 +226,12 @@ var HTML_AJAX = {
 			for(var i = 3; i < arguments.length; i++) {
 				args.push(arguments[i]);
 			}
-			HTML_AJAX.fullcall(HTML_AJAX.defaultServerUrl,HTML_AJAX.defaultEncoding,arguments[1],arguments[2],callback,args, false, true);
+			HTML_AJAX.fullcall(HTML_AJAX.defaultServerUrl,HTML_AJAX.defaultEncoding,arguments[1],arguments[2],callback,args, {grab:true});
 		}
 	},
     append: function(id) {
         var callback = function(result) {
-            document.getElementById(id).innerHTML += result;
+            HTML_AJAX_Util.setInnerHTML(document.getElementById(id),result,'append');
         }
         if (arguments.length == 2) {
             // grab replacement
@@ -232,7 +243,7 @@ var HTML_AJAX = {
             for(var i = 3; i < arguments.length; i++) {
                 args.push(arguments[i]);
             }
-            HTML_AJAX.fullcall(HTML_AJAX.defaultServerUrl,HTML_AJAX.defaultEncoding,arguments[1],arguments[2],callback,args, false, true);
+            HTML_AJAX.fullcall(HTML_AJAX.defaultServerUrl,HTML_AJAX.defaultEncoding,arguments[1],arguments[2],callback,args, {grab:true});
         }
     }, 
     // override to add top level loading notification (start)
@@ -252,7 +263,7 @@ var HTML_AJAX = {
     },
     */
     // Class postfix to content-type map
-        contentTypeMap: {
+    contentTypeMap: {
         'JSON':         'application/json',
         'Null':         'text/plain',
         'Error':        'application/error',
@@ -269,78 +280,138 @@ var HTML_AJAX = {
             }
         }
     },
+    
+    // turns a form into a urlencoded string
+    formEncode: function(form, array_format) {
+        if (HTML_AJAX_Util.getType(form) == 'string') {
+            form = document.getElementById(form);
+        }
+        var el, inpType, value, name, escName;
+        var out = (array_format) ? {} : '';
+		var inputTags = form.getElementsByTagName('INPUT');
+		var selectTags = form.getElementsByTagName('SELECT');
+		var buttonTags = form.getElementsByTagName('BUTTON');
+		var textareaTags = form.getElementsByTagName('TEXTAREA');
+        var arrayRegex = /.+\[\]/;
+
+        var validElement = function (element) {
+            if (!element || !element.getAttribute) {
+                return false;
+            }
+            el = element;
+            name = el.getAttribute('name');
+            if (!name) {
+                // no element name so skip
+                return false;
+            }
+            escName = escape(name);
+            value = escape(el.value);
+            inpType = el.getAttribute('type');
+            return true;
+        }
+        
+        inputLoop:
+        for (var i=0; i < inputTags.length; i++) {
+            if (!validElement(inputTags[i])) {
+                continue;
+            }
+            if (inpType == 'checkbox' || inpType == 'radio') {
+                if (!el.checked) {
+                    // unchecked radios/checkboxes don't get submitted
+                    continue inputLoop;
+                }
+                if (array_format && arrayRegex.test(name)) {
+                    if (!out[escName]) {
+                        out[escName] = new Array();
+                    }
+                    out[escName].push(value);
+                    continue inputLoop;
+                }
+            }
+            // add element to output array
+			if (array_format) {
+				out[escName] = value;
+			} else {
+				out += escName + '=' + value + '&';
+			}
+        } // end inputLoop
+
+        selectLoop:
+        for (var i=0; i<selectTags.length; i++) {
+            if (!validElement(selectTags[i])) {
+                continue selectLoop;
+            }
+            var options = el.options;
+            for (var z=0; z<options.length; z++){
+                var option=options[z];
+                if(option.selected){
+                    if (array_format) {
+                        if (el.type == 'select-one') {
+                            out[escName] = escape(option.value);
+                            //only one item can be selected
+                            continue selectLoop;
+                        } else {
+                            if (!out[escName]) {
+                                out[name] = new Array();
+                            }
+                            out[escName].push(escape(option.value));
+                        }
+                    } else {
+                        out += escName + '=' + escape(option.value) + '&';
+                    }
+                }
+            }
+        } // end selectLoop
+
+        buttonLoop:
+        for (var i=0; i<buttonTags.length; i++) {
+            if (!validElement(buttonTags[i])) {
+                continue;
+            }
+            // add element to output array
+			if (array_format) {
+				out[escName] = value;
+			} else {
+				out += escName + '=' + value + '&';
+			}
+        } // end buttonLoop
+
+        textareaLoop:
+        for (var i=0; i<textareaTags.length; i++) {
+            if (!validElement(textareaTags[i])) {
+                continue;
+            }
+            // add element to output array
+			if (array_format) {
+				out[escName] = value;
+			} else {
+				out += escName + '=' + value + '&';
+			}
+        } // end textareaLoop
+        
+        return out;
+    },
     // submits a form through ajax. both arguments can be either DOM nodes or IDs, if the target is omitted then the form is set to be the target
-    formSubmit: function (form, target, customRequest)
+    formSubmit: function (form, target, options)
     {
-        if (typeof form == 'string') {
+        if (HTML_AJAX_Util.getType(form) == 'string') {
             form = document.getElementById(form);
             if (!form) {
                 // let the submit be processed normally
                 return false;
             }
         }
-        if (typeof target == 'string') {
-            target = document.getElementById('target');
+
+        var out = HTML_AJAX.formEncode(form);
+        if (HTML_AJAX_Util.getType(target) == 'string') {
+            target = document.getElementById(target);
         }
         if (!target) {
             target = form;
         }
-        var action = form.action;
-        var el, type, value, name, nameParts, useValue = true;
-        var out = '', tags = form.elements;
-        childLoop:
-        for (i in tags) {
-            el = tags[i];
-            if (!el || !el.getAttribute) {
-                continue;
-            }
-            name = el.getAttribute('name');
-            if (!name) {
-                // no element name so skip
-                continue;
-            }
-            // find the element value
-            type = el.nodeName.toLowerCase();
-            switch (type) {
-            case 'input':
-                var inpType = el.getAttribute('type');
-                switch (inpType) {
-                case 'submit':
-                    type = 'button';
-                    break;
-                case 'checkbox':
-                case 'radio':
-                    if (el.checked) {
-                        value = 'checked';
-                        useValue = false;
-                        break;
-                    }
-                    // unchecked radios/checkboxes don't get submitted
-                    continue childLoop;
-                case 'text':
-                default:
-                    type = 'text';
-                    // continue for value
-                    break;
-                }
-                break;
-            case 'button':
-            case 'textarea':
-            case 'select':
-                break;
-            default:
-                // unknown element
-                continue childLoop;
-            }
-            if (useValue) {
-                value = el.value;
-            }
-            // add element to output array
-            out += escape(name) + '=' + escape(value) + '&';
-            useValue = true;
-        } // end childLoop
+        var action = form.getAttribute('action');
         var callback = function(result) {
-            target.innerHTML = result;
+            HTML_AJAX_Util.setInnerHTML(target,result);
         }
 
         var serializer = HTML_AJAX.serializerForEncoding('Null');
@@ -348,7 +419,7 @@ var HTML_AJAX = {
         request.isAsync = true;
         request.callback = callback;
 
-        switch (form.method.toLowerCase()) {
+        switch (form.getAttribute('method').toLowerCase()) {
         case 'post':
             var headers = {};
             headers['Content-Type'] = 'application/x-www-form-urlencoded';
@@ -365,14 +436,43 @@ var HTML_AJAX = {
             request.requestType = 'GET';
         }
 
-        if(customRequest) {
-            for(var i in customRequest) {
-                request[i] = customRequest[i];
+        if(options) {
+            for(var i in options) {
+                request[i] = options[i];
             }
         }
         HTML_AJAX.makeRequest(request);
         return true;
-    } // end formSubmit()
+    }, // end formSubmit()
+    makeFormAJAX: function(form,target,options) {
+        if (HTML_AJAX_Util.getType(form) == 'string') {
+            var form = document.getElementById(form);
+        }
+        var preSubmit = false;
+        if(form.onsubmit) {
+            preSubmit = form.onsubmit;
+            form.onsubmit = function() {};
+        }
+        form.HAOptions = options;
+        var handler = function(e) {
+            var form = HTML_AJAX_Util.eventTarget(e);
+
+            var valid = true;
+            if (preSubmit) {
+                valid = preSubmit();
+            }
+		    if (valid) {
+			    HTML_AJAX.formSubmit(form,target,form.HAOptions);
+			}
+            // cancel submission in IE
+            e.returnValue = false;
+            // cancel submission in FF
+            if (e.preventDefault) {
+                e.preventDefault();
+            }
+        }
+		HTML_AJAX_Util.registerEvent(form,'submit',handler);
+    }
 }
 
 
@@ -382,7 +482,7 @@ var HTML_AJAX = {
 
 function HTML_AJAX_Serialize_Null() {}
 HTML_AJAX_Serialize_Null.prototype = {
-	contentType: 'text/plain; charset=UTF-8;',
+	contentType: 'text/plain; charset=utf-8',
 	serialize: function(input) {
 		return new String(input).valueOf();
 	},
@@ -395,7 +495,7 @@ HTML_AJAX_Serialize_Null.prototype = {
 // serialization class for JSON, wrapper for JSON.stringify in json.js
 function HTML_AJAX_Serialize_JSON() {}
 HTML_AJAX_Serialize_JSON.prototype = {
-	contentType: 'application/json; charset=UTF-8',
+	contentType: 'application/json; charset=utf-8',
 	serialize: function(input) {
 		return HTML_AJAX_JSON.stringify(input);
 	},
@@ -411,7 +511,7 @@ HTML_AJAX_Serialize_JSON.prototype = {
 
 function HTML_AJAX_Serialize_Error() {}
 HTML_AJAX_Serialize_Error.prototype = {
-	contentType: 'application/error; charset=UTF-8',
+	contentType: 'application/error; charset=utf-8',
 	serialize: function(input) {
         var ser = new HTML_AJAX_Serialize_JSON();
         return ser.serialize(input);

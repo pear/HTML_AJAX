@@ -6,7 +6,7 @@
  *    The payload, unserialized
  *    The timeout for async calls
  *    The callback method
- *    Optional event handlers: onError, onLoad, onSend
+ *    Optional event handlers: onError, Load, Send
  *    A serializer instance
  *
  * @category   HTML
@@ -64,6 +64,12 @@ HTML_AJAX_Request.prototype = {
     // is this a grab request? if so we need to proxy for iframes
     grab: false,
     
+    // true if this request should expect a multipart response
+    multipart: false,
+
+    // remote callback
+    phpCallback: false,
+    
     /**
      * Add an argument for the remote method
      * @param string argument name
@@ -101,15 +107,20 @@ HTML_AJAX_Request.prototype = {
      * Get the complete url, adding in any needed get params for rpc
      */
     completeUrl: function() {
-        var url = new String(this.requestUrl);
-        var delimiter = '?';
-        if (url.indexOf('?') >= 0) {
-            delimiter = '&';
-        }
         if (this.className || this.methodName) {
-            url += delimiter+'c='+escape(this.className)+'&m='+escape(this.methodName);
+            this.addGet('c', this.className);
+            this.addGet('m', this.methodName);
         }
-        return url;
+        if (this.phpCallback) {
+            if (HTML_AJAX_Util.getType(this.phpCallback) == 'array') {
+                this.phpCallback = this.phpCallback.join('.');
+            }
+            this.addGet('cb', this.phpCallback);
+        }
+        if (this.multipart) {
+            this.addGet('multipart', '1');
+        }
+        return this.requestUrl;
     },
     
     /**
@@ -120,6 +131,15 @@ HTML_AJAX_Request.prototype = {
             return 0;
         }
         return (this.priority > other.priority ? 1 : -1);
+    },
+
+    /**
+     * Add a GET argument
+     */
+    addGet: function(name, value) {
+        var url = new String(this.requestUrl);
+        url += (url.indexOf('?') < 0 ? '?' : '&') + escape(name) + '=' + escape(value);
+        this.requestUrl = url;
     }
 }
 /* vim: set expandtab tabstop=4 shiftwidth=4 softtabstop=4: */

@@ -94,8 +94,8 @@ HTML_AJAX.onError = function(e) {
 var Open = HTML_AJAX.Open;
 var Load = HTML_AJAX.Load;
 
-HTML_AJAX.onOpen = function(request) {
-	Open();
+HTML_AJAX.Open = function(request) {
+	Open(request);
 	document.getElementById('eventLog').innerHTML += "Open: "+request.className+'::'+request.methodName+"\n";
 }
 HTML_AJAX.Send = function(request) {
@@ -105,7 +105,7 @@ HTML_AJAX.rogress = function(request) {
 	document.getElementById('eventLog').innerHTML += "Progress: "+request.className+'::'+request.methodName+"\n";
 }
 HTML_AJAX.Load = function(request) {
-	Load();
+	Load(request);
 	document.getElementById('eventLog').innerHTML += "Load: "+request.className+'::'+request.methodName+"\n";
 }
 

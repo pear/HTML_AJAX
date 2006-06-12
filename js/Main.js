@@ -192,9 +192,20 @@ var HTML_AJAX = {
 
         return HTML_AJAX.makeRequest(request);
 	},
-    phpCallback: function(callee, callback) {
-        HTML_AJAX.fullcall(HTML_AJAX.defaultServerUrl, HTML_AJAX.defaultEncoding,
-            false, false, callback, arguments.slice(2), {phpCallback: callee});
+    callPhpCallback: function(phpCallback, jsCallback, url) {
+        var args = new Array();
+        for (var i = 3; i < arguments.length; i++) {
+            args.push(arguments[i]);
+        }
+        if (HTML_AJAX_Util.getType(phpCallback[0]) == 'object') {
+            jsCallback(phpCallback[0][phpCallback[1]](args));
+            return;
+        }
+        if (!url) {
+            url = HTML_AJAX.defaultServerUrl;
+        }
+        HTML_AJAX.fullcall(url, HTML_AJAX.defaultEncoding,
+            false, false, jsCallback, args, {phpCallback: phpCallback});
     },
 	call: function(className,method,callback) {
         var args = new Array();
@@ -304,8 +315,16 @@ var HTML_AJAX = {
                 // no element name so skip
                 return false;
             }
+            if (element.disabled) {
+                return false;
+            }
+
             escName = escape(name);
-            value = escape(el.value);
+			if (array_format) {
+				value = el.value;
+			} else {
+				value = escape(el.value);
+			}
             inpType = el.getAttribute('type');
             return true;
         }
@@ -347,14 +366,14 @@ var HTML_AJAX = {
                 if(option.selected){
                     if (array_format) {
                         if (el.type == 'select-one') {
-                            out[escName] = escape(option.value);
+                            out[escName] = option.value;
                             //only one item can be selected
                             continue selectLoop;
                         } else {
                             if (!out[escName]) {
                                 out[name] = new Array();
                             }
-                            out[escName].push(escape(option.value));
+                            out[escName].push(option.value);
                         }
                     } else {
                         out += escName + '=' + escape(option.value) + '&';

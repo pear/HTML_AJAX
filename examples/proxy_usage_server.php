@@ -52,6 +52,9 @@ callback.prototype = {
 	},
 	unicode_data: function(result) {
 		document.getElementById('target').innerHTML = HTML_AJAX_Util.varDump(result);
+	},
+	dump: function(result) {
+		document.getElementById('target').innerHTML = result;
 	}
 }
 
@@ -89,6 +92,9 @@ function unicodeTest2() {
 function cookieTest() {
 	asyncProxy.cookies();
 }
+function assocTest() {
+	asyncProxy.dump({a: 'first var', b: 'second var'});
+}
 </script>
 <ul>
 	<li><a href="javascript:clearTarget()">Clear Target</a></li>
@@ -96,6 +102,7 @@ function cookieTest() {
 	<li><a href="javascript:asyncCall();">Run Async Echo call</a></li>
 	<li><a href="javascript:unicodeTest();">Check ability to round trip utf-8 JSON data</a></li>
 	<li><a href="javascript:unicodeTest2();">Check ability to recieve utf-8 JSON data</a></li>
+	<li><a href="javascript:assocTest();">Check ability to decode js hashes into PHP associative arrays using JSON</a></li>
 	<li><a href="javascript:cookieTest();">View Cookies</a></li>
 </ul>
 

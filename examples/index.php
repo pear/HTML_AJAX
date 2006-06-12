@@ -37,6 +37,7 @@ Front end files for examples, you can actually run these and see some example ou
 <li><a href='slow_livesearch.php'>slow_livesearch.php</a> - An example showing how the ordered queue can be used to manage high latency</li>
 <li><a href='helper_usage.php'>helper_usage.php</a> - An example showing the basics of the helper api</li>
 <li><a href='form.php'>form.php</a> - Basic AJAX form submission example</a></li>
+<li><a href='action_usage.php'>action_usage.php</a> - Basic HTML_AJAX_Action usage</a></li>
 </ul>
 
 <p>Real Life Examples</p>

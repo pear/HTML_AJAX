@@ -141,8 +141,10 @@ class HTML_AJAX_Server
 
     /**
      * Constructor creates the HTML_AJAX instance
+     *
+     * @param string $serverUrl (Optional) the url the client should be making a request too
      */
-    function HTML_AJAX_Server() 
+    function HTML_AJAX_Server($serverUrl = false) 
     {
         $this->ajax =& new HTML_AJAX();
 
@@ -158,7 +160,14 @@ class HTML_AJAX_Server
         }
 
         // call the server with this query string
-        $this->ajax->serverUrl = htmlentities($_SERVER['PHP_SELF']) .'?'. htmlentities($querystring);
+        if ($serverUrl === false) {
+            $serverUrl = htmlentities($_SERVER['PHP_SELF']);
+        }
+
+        if (substr($serverUrl,-1) != '?') {
+            $serverUrl .= '?';
+        }
+        $this->ajax->serverUrl =  $serverUrl . htmlentities($querystring);
         
         $methods = get_class_methods($this);
         foreach($methods as $method) {
@@ -247,7 +256,7 @@ class HTML_AJAX_Server
         
         if (is_array($callback) && is_object($callback[0])) {
             // object method
-            $this->registerClass($callback[0], false, array($callback[1]));
+            $this->registerClass($callback[0], strtolower(get_class($callback[0])), array($callback[1]));
             return true;
         }
         

@@ -373,23 +373,23 @@ var HTML_AJAX_Util = {
     classSep: '(^|$| )',
     hasClass: function(o, className) {
         var o = this.getElement(o);
-        var regex = new RegExp(this.classSEP + className + this.classSEP);
+        var regex = new RegExp(this.classSep + className + this.classSep);
         return regex.test(o.className);
     },
     addClass: function(o, className) {
-        var object = this.getElement(object);
+        var o = this.getElement(o);
         if(!this.hasClass(o, className)) {
             o.className += " " + className;
         }
     },
     removeClass: function(o, className) {
-        var object = this.getElement(object);
-        var regex = new RegExp(this.classSEP + className + this.classSEP);
+        var o = this.getElement(o);
+        var regex = new RegExp(this.classSep + className + this.classSep);
         o.className = o.className.replace(regex, " ");
     },
     replaceClass: function(o, oldClass, newClass) {
         var o = this.getElement(o);
-        var regex = new RegExp(this.classSEP + oldClass + this.classSEP);
+        var regex = new RegExp(this.classSep + oldClass + this.classSep);
         o.className = o.className.replace(regex, newClass);
     },
     getElement: function(el) {

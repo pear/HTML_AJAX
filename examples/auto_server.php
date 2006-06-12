@@ -40,7 +40,7 @@ class TestServer extends HTML_AJAX_Server {
 	// init method for the testHaa class, includes needed files an registers it for ajax, directly passes in methods to register to specify case in php4
 	function initTestHaa() {
 		include 'support/testHaa.class.php';
-		$this->registerClass(new testHaa(),'testHaa',array('updateClassName'));
+		$this->registerClass(new testHaa(),'testHaa',array('updateClassName','greenText','highlight','duplicate'));
 	}
 	
 	

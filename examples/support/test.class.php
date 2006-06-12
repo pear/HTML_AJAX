@@ -19,6 +19,9 @@ class test {
 	function echo_string($string) {
 		return "From PHP: ".$string;
 	}
+	function echo_strings($strings) {
+		return $strings;
+	}
 	function slow_echo_string($string) {
 		sleep(2);
 		return "From PHP: ".$string;
@@ -35,6 +38,9 @@ class test {
 	}
 	function echo_data($data) {
 		return array('From PHP:'=>$data);
+	}
+	function dump($data) {
+		return print_r($data, true);
 	}
 	function unicode_data() {
 		$returnData = array('word' => mb_convert_encoding('Français','UTF-8'), 'suggestion' => array(mb_convert_encoding('Français','UTF-8'), mb_convert_encoding('caractères','UTF-8')));

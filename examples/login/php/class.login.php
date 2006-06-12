@@ -41,7 +41,7 @@
 		 *
 		 * @param array the form object
 		 */
-		function validate($objForm) {
+		function validate($arrayForm) {
 			//--------------------------------------------------
 			// Initialize function
 			//--------------------------------------------------
@@ -56,9 +56,10 @@
 			$arrValidated['email'] = true;
 
 			// Never trust the values passed by users :)
-			$objForm->username = trim($objForm->username);
-			$objForm->password = trim($objForm->password);
-			$objForm->email = trim($objForm->email);
+			$objForm = new stdClass();
+			$objForm->username = trim($arrayForm['username']);
+			$objForm->password = trim($arrayForm['password']);
+			$objForm->email = trim($arrayForm['email']);
 
 			//--------------------------------------------------
 			// Check values

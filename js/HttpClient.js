@@ -13,6 +13,8 @@ HTML_AJAX_HttpClient.prototype = {
 
     // timeout id
     _timeoutId: null,
+
+	callbackComplete: true,
     
     // method to initialize an xmlhttpclient
     init:function() 
@@ -108,7 +110,12 @@ HTML_AJAX_HttpClient.prototype = {
             }
 
             if (this.request.isAsync) {
+                if (this.request.callback) {
+                    this.callbackComplete = false;
+                }
                 this.xmlhttp.onreadystatechange = function() { self._readyStateChangeCallback(); }
+            } else {
+                this.xmlhttp.onreadystatechange = function() {}
             }
             var payload = this.request.getSerializedPayload();
             if (payload) {
@@ -184,7 +191,6 @@ HTML_AJAX_HttpClient.prototype = {
                     window.clearTimeout(this._timeoutId);
 
                     if (this.xmlhttp.status == 200) {
-                        HTML_AJAX.requestComplete(this.request);
                         if (this.request.Load) {
                             this.request.Load();
                         } else if (HTML_AJAX.Load ) {
@@ -195,6 +201,7 @@ HTML_AJAX_HttpClient.prototype = {
 
                         if (this.request.callback) {
                             this.request.callback(response);
+                            this.callbackComplete = true;
                         }
                     }
 
@@ -202,6 +209,7 @@ HTML_AJAX_HttpClient.prototype = {
                         var e = new Error('HTTP Error Making Request: ['+this.xmlhttp.status+'] '+this.xmlhttp.statusText);
                         this._handleError(e);
                     }
+                    HTML_AJAX.requestComplete(this.request);
                 break;
             }
         } catch (e) {

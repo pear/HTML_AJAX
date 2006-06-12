@@ -32,20 +32,20 @@
   </maintainer>
   </maintainers>
  <release>
-  <version>0.4.0</version>
-  <date>2006-04-07</date>
+  <version>0.4.1</version>
+  <date>2006-06-13</date>
   <license>lgpl</license>
   <state>alpha</state>
-  <notes>Added ordered Queue Support and the slow_livesearch example to show it off
-	Added setInnerHTML method to HTML_AJAX_Util (Bug #6672)
-	Added getElementsByCssSelector, hasClass, addClass, removeClass, replaceClass, getElement methods to HTML_AJAX_Util
-	Method parameter change to HTML_AJAX.fullCall the last option is now a hash for setting any option on the request object instead of just its customHeaders property
-	Added support for setting options to HTML_AJAX.grab
-	Added slow livesearch example
-	Added jsEncode method to generate a JSON string from a single variable
-	Added dhtmlHistory.js to provide access to DHTML history, history data, and bookmarking (not fully integrated yet)
-	Added support to formEncode to return form data in an array
-	Added support for exporting callbacks using the PHP callback pseudo-type
+  <notes>Added support for returning PHP associative arrays from JS objects when using JSON
+	NOTE: HTML_AJAX now returns associative arrays by default when using the JSON serializer
+	Fix exported class name character case in stub should match the object class name for PHP5
+	Fix bug #7201, Loading DIV didn&apos;t unload after sync call
+	Fix values returned by formEncode should not be escaped when using array_format
+	Fix HttpClients from the clientPool are not reused until their callback has returned (fixes chained calls problem in FF1.0)
+
+	Provided an option to set the serverUrl in HTML_AJAX_Server
+	Added a new HTML_AJAX_Action example
+	Disabled form elements are now ignored by formEncode() and formSubmit()
   </notes>
   <deps>
    <dep type="pkg" rel="ge" version="1.3.5" optional="no">PEAR</dep>
@@ -108,7 +108,7 @@
    <file role="php" baseinstalldir="HTML" md5sum="db9fc794ecfd2253c4b83221a8f93bae" name="AJAX/Serializer/Error.php">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
-   <file role="php" baseinstalldir="HTML" md5sum="d84ff21f56cf51fe0579eee360b53fc1" name="AJAX/Serializer/JSON.php">
+   <file role="php" baseinstalldir="HTML" md5sum="5114e38dc2b75b706e0ec96b137fa435" name="AJAX/Serializer/JSON.php">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
    <file role="php" baseinstalldir="HTML" md5sum="0b9a9ccf611418d7538e92b0a9925c48" name="AJAX/Serializer/Null.php">
@@ -120,7 +120,7 @@
    <file role="php" baseinstalldir="HTML" md5sum="23c91af380629a762a4ab0eaeea18116" name="AJAX/Serializer/Urlencoded.php">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
-   <file role="php" baseinstalldir="HTML" md5sum="4606132102904fc0efc0bc44f22c7384" name="AJAX/Action.php">
+   <file role="php" baseinstalldir="HTML" md5sum="ef2349d966ff15fff6979ce786557dc3" name="AJAX/Action.php">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
    <file role="php" baseinstalldir="HTML" md5sum="68f0ae15c17ec7e363592f7110f9a7e8" name="AJAX/Debug.php">
@@ -135,7 +135,7 @@
    <file role="php" baseinstalldir="HTML" md5sum="788f64a36b2180bc31d48ee449e274f2" name="AJAX/Response.php">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
-   <file role="php" baseinstalldir="HTML" md5sum="17635531ea3a41706a46cb37f1530d5f" name="AJAX/Server.php">
+   <file role="php" baseinstalldir="HTML" md5sum="99b97476bfc5fe7c10a957e191e25edb" name="AJAX/Server.php">
     <replace type="pear-config" from="@data-dir@" to="data_dir"/>
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
@@ -148,7 +148,7 @@
    <file role="doc" baseinstalldir="HTML" md5sum="c15c8c46bc4b2d1e88bbc777f4ad4819" name="examples/guestbook/auto_server.php">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
-   <file role="doc" baseinstalldir="HTML" md5sum="332d76d3b2f0ff4f26cc305b2d3b7bd9" name="examples/guestbook/guestbook.class.php">
+   <file role="doc" baseinstalldir="HTML" md5sum="f66fdf60ee29363f1625a69dec1e892f" name="examples/guestbook/guestbook.class.php">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
    <file role="doc" baseinstalldir="HTML" md5sum="6ee14d084b4fa157c700d658065d6006" name="examples/guestbook/index.php">
@@ -157,7 +157,7 @@
    <file role="doc" baseinstalldir="HTML" md5sum="8d22b91692554305f726c453c21ec37c" name="examples/login/php/auto_server.php">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
-   <file role="doc" baseinstalldir="HTML" md5sum="d0709028b0ed12ccf57f9fb9f4916b7c" name="examples/login/php/class.login.php">
+   <file role="doc" baseinstalldir="HTML" md5sum="4796a5a515da8a45eddc5dc23eeb507f" name="examples/login/php/class.login.php">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
    <file role="doc" baseinstalldir="HTML" md5sum="0f7e70d918e397b577ddd2f1189bb635" name="examples/login/index.php">
@@ -172,7 +172,7 @@
    <file role="doc" baseinstalldir="HTML" md5sum="33e1c8d9b339db0c95960130eba793c9" name="examples/review/index.php">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
-   <file role="doc" baseinstalldir="HTML" md5sum="6ff8ae3eb0b74a8cfe4600046f570e57" name="examples/review/review.class.php">
+   <file role="doc" baseinstalldir="HTML" md5sum="0a2952f9f051f38d683b983dd53193b2" name="examples/review/review.class.php">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
    <file role="doc" baseinstalldir="HTML" md5sum="0e4268ee8ff8dbf638d8880a8d40ff53" name="examples/support/customLib.js">
@@ -181,13 +181,13 @@
    <file role="doc" baseinstalldir="HTML" md5sum="685d1d6df0bce8cb203fd9d6a90f18b4" name="examples/support/livesearch.class.php">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
-   <file role="doc" baseinstalldir="HTML" md5sum="f4e9dd89bc499263fc245e11645ed9c0" name="examples/support/test.class.php">
+   <file role="doc" baseinstalldir="HTML" md5sum="0f4fbabb13ef0b2dc0177f4ed9b948aa" name="examples/support/test.class.php">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
    <file role="doc" baseinstalldir="HTML" md5sum="48378c2c69bc72aa32f5453e6e7d4601" name="examples/support/test2.class.php">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
-   <file role="doc" baseinstalldir="HTML" md5sum="8fae565fcb98b4a4b2da48d59fe9a331" name="examples/support/testHaa.class.php">
+   <file role="doc" baseinstalldir="HTML" md5sum="6e18cf6216e4403ecc4d3c87bd59d624" name="examples/support/testHaa.class.php">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
    <file role="doc" baseinstalldir="HTML" md5sum="e0400b50c02ad6daff882f234cc6273a" name="examples/tests/js_utils_getElements.php">
@@ -217,7 +217,10 @@
    <file role="doc" baseinstalldir="HTML" md5sum="4883bcc9e888617b694e7ea8b9b96fbe" name="examples/tests/test_speed.php">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
-   <file role="doc" baseinstalldir="HTML" md5sum="b9ad35262715a5b8989653f045e027de" name="examples/auto_server.php">
+   <file role="doc" baseinstalldir="HTML" md5sum="82492c28b5158e9904f86bd2206111d5" name="examples/action_usage.php">
+    <replace type="package-info" from="@package_version@" to="version"/>
+   </file>
+   <file role="doc" baseinstalldir="HTML" md5sum="ebb95e54ae62d108af51eaa03e4e32d4" name="examples/auto_server.php">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
    <file role="doc" baseinstalldir="HTML" md5sum="8408959b53ad15ba00af37c322170402" name="examples/error_usage.php">
@@ -235,7 +238,10 @@
    <file role="doc" baseinstalldir="HTML" md5sum="f8af303e9baf5fa91d73c150f5a950bc" name="examples/helper_usage.php">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
-   <file role="doc" baseinstalldir="HTML" md5sum="f524ea26b970fc4bb26be9edaee516cc" name="examples/index.php">
+   <file role="doc" baseinstalldir="HTML" md5sum="d4faa2c9c274f14ba3a8baab8e520a4d" name="examples/index.php">
+    <replace type="package-info" from="@package_version@" to="version"/>
+   </file>
+   <file role="doc" baseinstalldir="HTML" md5sum="f231ba6b04a70e201442b9c3c0284a3c" name="examples/php_callback.php">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
    <file role="doc" baseinstalldir="HTML" md5sum="efc6c52ef7127b27127aa08e4c14f4f7" name="examples/proxyless_usage.php">
@@ -244,7 +250,7 @@
    <file role="doc" baseinstalldir="HTML" md5sum="632ba5fdbec4d863d9ba8c4b692592b9" name="examples/proxy_usage_inline_javascript.php">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
-   <file role="doc" baseinstalldir="HTML" md5sum="c73fad70ffcb5bca2a6fbd4f8aa7facc" name="examples/proxy_usage_server.php">
+   <file role="doc" baseinstalldir="HTML" md5sum="96b17572b8074592a6cb9620f274040c" name="examples/proxy_usage_server.php">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
    <file role="doc" baseinstalldir="HTML" md5sum="db4cc374a04dd6c7edd18fca8d994282" name="examples/queue_usage.php">
@@ -286,7 +292,7 @@
    <file role="data" baseinstalldir="HTML" md5sum="bb74ba9b39986cead94db64ea0d2e81e" name="js/Alias.js">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
-   <file role="data" baseinstalldir="HTML" md5sum="aec144ce675e393efbd71a7becebf5bc" name="js/clientPool.js">
+   <file role="data" baseinstalldir="HTML" md5sum="7cef6c2e5e503e365fe10767ec44080e" name="js/clientPool.js">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
    <file role="data" baseinstalldir="HTML" md5sum="21a5c156dc94f782b59fc745c2c27a13" name="js/dhtmlHistory.js">
@@ -295,13 +301,13 @@
    <file role="data" baseinstalldir="HTML" md5sum="38b87c8b118c0d09028180434a1f54a2" name="js/Dispatcher.js">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
-   <file role="data" baseinstalldir="HTML" md5sum="4aaffae41ff910d183cf981572f6e860" name="js/HTML_AJAX.js">
+   <file role="data" baseinstalldir="HTML" md5sum="3d9db1ab4b3133fbff61237c483ee671" name="js/HTML_AJAX.js">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
-   <file role="data" baseinstalldir="HTML" md5sum="bd9fdd424eec42e2bb5bb6b1eeffaae3" name="js/HTML_AJAX_lite.js">
+   <file role="data" baseinstalldir="HTML" md5sum="39de53247e80d1d0289a9876e3d66f83" name="js/HTML_AJAX_lite.js">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
-   <file role="data" baseinstalldir="HTML" md5sum="71f44f8297ee28fd98f16bd9a615a604" name="js/HttpClient.js">
+   <file role="data" baseinstalldir="HTML" md5sum="f7f0b6f6aaf7c709ec9ad55dea214a59" name="js/HttpClient.js">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
    <file role="data" baseinstalldir="HTML" md5sum="597199c1c4ec94deaf71c4637733a5dd" name="js/IframeXHR.js">
@@ -310,7 +316,7 @@
    <file role="data" baseinstalldir="HTML" md5sum="c42e942a499e43b112f5b978cc6573b0" name="js/Loading.js">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
-   <file role="data" baseinstalldir="HTML" md5sum="00782b4f04ecbfd00576333e9de001ca" name="js/Main.js">
+   <file role="data" baseinstalldir="HTML" md5sum="8064880165f51abe672092db321e1ee9" name="js/Main.js">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
    <file role="data" baseinstalldir="HTML" md5sum="563ec66f6a2b5d6ac5b7c26dce48eda6" name="js/orderedQueue.js">
@@ -322,237 +328,30 @@
    <file role="data" baseinstalldir="HTML" md5sum="fee847604483b33431584f4fa96a0bc2" name="js/Request.js">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
-   <file role="data" baseinstalldir="HTML" md5sum="97ce66c8abf90aa310ce4c1e3879aa1d" name="js/util.js">
+   <file role="data" baseinstalldir="HTML" md5sum="19315f2440fce0a1199a39041e93ad9b" name="js/util.js">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
-   <file role="php" baseinstalldir="HTML" md5sum="f4812a0ab5888ddb99a362ca894cbd9e" name="AJAX.php">
+   <file role="php" baseinstalldir="HTML" md5sum="8a749c49554f5f263e8d87197da3d477" name="AJAX.php">
     <replace type="package-info" from="@package_version@" to="version"/>
    </file>
   </filelist>
  </release>
  <changelog>
    <release>
-    <version>0.4.0</version>
-    <date>2006-04-07</date>
+    <version>0.4.1</version>
+    <date>2006-06-13</date>
     <license>lgpl</license>
     <state>alpha</state>
-    <notes>Added ordered Queue Support and the slow_livesearch example to show it off
-	Added setInnerHTML method to HTML_AJAX_Util (Bug #6672)
-	Added getElementsByCssSelector, hasClass, addClass, removeClass, replaceClass, getElement methods to HTML_AJAX_Util
-	Method parameter change to HTML_AJAX.fullCall the last option is now a hash for setting any option on the request object instead of just its customHeaders property
-	Added support for setting options to HTML_AJAX.grab
-	Added slow livesearch example
-	Added jsEncode method to generate a JSON string from a single variable
-	Added dhtmlHistory.js to provide access to DHTML history, history data, and bookmarking (not fully integrated yet)
-	Added support to formEncode to return form data in an array
-	Added support for exporting callbacks using the PHP callback pseudo-type
-    </notes>
-   </release>
-   <release>
-    <version>0.3.5pre1</version>
-    <date>2006-03-09</date>
-    <license>lgpl</license>
-    <state>alpha</state>
-    <notes>A bunch of other changes that need to be added here
-	Added ordered Queue Support and the slow_livesearch example to show it off
-    </notes>
-   </release>
-   <release>
-    <version>0.3.4</version>
-    <date>2006-02-13</date>
-    <license>lgpl</license>
-    <state>alpha</state>
-    <notes>Fix for Bug #6478 problems with assignAttr in HTML_AJAX_Action
-	Add a flag (HTML_AJAX-&gt;php4CompatCase) that allows for exporting all introspected method/class names in php5 in lower case for php4 compat
-	Update to the newest Services_JSON code, still waiting for a Services_JSON release so we can stop embedding it (fixes bug: #6501)
-	Fix bug #6424, getting extra Request timeouts errors
-	Fix bug #6564, Don&apos;t send Content-Length header when output buffering is enabled
-	Fix bug #6295, Use std input when HTTP_RAW_POST isn&apos;t set
-	Fix for Main.js compatibility function tests
-	Patch from Julien Wajsberg, Keep extra query params passed to HTML_AJAX_Server in the default serverUrl, this helps when integrating with frameworks
-	Fix bug #6478, Not possible to set className in firefox using HTML_AJAX_Action, now were setting the attribute directly instead of calling setAttribute
-    </notes>
-   </release>
-   <release>
-    <version>0.3.1</version>
-    <date>2005-12-05</date>
-    <license>lgpl</license>
-    <state>alpha</state>
-    <notes>Rearranged the examples dir, moving support files and tests into there own directory
-	Updated examples index.php page so that it makes sense when shown from the HTML_AJAX website
-	Fix some various IE bugs, grabbing non-existant headers was throwing errors
-	Fixed problem with async requests timing out in IE
-	Added IFrame fallback, targeted at versions of Opera before XMLHttpRequest and IE with ActiveX turned off
-	Fix js file detection when not installed through PEAR
-	Fix numerous IE 5 javascript bugs and added js compat functions
-	haSerializer and HTML_AJAX_Action bugs fixed
-    </notes>
-   </release>
-   <release>
-    <version>0.3.0</version>
-    <date>2005-11-17</date>
-    <license>lgpl</license>
-    <state>alpha</state>
-    <notes>Added haSerializer (HTML_AJAX_Serializer) for &quot;event pushing&quot; - you can do javascript events using the HTML_AJAX_Action class and not have to write javascript handlers for data from ajax callbacks
-   Major Bug Fix: json and other serializers now work in opera (bad content-type handling/detection in that browser)
-   BC BREAK - in js renamed event handlers so they don&apos;t collide with native ones and cause problems onOpen -&gt; Open, onLoad -&gt; Load, onProgress -&gt; Progress, onSend -&gt; Send
-   Added stub support to helper class
-   HTML_AJAX_Util (javascript):
-   - setElementEvent() renamed to registerEvent(), set event should now be fixed
-   - New methods: getType() and strRepeat()
-   - Fixed methods: varDump() and getElementsByClassName()
-   Behavior javascript files moved to own directory and HTML_AJAX_Server updated to reflect change
-   Javascript serializer files moved to own directory and files updated to reflect change
-   Better example for behavior use in example directory
-   Fixed URL encoding serializer, requires PHP 5 or the PHP_Compat implementation of http_build_query()
-   Added serializer compatible with PHP&apos;s native serialization functions
-   Small optimizations and cleanup of HTML_AJAX
-   Added a request priority queue
-   Added HTTP client pooling
-   Update and cleaned up the examples
-   Pass errors from sync calls to HTML_AJAX.onError
-    </notes>
-   </release>
-   <release>
-    <version>0.2.6</version>
-    <date>2005-11-11</date>
-    <license>lgpl</license>
-    <state>alpha</state>
-    <notes>Added stub support to helper class
-   HTML_AJAX_Util (javascript):
-   - setElementEvent() renamed to registerEvent(), set event should now be fixed
-   - New methods: getType() and strRepeat()
-   - Fixed methods: varDump() and getElementsByClassName()
-   Behavior javascript files moved to own directory and HTML_AJAX_Server updated to reflect change
-   Better example for behavior use in example directory
-   Fixed URL encoding serializer, requires PHP 5 or the PHP_Compat implementation of http_build_query()
-   Added serializer compatible with PHP&apos;s native serialization functions
-   Small optimizations and cleanup of HTML_AJAX
-   Added a request priority queue
-   Added HTTP client pooling
-    </notes>
-   </release>
-   <release>
-    <version>0.2.5</version>
-    <date>2005-11-04</date>
-    <license>lgpl</license>
-    <state>alpha</state>
-    <notes>Small optimizations and cleanup of HTML_AJAX and HTML_AJAX_Server
-	Case fixes for specifing case while exporting a class
-	Fix url creation in javascript allowing server urls to contain parameters
-	Added a flag to turn off sending a Content-Length header
-    </notes>
-   </release>
-   <release>
-    <version>0.2.4</version>
-    <date>2005-10-26</date>
-    <license>lgpl</license>
-    <state>alpha</state>
-    <notes>#5788  	New bug in Ajax Server , cant create JS stub
-	New login example
-    </notes>
-   </release>
-   <release>
-    <version>0.2.3</version>
-    <date>2005-10-24</date>
-    <license>lgpl</license>
-    <state>alpha</state>
-    <notes>Initial Helper API see examples/usage_helper.php for details
-	HTML_AJAX.append
-	BC Change, default loading implementation moved to its own file
-	client param takes a comma seperated list of args now ex: server.php?client=main,httpclient
-	ajax server has support for delivering custom libraries HTML_AJAX_Server::registerJSLibrary
-	Bug #5675 Reference bug in php 4.4 5.1 etc
-    </notes>
-   </release>
-   <release>
-    <version>0.2.2</version>
-    <date>2005-09-30</date>
-    <license>lgpl</license>
-    <state>alpha</state>
-    <notes>AJAX request queues, see examples/queue_usage.php for usage
-    </notes>
-   </release>
-   <release>
-    <version>0.2.1</version>
-    <date>2005-09-30</date>
-    <license>lgpl</license>
-    <state>alpha</state>
-    <notes>This release is mainly bug fixes.
-	Remove debug message when throwing an exception
-	Fix problems with async calls
-	Fix broken content-type detection
-	Stop trying to run an init method when the init flag isn&apos;t set
-	PHP required version moved to 4.1.0 which is what it should need
+    <notes>Added support for returning PHP associative arrays from JS objects when using JSON
+	NOTE: HTML_AJAX now returns associative arrays by default when using the JSON serializer
+	Fix exported class name character case in stub should match the object class name for PHP5
+	Fix bug #7201, Loading DIV didn&apos;t unload after sync call
+	Fix values returned by formEncode should not be escaped when using array_format
+	Fix HttpClients from the clientPool are not reused until their callback has returned (fixes chained calls problem in FF1.0)
 
-There is also a couple small features added
-	A basic debug class has been added, allowing you to write PHP errors to a file
-	HTML_AJAX.replace now works async
-    </notes>
-   </release>
-   <release>
-    <version>0.2.0</version>
-    <date>2005-09-26</date>
-    <license>lgpl</license>
-    <state>alpha</state>
-    <notes>Reliense under the LGPL fixing concerns about GPL compability
-
-Full rewrite of all JavaScript code pulled in from JPSpan, this allows for relicence, as well as shrinking the code size while adding new features
-   Big new Features are: 
-   Request object non contains all information needed to make a request, HTML_AJAX.makeRequest added service a request object
-   HTML_AJAX_HttpClient instances now created as needed by a factory HTML_AJAX.httpClient(), this functionality will be replaced at some future point
-
-   These changes will allow for various queue and pool structures to be created in the future, but for now client in progress errors should not be possible
-   	when using proxy objects
-
-Serializer that mimics post added, filling _POST on an ajax request, helper code for AJAX forms still in progress
-
-Bugs Fixed:
-5087, 5284 	- jsClient Location fixes, allows it to be set manually
-5908 		- PHP 5 bug fix, auto loading of classes not working in php5 for an unknown reason, just load serializer as a normal include
-5029 		- init bug in auto_server
-    </notes>
-   </release>
-   <release>
-    <version>0.1.4</version>
-    <date>2005-08-19</date>
-    <license>PHP License</license>
-    <state>alpha</state>
-    <notes>PEAR CS fixes
-Support for generating multiple stubs in a single request stub=test,test2
-304 Http Cache support for Client and Stub generation, this is on by default, caching rules are configurable see docblocks for more info
-    </notes>
-   </release>
-   <release>
-    <version>0.1.3</version>
-    <date>2005-08-01</date>
-    <license>PHP License</license>
-    <state>alpha</state>
-    <notes>Update comments to PEAR coding standards
-    </notes>
-   </release>
-   <release>
-    <version>0.1.2</version>
-    <date>2005-07-29</date>
-    <license>PHP License</license>
-    <state>alpha</state>
-    <notes>Minor browser compatibility bug fixes, use directory seperator constant
-    </notes>
-   </release>
-   <release>
-    <version>0.1.1</version>
-    <date>2005-07-28</date>
-    <license>PHP License</license>
-    <state>alpha</state>
-    <notes>Adds Error and Event handling
-    </notes>
-   </release>
-   <release>
-    <version>0.1.0</version>
-    <date>2005-07-28</date>
-    <license>PHP License</license>
-    <state>alpha</state>
-    <notes>initial release
+	Provided an option to set the serverUrl in HTML_AJAX_Server
+	Added a new HTML_AJAX_Action example
+	Disabled form elements are now ignored by formEncode() and formSubmit()
     </notes>
    </release>
  </changelog>

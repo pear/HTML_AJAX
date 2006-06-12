@@ -24,8 +24,8 @@ HTML_AJAX_Client_Pool.prototype = {
     },
     getClient: function ()
     {
-        for (i = 0; i < this._len; i++) {
-            if (!this._clients[i].callInProgress()) {
+        for (var i = 0; i < this._len; i++) {
+            if (!this._clients[i].callInProgress() && this._clients[i].callbackComplete) {
                 return this._clients[i];
             }
         }
@@ -37,7 +37,7 @@ HTML_AJAX_Client_Pool.prototype = {
     },
     removeClient: function (client)
     {
-        for (i = 0; i < this._len; i++) {
+        for (var i = 0; i < this._len; i++) {
             if (!this._clients[i] == client) {
                 this._clients.splice(i, 1);
                 return true;

@@ -148,9 +148,20 @@ request.requestType = 'GET';
 }
 return HTML_AJAX.makeRequest(request);
 },
-phpCallback: function(callee, callback) {
-HTML_AJAX.fullcall(HTML_AJAX.defaultServerUrl, HTML_AJAX.defaultEncoding,
-false, false, callback, arguments.slice(2), {phpCallback: callee});
+callPhpCallback: function(phpCallback, jsCallback, url) {
+var args = new Array();
+for (var i = 3; i < arguments.length; i++) {
+args.push(arguments[i]);
+}
+if (HTML_AJAX_Util.getType(phpCallback[0]) == 'object') {
+jsCallback(phpCallback[0][phpCallback[1]](args));
+return;
+}
+if (!url) {
+url = HTML_AJAX.defaultServerUrl;
+}
+HTML_AJAX.fullcall(url, HTML_AJAX.defaultEncoding,
+false, false, jsCallback, args, {phpCallback: phpCallback});
 },
 call: function(className,method,callback) {
 var args = new Array();
@@ -237,8 +248,15 @@ name = el.getAttribute('name');
 if (!name) {
 return false;
 }
+if (element.disabled == 'true') {
+return false;
+}
 escName = escape(name);
+if (array_format) {
+value = el.value;
+} else {
 value = escape(el.value);
+}
 inpType = el.getAttribute('type');
 return true;
 }
@@ -276,13 +294,13 @@ var option=options[z];
 if(option.selected){
 if (array_format) {
 if (el.type == 'select-one') {
-out[escName] = escape(option.value);
+out[escName] = option.value;
 continue selectLoop;
 } else {
 if (!out[escName]) {
 out[name] = new Array();
 }
-out[escName].push(escape(option.value));
+out[escName].push(option.value);
 }
 } else {
 out += escName + '=' + escape(option.value) + '&';
@@ -610,8 +628,8 @@ return this._clients[key];
 },
 getClient: function ()
 {
-for (i = 0; i < this._len; i++) {
-if (!this._clients[i].callInProgress()) {
+for (var i = 0; i < this._len; i++) {
+if (!this._clients[i].callInProgress() && this._clients[i].callbackComplete) {
 return this._clients[i];
 }
 }
@@ -623,7 +641,7 @@ return false;
 },
 removeClient: function (client)
 {
-for (i = 0; i < this._len; i++) {
+for (var i = 0; i < this._len; i++) {
 if (!this._clients[i] == client) {
 this._clients.splice(i, 1);
 return true;
@@ -1169,6 +1187,7 @@ function HTML_AJAX_HttpClient() { }
 HTML_AJAX_HttpClient.prototype = {
 request: null,
 _timeoutId: null,
+callbackComplete: true,
 init:function()
 {
 try {
@@ -1248,7 +1267,12 @@ this.xmlhttp.setRequestHeader('Content-Type',this.request.getContentType() + '; 
 }
 }
 if (this.request.isAsync) {
+if (this.request.callback) {
+this.callbackComplete = false;
+}
 this.xmlhttp.onreadystatechange = function() { self._readyStateChangeCallback(); }
+} else {
+this.xmlhttp.onreadystatechange = function() {}
 }
 var payload = this.request.getSerializedPayload();
 if (payload) {
@@ -1311,7 +1335,6 @@ break;
 case 4:
 window.clearTimeout(this._timeoutId);
 if (this.xmlhttp.status == 200) {
-HTML_AJAX.requestComplete(this.request);
 if (this.request.Load) {
 this.request.Load();
 } else if (HTML_AJAX.Load ) {
@@ -1320,12 +1343,14 @@ HTML_AJAX.Load(this.request);
 var response = this._decodeResponse();
 if (this.request.callback) {
 this.request.callback(response);
+this.callbackComplete = true;
 }
 }
 else {
 var e = new Error('HTTP Error Making Request: ['+this.xmlhttp.status+'] '+this.xmlhttp.statusText);
 this._handleError(e);
 }
+HTML_AJAX.requestComplete(this.request);
 break;
 }
 } catch (e) {
@@ -2356,23 +2381,23 @@ return;
 classSep: '(^|$| )',
 hasClass: function(o, className) {
 var o = this.getElement(o);
-var regex = new RegExp(this.classSEP + className + this.classSEP);
+var regex = new RegExp(this.classSep + className + this.classSep);
 return regex.test(o.className);
 },
 addClass: function(o, className) {
-var object = this.getElement(object);
+var o = this.getElement(o);
 if(!this.hasClass(o, className)) {
 o.className += " " + className;
 }
 },
 removeClass: function(o, className) {
-var object = this.getElement(object);
-var regex = new RegExp(this.classSEP + className + this.classSEP);
+var o = this.getElement(o);
+var regex = new RegExp(this.classSep + className + this.classSep);
 o.className = o.className.replace(regex, " ");
 },
 replaceClass: function(o, oldClass, newClass) {
 var o = this.getElement(o);
-var regex = new RegExp(this.classSEP + oldClass + this.classSEP);
+var regex = new RegExp(this.classSep + oldClass + this.classSep);
 o.className = o.className.replace(regex, newClass);
 },
 getElement: function(el) {

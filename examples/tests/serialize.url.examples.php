@@ -22,7 +22,7 @@ $examples = array(
 );
 
 require_once 'HTML/AJAX/Serializer/Urlencoded.php';
-$sr = new HTML_AJAX_Serialize_Urlencoded;
+$sr = new HTML_AJAX_Serializer_Urlencoded;
 echo '<h1><a name="pos">Positives</a> | <a href="#neg">Negatives</a></h1>';
 $c = count($examples);
 for ($i = 0; $i < $c; $i++) {

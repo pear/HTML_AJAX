@@ -1,11 +1,11 @@
 <?php
 /**
- * OO AJAX Implementation for PHP
+ * OO AJAX Implementation for PHP, contains HTML_AJAX_Response
  *
  * @category   HTML
  * @package    AJAX
  * @author     Elizabeth Smith <auroraeosrose@gmail.com>
- * @copyright  2005 Elizabeth Smith
+ * @copyright  2005-2006 Elizabeth Smith
  * @license    http://www.opensource.org/licenses/lgpl-license.php  LGPL
  * @version    Release: @package_version@
  */
@@ -16,41 +16,61 @@
 require_once 'HTML/AJAX.php';
 
 /**
- * Josh says we need this, I don't know why yet
+ * Simple base class for a response object to use as an ajax callback
+ *
+ * This is the base response class, more interesting response classes can be
+ * built off of this, simply give it a unique content type and override the
+ * getPayload method or fill the payload property with your extended classes's
+ * serialized content
+ *
+ * @version   $Id: Response.php 536 2006-08-12 01:05:54Z emsmith $
  */
 class HTML_AJAX_Response
 {
 
-	/**
-	 * about
-	 * @var $contentType type
-	 */
-	var $contentType = 'text/plain';
+    /**
+     * The base response class uses plain text so use that content type
+     *
+     * @var string
+     * @access public
+     */
+    var $contentType = 'text/plain';
 
-	/**
-	 * about
-	 * @var $payload type
-	 */
-	var $payload = '';
+    /**
+     * Assign a string to this variable to use the bare response class
+     *
+     * @var string
+     * @access public
+     */
+    var $payload = '';
 
-	/**
-	 * public function getContentType()
-	 *
-	 * gets the right content type?
-	 */
-	function getContentType()
-	{
-		return $this->contentType;
-	}
+    /**
+     * Returns the appropriate content type
+     *
+     * This normally simply returns the contentType property but can be overridden
+     * by an extending class if the content-type is variable
+     *
+     * @return  string   appropriate content type
+     * @access public
+     */
+    function getContentType()
+    {
+        return $this->contentType;
+    }
 
-	/**
-	 * public function getPayload()
-	 *
-	 * something
-	 */
-	function getPayload()
-	{
-		return $this->payload;
-	}
+    /**
+     * Returns the serialized content of the response class
+     *
+     * You can either fill the payload elsewhere in an extending class and leave
+     * this method alone, or you can override it if you have a different type
+     * of payload that needs special treatment
+     *
+     * @return  string   serialized response content
+     * @access public
+     */
+    function getPayload()
+    {
+        return $this->payload;
+    }
 }
 ?>

@@ -31,7 +31,7 @@ class test {
 	}
 	function multiarg() {
 		$args = func_get_args();
-		return "passed in ".count($args)." args ".implode('|',$args);
+		return "passed in ".count($args)." args ".var_export($args, TRUE);
 	}
 	function cookies() {
 		return $_COOKIE;

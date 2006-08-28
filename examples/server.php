@@ -26,6 +26,7 @@ $server = new HTML_AJAX_Server();
 // register an instance of the class were registering
 $test =& new test();
 $server->registerClass($test);
+$server->ajax->packJavaScript = true;
 
 // handle different types of requests possiblities are
 // ?client=all - request for all javascript client files

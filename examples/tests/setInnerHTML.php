@@ -91,6 +91,12 @@ function test11() {
 function test12() {
 	test(false,'<div id="test12">Blah</div><script type="text/javascript">document.getElementById("test12").style.color = "orange";</s'+'cript>');
 }
+function test13() {
+         test(false, '<script type="text/javascript">\n<!--\n alert("hello world from comments!");\n//-->\n</' + 'script>');
+}
+function test14() {
+         test(false, '<script type="text/javascript">\n<![CDATA[\n alert("hello world from cdata comments!");\n]]>\n</' + 'script>');
+}
 </script>
 </head>
 <body>
@@ -107,6 +113,8 @@ function test12() {
 	<li><a href="javascript:test10()">Create a function and call it in the parent scope</a></li>
 	<li><a href="javascript:test11()">Replace/Replace make sure default mode is detected properly</a></li>
 	<li><a href="javascript:test12()">Use an element adding in this set latter in the process</a></li>
+	<li><a href="javascript:test13()">Script inside comment</a></li>
+	<li><a href="javascript:test14()">Script inside cdata comment</a></li>
 </ol>
 
 <div id="status"></div>

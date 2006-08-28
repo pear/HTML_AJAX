@@ -47,6 +47,8 @@ More information for Ben Nolan's implementation: <http://ripcord.co.nz/behaviour
 */
 
 var Behavior = {
+	// so to an id to get debug timings
+	debug : false,
 
 	// private data member
 	list : new Array(),
@@ -67,14 +69,37 @@ var Behavior = {
 
 	// void apply() : Applies the registered ruleset.
 	apply : function() {
+		if (this.debug) {
+			document.getElementById(this.debug).innerHTML += 'Apply: '+new Date()+'<br>';
+			var total = 0;
+		}
+		if (Behavior.list.length > 2) {
+			cssQuery.caching = true;
+		}
 		for (i = 0; i < Behavior.list.length; i++) {
 			var rule = Behavior.list[i];
+			
+			if (this.debug) { var ds = new Date() };
 			var tags = cssQuery(rule.selector, rule.from);
+	
+			if (this.debug) {
+				var de = new Date();
+				var ts = de.valueOf()-ds.valueOf();
+				document.getElementById(this.debug).innerHTML += 'Rule: '+rule.selector+' - Took: '+ts+' - Returned: '+tags.length+' tags<br>';
+				total += ts;
+			}
 			if (tags) {
 				for (j = 0; j < tags.length; j++) {
 					rule.action(tags[j]);
 				}
 			}
+		}
+		if (Behavior.list.length > 2) {
+			cssQuery.caching = false;
+		}
+
+		if (this.debug) {
+			document.getElementById(this.debug).innerHTML += 'Total rule apply time: '+total;
 		}
 	},
 

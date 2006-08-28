@@ -7,8 +7,9 @@
  *
  * The proxyless api is provided by Main.js
  *
- * There are 3 main methods and 2 properties to the proxyless api, they all exist as static methods on HTML_AJAX
+ * There are 4 main methods and 2 properties to the proxyless api, they all exist as static methods on HTML_AJAX
  *	HTML_AJAX.grab(url)
+ *	HTML_AJAX.post(url,payload)
  *	HTML_AJAX.replace(id,url) or HTML_AJAX.replace(id,class,method,arg1,arg2,etc)
  *	HTML_AJAX.call(class,method,callback,arg1,arg2,etc)
  *
@@ -37,6 +38,7 @@
 <script type='text/javascript' src="server.php?client=json"></script>
 <script type='text/javascript' src="server.php?client=loading"></script>
 <script type='text/javascript' src="server.php?client=iframe"></script>
+<script type='text/javascript' src="server.php?client=urlserializer"></script>
 
 </head>
 <body>
@@ -64,6 +66,22 @@ function grabAsync() {
 }
 
 function grabCallback(result) {
+	document.getElementById('target').innerHTML = result;
+}
+
+// POST lets you make simple POST requests to a url, if you use a hash {key:value,key2:value,etc} as the payload then the
+// data will be automatically be urlencoded, making it look like a form submission to the server
+// if the data is a string it will be sent as is
+var postUrl = 'support/post_tester.php';
+function postSync() {
+	document.getElementById('target').innerHTML = HTML_AJAX.post(postUrl,{dog:'bob',cat:'tigger'});
+}
+
+function postAsync() {
+	HTML_AJAX.post(postUrl,{dog:'bob',cat:'tigger'},grabCallback);
+}
+
+function postCallback(result) {
 	document.getElementById('target').innerHTML = result;
 }
 
@@ -114,6 +132,8 @@ function callCallback(result) {
 	<li><a href="javascript:clearTarget()">Clear Target</a></li>
 	<li><a href="javascript:grabSync()">Run Sync Grab Example</a></li>
 	<li><a href="javascript:grabAsync()">Run Async Grab  Example</a></li>
+	<li><a href="javascript:postSync()">Run Sync Post Example</a></li>
+	<li><a href="javascript:postAsync()">Run Async Post  Example</a></li>
 	<li><a href="javascript:replaceUrl()">Replace with content from a url</a></li>
 	<li><a href="javascript:replaceFromMethod()">Replace with content from a method call</a></li>
 	<li><a href="javascript:replaceFromMethodMulti()">Replace with content from a method call (multiple method arguments)</a></li>

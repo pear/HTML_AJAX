@@ -1,0 +1,14 @@
+Well if you've got this far you've at least found the development version of HTML_AJAX
+If you want to run a non released version you have to perform some of the magic the pear
+installer does on your own.
+
+The quickest solution to this is to run pear install -f package.xml.  
+This will install HTML_AJAX overwriting whatever version is currently installed.
+If your on windows you'll want to take a look at test.bat.
+
+Or you can simply check out HTML_AJAX into a directory called HTML and set the parent
+directory in an .htacess file as the include path, also make sure you turn off E_STRICT
+or the examples will break
+
+php_value include_path "/path/to/HTML/parent"
+php_value error_reporting 2047

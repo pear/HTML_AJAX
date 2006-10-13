@@ -1,15 +1,6 @@
 <?php
 /**
- * Example of Using HTML_AJAX with a queue
- *
- * When using HTML_AJAX your actually always using a queue, its just its a simple one that always performs whatever actions its given immediately
- * HTML_AJAX however provides other queues offering different modes of operation
- *
- * Currently the Queues are (class names are prefixed with: HTML_AJAX_Queue_):
- * Immediate - Default make the request immediately
- * Interval_SingleBuffer - Make request on an interval with holding just the last request between calls
- *
- * Interval_SingleBuffer is generally used for Live Search/Google Suggest type operations
+ * Using the ordered queue to deal with high latency
  *
  * @category   HTML
  * @package    AJAX
@@ -19,12 +10,16 @@
  * @version    Release: @package_version@
  * @link       http://pear.php.net/package/HTML_AJAX
  */
+session_start();
+if (isset($_GET['latency'])) {
+    $_SESSION['sleep'] = $_GET['latency'];
+}
 ?>
 <html>
 <head>
 
-<script type='text/javascript' src="server.php?client=Util,main,dispatcher,httpclient,request,json,loading,iframe,queues"></script>
-<script type='text/javascript' src="auto_server.php?stub=livesearch"></script>
+<script type='text/javascript' src="server.php?client=Util,main,dispatcher,httpclient,request,json,loading,iframe,orderedqueue"></script>
+<script type='text/javascript' src="slow_server.php?stub=livesearch"></script>
 
 </head>
 <body>
@@ -51,11 +46,10 @@ callback = {
 var remoteLiveSearch = new livesearch(callback);
 
 // we could change the queue by overriding the default one, but generally you want to create a new one
-// set our remote object to use the rls queue
-remoteLiveSearch.dispatcher.queue = 'rls';
+// set our remote object to use the ordered queue
+remoteLiveSearch.dispatcher.queue = 'ordered';
 
-// create the rls queue, with a 350ms buffer, a larger interval such as 2000 is useful to see what is happening but not so useful in real life
-HTML_AJAX.queues['rls'] = new HTML_AJAX_Queue_Interval_SingleBuffer(350);
+HTML_AJAX.queues['ordered'] = new HTML_AJAX_Queue_Ordered();
 
 
 // what to call on onkeyup, you might want some logic here to not search on empty strings or to do something else in those cases
@@ -65,6 +59,13 @@ function searchRequest(searchBox) {
 </script>
 
 <p>This is a really basic LiveSearch example, type in the box below to find a fruit</p>
+<p>By deafult server add latency to the request, starting with 5 seconds and reducing 1 second per request</p>
+<p>An ordered queue has been used which should make results come back in the order they are sent not the order they are received</p>
+
+<form action="slow_livesearch.php">
+<label>Set current latency too: <input name="latency" size=4><input type="submit">
+</form>
+<hr><br>
 
 Search <input id="search" autocomplete="off" onkeyup="searchRequest(this)">
 

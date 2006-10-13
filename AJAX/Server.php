@@ -106,7 +106,7 @@ class HTML_AJAX_Server
         'html_ajax_lite'=>  'HTML_AJAX_lite.js',
         'json'          =>  'serializer/JSON.js',
         'request'       =>  'Request.js',
-        'main'          =>  array('Main.js','clientPool.js'),
+        'main'          =>  array('Compat.js','Main.js','clientPool.js'),
         'httpclient'    =>  'HttpClient.js',
         'dispatcher'    =>  'Dispatcher.js',
         'util'          =>  'util.js',
@@ -114,10 +114,21 @@ class HTML_AJAX_Server
         'phpserializer' =>  'serializer/phpSerializer.js',
         'urlserializer' =>  'serializer/UrlSerializer.js',
         'haserializer'  =>  'serializer/haSerializer.js',
-        'priorityqueue' =>  'priorityQueue.js',
         'clientpool'    =>  'clientPool.js',
         'iframe'        =>  'IframeXHR.js',
-        'behavior'      =>  array('behavior/behavior.js','behavior/cssQuery-p.js')
+        'alias'         =>  'Alias.js',
+        'queues'        =>  'Queue.js',
+        'behavior'      =>  array('behavior/behavior.js','behavior/cssQuery-p.js'),
+
+        // rules to help you use a minimal library set
+        'standard'      =>  array('Compat.js','clientPool.js','util.js','main.js','HttpClient.js','Request.js','serializer/JSON.js',
+                                    'loading.js','serializer/UrlSerializer.js','Alias.js','behavior/behavior.js','behavior/cssQuery-p.js'),
+        'jsonrpc'       =>  array('Compat.js','util.js','main.js','clientPool.js','HttpClient.js','Request.js','serializer/JSON.js'),
+        'proxyobjects'  =>  array('Compat.js','util.js','main.js','clientPool.js','Request.js','serializer/JSON.js','Dispatcher.js'),
+
+        // BC rules
+        'priorityqueue' =>  'Queue.js',
+        'orderedqueue'  =>  'Queue.js',
     );
 
     /**
@@ -139,8 +150,10 @@ class HTML_AJAX_Server
 
     /**
      * Constructor creates the HTML_AJAX instance
+     *
+     * @param string $serverUrl (Optional) the url the client should be making a request too
      */
-    function HTML_AJAX_Server() 
+    function HTML_AJAX_Server($serverUrl = false) 
     {
         $this->ajax =& new HTML_AJAX();
 
@@ -150,10 +163,20 @@ class HTML_AJAX_Server
         // keep in the query string all the parameters that don't belong to AJAX
         // we remove all string like "parameter=something&". Final '&' can also
         // be '&amp;' (to be sure) and is optional. '=something' is optional too.
-        $querystring = preg_replace('/(' . join('|', $parameters) . ')(?:=[^&]*(?:&(?:amp;)?|$))?/', '', $_SERVER['QUERY_STRING']);
+        $querystring = '';
+        if (isset($_SERVER['QUERY_STRING'])) {
+            $querystring = preg_replace('/(' . join('|', $parameters) . ')(?:=[^&]*(?:&(?:amp;)?|$))?/', '', $this->ajax->_getServer('QUERY_STRING'));
+        }
 
         // call the server with this query string
-        $this->ajax->serverUrl = htmlentities($_SERVER['PHP_SELF']) .'?'. htmlentities($querystring);
+        if ($serverUrl === false) {
+            $serverUrl = htmlentities($this->ajax->_getServer('PHP_SELF'));
+        }
+
+        if (substr($serverUrl,-1) != '?') {
+            $serverUrl .= '?';
+        }
+        $this->ajax->serverUrl =  $serverUrl . htmlentities($querystring);
         
         $methods = get_class_methods($this);
         foreach($methods as $method) {
@@ -179,7 +202,9 @@ class HTML_AJAX_Server
             $this->generateClient();
             return true;
         } else {
-            $this->_init($this->_cleanIdentifier($_GET['c']));
+            if (!empty($_GET['c'])) {
+                $this->_init($this->_cleanIdentifier($this->ajax->_getVar('c')));
+            }
             return $this->ajax->handleRequest();
         }
     }
@@ -192,6 +217,17 @@ class HTML_AJAX_Server
     function registerClass(&$instance, $exportedName = false, $exportedMethods = false) 
     {
         $this->ajax->registerClass($instance,$exportedName,$exportedMethods);
+    }
+
+    /**
+     * Change default serialization - important for exporting classes
+     *
+     * I wanted this for the xml serializer :)
+     */
+    function setSerializer($type) 
+    {
+        $this->ajax->serializer = $type;
+        $this->ajax->unserializer = $type;
     }
 
     /**
@@ -226,6 +262,29 @@ class HTML_AJAX_Server
     }
 
     /**
+     * Register a callback to be exported to the client
+     *
+     * This function uses the PHP callback pseudo-type
+     *
+     */
+    function registerPhpCallback($callback)
+    {
+        if (!is_callable($callback)) {
+            // invalid callback
+            return false;
+        }
+        
+        if (is_array($callback) && is_object($callback[0])) {
+            // object method
+            $this->registerClass($callback[0], strtolower(get_class($callback[0])), array($callback[1]));
+            return true;
+        }
+        
+        // static callback
+        $this->ajax->registerPhpCallback($callback);
+    }
+
+    /**
      * Generate client js
      *
      * @todo    this is going to need tests to cover all the options
@@ -237,6 +296,7 @@ class HTML_AJAX_Server
         ob_start();
 
         // create a list list of js files were going to need to output
+        // index is the full file and so is the value, this keeps duplicates out of $fileList
         $fileList = array();
 
         if(!is_array($this->options['client'])) {
@@ -247,10 +307,10 @@ class HTML_AJAX_Server
                 $lib = (array)$this->javascriptLibraries[$library];
                 foreach($lib as $file) {
                     if (isset($this->javascriptLibraryPaths[$library])) {
-                        $fileList[] = $this->javascriptLibraryPaths[$library].$file;
+                        $fileList[$this->javascriptLibraryPaths[$library].$file] = $this->javascriptLibraryPaths[$library].$file;
                     }
                     else {
-                        $fileList[] = $this->clientJsLocation().$file;
+                        $fileList[$this->clientJsLocation().$file] = $this->clientJsLocation().$file;
                     }
                 }
             }
@@ -369,11 +429,16 @@ class HTML_AJAX_Server
         $length = ob_get_length();
         $output = ob_get_contents();
         ob_end_clean();
+
+        if ($this->ajax->packJavaScript) {
+            $output = $this->ajax->packJavaScript($output);
+            $length = strlen($output);
+        }
         if ($length > 0 && $this->ajax->_sendContentLength()) { 
-            $headers['Content-Length'] = $length;
+            //$headers['Content-Length'] = $length;
         }
         $headers['Content-Type'] = 'text/javascript; charset=utf-8';
-        call_user_func($this->ajax->_callbacks['headers'], $headers);
+        $this->ajax->_sendHeaders($headers);
         echo($output);
     }
 
@@ -423,13 +488,7 @@ class HTML_AJAX_Server
     {
         $this->options = array('client'=>array(),'stub'=>array());
         if (isset($_GET['client'])) {
-            $this->options['client'] = array();
-             if (strstr($_GET['client'],',')) {
-                $clients = explode(',',$_GET['client']);
-            } else {
-                $clients = array($_GET['client']);
-            }
-            
+            $clients = explode(',',$this->ajax->_getVar('client'));
             $client = array();
             foreach($clients as $val) {
                 $cleanVal = $this->_cleanIdentifier($val);
@@ -443,11 +502,7 @@ class HTML_AJAX_Server
             }
         }
         if (isset($_GET['stub'])) {
-            if (strstr($_GET['stub'],',')) {
-                $stubs = explode(',',$_GET['stub']);
-            } else {
-                $stubs = array($_GET['stub']);
-            }
+            $stubs = explode(',',$this->ajax->_getVar('stub'));
             $stub = array();
             foreach($stubs as $val) {
                 $cleanVal = $this->_cleanIdentifier($val);
@@ -495,6 +550,7 @@ class HTML_AJAX_Server
      */
     function _init($className) 
     {
+        $className = strtolower($className);
         if ($this->initMethods) {
             if (isset($this->_initLookup[$className])) {
                 $method =& $this->_initLookup[$className];
@@ -576,7 +632,7 @@ class HTML_AJAX_Server
      */
     function _compareEtags($serverETag) {
         if (isset($_SERVER['HTTP_IF_NONE_MATCH'])) {
-    		if (strcmp($_SERVER['HTTP_IF_NONE_MATCH'],$serverETag) == 0) {
+    		if (strcmp($this->ajax->_getServer('HTTP_IF_NONE_MATCH'),$serverETag) == 0) {
                 $this->_sendCacheHeaders($serverETag,true);
                 return true;
             }

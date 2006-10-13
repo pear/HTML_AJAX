@@ -19,12 +19,9 @@
  */
 require_once 'PEAR/PackageFileManager.php';
 
-$version = '0.2.5';
+$version = '0.5.1';
 $notes = <<<EOT
-	Small optimizations and cleanup of HTML_AJAX and HTML_AJAX_Server
-	Case fixes for specifing case while exporting a class
-	Fix url creation in javascript allowing server urls to contain parameters
-	Added a flag to turn off sending a Content-Length header
+	Map PEAR_Error objects so they can be caught on the JavaScript side
 EOT;
 
 $description =<<<EOT
@@ -38,9 +35,9 @@ $result = $package->setOptions(array(
    'summary'           => 'PHP and JavaScript AJAX library',
    'description'       => $description,
    'version'           => $version,
-   'state'             => 'alpha',
+   'state'             => 'beta',
    'license'           => 'lgpl',
-   'ignore'            => array('package.php', 'package.xml', '*.bak', '*src*', '*.tgz','test.bat','build.php','DeveloperNotes.txt'),
+   'ignore'            => array('package.php', 'package.xml', '*.bak', '*src*', '*.tgz','test.bat','build.php','DeveloperNotes.txt','*cssQuery-src*'),
    'filelistgenerator' => 'file', // other option is 'file'
    'notes'             => $notes,
    'changelogoldtonew' => false,
@@ -59,6 +56,8 @@ if (PEAR::isError($result)) {
 
 $package->addMaintainer('jeichorn','lead','Joshua Eichorn','josh@bluga.net');
 $package->addMaintainer('davidc','lead','David Coallier','davidc@php.net');
+$package->addMaintainer('arpad','developer','Arpad Ray','arpad@php.net');
+$package->addMaintainer('lyaish','developer','Laurent Yaish','laurenty@gmail.com');
 
 // dependencies can be added at will here
 $package->addDependency('PEAR', '1.3.5', 'ge', 'pkg', false);

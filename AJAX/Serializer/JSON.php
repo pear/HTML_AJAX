@@ -28,13 +28,22 @@ class HTML_AJAX_Serializer_JSON
      * @access private
      */
     var $_jsonext;
+
+    /**
+     * use loose typing to decode js objects into php associative arrays
+     * @access public
+     */
+    var $loose_type;
+    
     // }}}
     // {{{ constructor
-    function HTML_AJAX_Serializer_JSON() 
+    function HTML_AJAX_Serializer_JSON($use_loose_type = true) 
     {
+        $this->loose_type = (bool) $use_loose_type;
         $this->_jsonext = $this->_detect();
         if(!$this->_jsonext) {
-            $this->_json =& new HTML_AJAX_JSON();
+            $use_loose_type = ($this->loose_type) ? SERVICES_JSON_LOOSE_TYPE : 0;
+            $this->_json =& new HTML_AJAX_JSON($use_loose_type);
         }
     }
     // }}}
@@ -66,7 +75,7 @@ class HTML_AJAX_Serializer_JSON
     function unserialize($input) 
     {
         if($this->_jsonext) {
-            return json_decode($input);
+            return json_decode($input, $this->loose_type);
         } else {
             return $this->_json->decode($input);
         }
@@ -74,7 +83,7 @@ class HTML_AJAX_Serializer_JSON
     // }}}
     // {{{ _detect
     /**
-     * detcts the loaded extension
+     * detects the loaded extension
      */
     function _detect()
     {

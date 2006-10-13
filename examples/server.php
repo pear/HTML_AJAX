@@ -18,7 +18,7 @@
 include 'HTML/AJAX/Server.php';
 
 // include the test class will be registering
-	include 'test.class.php';
+	include 'support/test.class.php';
 
 // create our new server
 $server = new HTML_AJAX_Server();
@@ -26,6 +26,7 @@ $server = new HTML_AJAX_Server();
 // register an instance of the class were registering
 $test =& new test();
 $server->registerClass($test);
+$server->ajax->packJavaScript = true;
 
 // handle different types of requests possiblities are
 // ?client=all - request for all javascript client files

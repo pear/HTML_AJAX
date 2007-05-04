@@ -21,7 +21,7 @@ class GuestbookServer extends HTML_AJAX_Server {
 	// init method for the test class, includes needed files an registers it for ajax
 	function initGuestbook() {
 		include 'guestbook.class.php';
-		$this->registerClass(new Guestbook(),'guestbook',array('newEntry', 'clearGuestbook', 'deleteEntry', 'editEntry')); // specify methods so that we get case in php4
+		$this->registerClass(new Guestbook(),'guestbook',array('newEntry', 'clearGuestbook', 'deleteEntry', 'editEntry', 'updateSelect')); // specify methods so that we get case in php4
 	}
 }
 

@@ -1,5 +1,5 @@
 <?php
-// $Id: XML.php 545 2006-08-14 23:02:58Z emsmith $
+// $Id: XML.php 583 2007-03-05 22:13:30Z jeichorn $
 /**
  * XML Serializer - does NOT need a js serializer, use responseXML property in XmlHttpRequest
  *
@@ -36,11 +36,17 @@ class HTML_AJAX_Serializer_XML
         {
             return $input->saveXml();
         }
-        // otherwise we'll assume you're on php4 and using domxml
-        else
-        {
+        // then will check for domxml
+        elseif (extension_loaded('Domxml')) 
+	{
             return $input->dump_mem();
         }
+	// will throw an error
+	else {
+		$error = new HTML_AJAX_Serializer_Error();	
+		$this->serializerNewType = 'Error';
+		return $error->serialize(array('errStr'=>"Missing PHP Dom extension direct XML won't work"));
+	}
     }
 
     /**
@@ -67,10 +73,15 @@ class HTML_AJAX_Serializer_XML
             $doc->loadXML($input);
             return $doc;
         }
-        // otherwise we'll assume you're on php4 and using domxml
+        // then we check for the domxml extensions
+        elseif (extension_loaded('Domxml'))
+	{
+            return domxml_open_mem($input);
+	}
+	// we give up and just return the xml directly
         else
         {
-            return domxml_open_mem($input);
+		return $input;
         }
     }
 }

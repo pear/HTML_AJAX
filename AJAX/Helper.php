@@ -145,5 +145,18 @@ class HTML_AJAX_Helper
 		$s = new HTML_AJAX_Serializer_JSON();
 		return $s->serialize($input);
 	}
+
+	/**
+	 * Check the request headers to see if this is an AJAX request
+     *
+     * @return boolean
+     */
+    function isAJAX() {
+        if (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && $_SERVER['HTTP_X_REQUESTED_WITH'] == 'XMLHttpRequest') {
+            return true;
+        }
+        return false;
+    }
 }
+/* vim: set expandtab tabstop=4 shiftwidth=4 softtabstop=4: */
 ?>

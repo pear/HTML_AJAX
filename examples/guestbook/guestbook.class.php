@@ -137,6 +137,19 @@ class guestbook {
 		return $response;
 	}
 
+	function updateSelect($id)
+	{
+		$response = new HTML_AJAX_Action();
+		$attr = array('id' => $id, 'name' => $id);
+		$response->replaceNode($id, 'select', $attr);
+		for ($i=1;$i<=10;$i++)
+		{
+			$attr = array('value' => $i, 'innerHTML' => 'Option ' . $i);
+			$response->createNode($id, 'option', $attr, 'append');
+		}
+		return $response;
+	}
+
 	function _makeDiv($key, $data, $replace = FALSE) {
 		$div = '';
 		if($replace == FALSE)

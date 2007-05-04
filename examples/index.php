@@ -79,6 +79,7 @@ Other Example files:
 <li><a href='tests/setInnerHTML.php'>setInnerHTML.php</a>	- Tests used to verify the operation of HTML_AJAX_Util.setInnerHTML</li>
 <li><a href='tests/duplicateJSLib.php'>duplicateJSLib.php</a>	- Tests used to verify that HTML_AJAX_Server is removing duplicate JS libraries from client generation correctly</li>
 <li><a href='tests/behaviorSpeed.php'>behaviorSpeed.php</a>	- Tests used to see how fast the JavaScript behavior code runs.</li>
+<li><a href='interceptors.php'>interceptors.php</a> - Interceptors test</a></li>
 </ul>
 
 <p>

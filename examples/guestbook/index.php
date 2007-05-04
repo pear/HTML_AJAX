@@ -148,6 +148,10 @@ function editentry(id) {
     var remoteguestbook = new guestbook();
     remoteguestbook.editEntry(id);
 }
+function updateselect(id) {
+    var remoteguestbook = new guestbook();
+    remoteguestbook.updateSelect(id);
+}
 </script>
 <h2>Welcome to the Guestbook</h2>
 <div id="guestbookList">
@@ -184,15 +188,15 @@ function editentry(id) {
   </fieldset>
  </form>
 
-<h4>Current Guestbook Testing Status</h4>
-<h5>Win32 - XP</h5>
-<ol>
-<li>Firefox 1.5b - all passed</li>
-<li>IE 6 - all passed</li>
-<li>Netscape 8 - IE mode passed, Gecko mode failed (some kind of browser bug I suspect)</li>
-<li>Opera 8.5 - all passed</li>
-<li>IE 5.5 - sessions were messed up but what worked was fine</li>
-<li>IE 5.01 - same as 5.5, messed up sessions but partially worked</li>
-</ol>
+<p>Fill a select item with a list of options - tests the HTML_AJAX_Action::replaceNode and HTML_AJAX_Action::createNode methods</p>
+ <form id="testing" action="index.php" method="post" onsubmit="return false;">
+  <div>
+	<a href="#" onclick="updateselect('replaceme');">Gimme some options</a>
+    <select id="replaceme">
+		<option name="dog" id="dog">Dog</option>
+	</select>
+  </div>
+ </form>
+
 </body>
 </html>

@@ -160,6 +160,11 @@ class HTML_AJAX {
     var $_validCallbacks = array();
 
     /**
+     * Interceptor instance
+     */
+    var $_interceptor = false;
+
+    /**
      * Set a class to handle requests
      *
      * @param   object  $instance
@@ -347,13 +352,14 @@ class HTML_AJAX {
         $class = strtolower($this->_getVar('c'));
         $method = $this->_getVar('m');
         $phpCallback = $this->_getVar('cb');
+
         
         if (!empty($class) && !empty($method)) {
             if (!isset($this->_exportedInstances[$class])) {
                 // handle error
                 trigger_error('Unknown class: '. $class); 
             }
-            if (!in_array($method,$this->_exportedInstances[$class]['exportedMethods'])) {
+            if (!in_array(($this->php4CompatCase ? strtolower($method) : $method),$this->_exportedInstances[$class]['exportedMethods'])) {
                 // handle error
                 trigger_error('Unknown method: ' . $method);
             }
@@ -387,6 +393,10 @@ class HTML_AJAX {
         $args = $unserializer->unserialize($this->_getClientPayload(), $this->_allowedClasses);
         if (!is_array($args)) {
             $args = array($args);
+        }
+
+        if ($this->_interceptor !== false) {
+            $args = $this->_processInterceptor($class,$method,$phpCallback,$args);
         }
         
         if (empty($phpCallback)) {
@@ -436,12 +446,28 @@ class HTML_AJAX {
         if(is_object($response) && is_a($response, 'HTML_AJAX_Response')) {
             $output = $response->getPayload();
             $content = $response->getContentType();
+        } else if(is_a($response, 'PEAR_Error')) {
+            $serializer = $this->_getSerializer('Error');
+            $output = $serializer->serialize(array(
+                'message'  => $response->getMessage(),
+                'userinfo' => $response->getUserInfo(),
+                'code'     => $response->getCode(),
+                'mode'     => $response->getMode()
+                )
+            );
+            $content = $this->contentTypeMap['Error'];
         } else {
             $serializer = $this->_getSerializer($this->serializer);
             $output = $serializer->serialize($response);
-            if (isset($this->contentTypeMap[$this->serializer])) {
-                //remember that IE is stupid and wants a capital T
-                $content = $this->contentTypeMap[$this->serializer];
+
+            $serializerType = $this->serializer;
+            // let a serializer change its output type
+            if (isset($serializer->serializerNewType)) {
+                $serializerType = $serializer->serializerNewType;
+            }
+
+            if (isset($this->contentTypeMap[$serializerType])) {
+                $content = $this->contentTypeMap[$serializerType];
             }
         }
         // headers to force things not to be cached:
@@ -609,7 +635,7 @@ class HTML_AJAX {
             $this->serializer = 'Error';
             $this->_sendResponse($e);
             if ($this->debugEnabled) {
-                $this->debug =& new HTML_AJAX_Debug($errstr, $errline, $errno, $errfile);
+                $this->debug = new HTML_AJAX_Debug($errstr, $errline, $errno, $errfile);
                 if ($this->debugSession) {
                     $this->debug->sessionError();
                 }
@@ -812,57 +838,119 @@ class HTML_AJAX {
         $this->_validCallbacks[md5(serialize($callback))] = 1;
     }
 
-    /**
+   /**
      * Make JavaScript code smaller
-     * 
+     *
      * Currently just strips whitespace and comments, needs to remain fast
+     * Strips comments only if they are not preceeded by code
+     * Strips /*-style comments only if they span over more than one line
+     * Since strings cannot span over multiple lines, it cannot be defeated by a string
+     * containing /*
      */
     function packJavaScript($input) {
         $stripPregs = array(
-            '/^\s+$/',
+            '/^\s*$/',
             '/^\s*\/\/.*$/'
         );
-        $blockStart = '/\/\*/';
-        $blockEnd = '/\*\//';
-
+        $blockStart = '/^\s*\/\/\*/';
+        $blockEnd = '/\*\/\s*(.*)$/';
+        $inlineComment = '/\/\*.*\*\//';
         $out = '';
 
-		$lines = explode("\n",$input);
-		$inblock = false;
-		foreach($lines as $line) {
-			$keep = true;
-			if ($inblock) {
-				if (preg_match($blockEnd,$line)) {
-					$inblock = false;
-					$keep = false;
-				}
-			}
-			else if (preg_match($blockStart,$line)) {
-				$inblock = true;
-                $keep = false;
+        $lines = explode("\n",$input);
+        $inblock = false;
+        foreach($lines as $line) {
+            $keep = true;
+            if ($inblock) {
                 if (preg_match($blockEnd,$line)) {
                     $inblock = false;
+                    $line = preg_match($blockEnd,'$1',$line);
+                    $keep = strlen($line) > 0;
                 }
-			}
+            }
+            else if (preg_match($inlineComment,$line)) {
+                $keep = true;
+            }
+            else if (preg_match($blockStart,$line)) {
+                $inblock = true;
+                $keep = false;
+            }
 
-			if (!$inblock) {
-				foreach($stripPregs as $preg) {
-					if (preg_match($preg,$line)) {
-						$keep = false;
-						break;
-					}
-				}
-			}
+            if (!$inblock) {
+                foreach($stripPregs as $preg) {
+                    if (preg_match($preg,$line)) {
+                        $keep = false;
+                        break;
+                    }
+                }
+            }
 
-			if ($keep && !$inblock) {
-				$out .= trim($line)."\n";
-			}
-			/* Enable to see what your striping out
-			else {
-				echo $line."<br>";
-			}//*/
-		}
+            if ($keep && !$inblock) {
+                $out .= trim($line)."\n";
+            }
+            /* Enable to see what your striping out
+            else {
+                echo $line."<br>";
+            }//*/
+        }
         return $out;
+    }
+
+    /**
+     * Set an intercptor class
+     *
+     * An interceptor class runs during the process of handling a request, it allows you to run security checks globally
+     * It also allows you to rewrite parameters
+     *
+     * You can throw errors and exceptions in your intercptor methods and they will be passed to javascript
+     * 
+     * You can add interceptors are 3 levels
+     * For a particular class/method, this is done by add a method to you class named ClassName_MethodName($params)
+     * For a particular class, method ClassName($methodName,$params)
+     * Globally, method intercept($className,$methodName,$params)
+     * 
+     * Only one match is done, using the most specific interceptor
+     *
+     * All methods have to return $params, if you want to empty all of the parameters return an empty array
+     *
+     * @todo handle php callbacks
+     */
+    function setInterceptor($instance) {
+        $this->_interceptor = $instance;
+    }
+
+    /**
+     * Attempt to intercept a call
+     *
+     * @todo handle php callbacks
+     */
+    function _processInterceptor($className,$methodName,$callback,$params) {
+
+        $m = $className.'_'.$methodName;
+        if (method_exists($this->_interceptor,$m)) {
+            return $this->_interceptor->$m($params);
+        }
+
+        $m = $className;
+        if (method_exists($this->_interceptor,$m)) {
+            return $this->_interceptor->$m($methodName,$params);
+        }
+
+        $m = 'intercept';
+        if (method_exists($this->_interceptor,$m)) {
+            return $this->_interceptor->$m($className,$methodName,$params);
+        }
+
+        return $params;
+    }
+}
+
+function HTML_AJAX_class_exists($class,$autoload) {
+    if (function_exists('interface_exists')) {
+        return class_exists($class,$autoload);
+    }
+    else {
+        return class_exists($class);
     }
 }
 /* vim: set expandtab tabstop=4 shiftwidth=4 softtabstop=4: */

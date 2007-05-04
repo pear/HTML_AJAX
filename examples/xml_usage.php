@@ -67,10 +67,10 @@ function clearTarget() {
 }
 
 //create xml document to send back to server
-var xmlhello = '<?xml version="1.0"?><root><tag>Hello</tag></root>';
+var xmlhello = '<' + '?xml version="1.0"?><root><tag>Hello</tag></root>';
 xmlhello = new DOMParser().parseFromString(xmlhello, 'text/xml');
 
-var xmlgoodbye = '<?xml version="1.0"?><root><tag>Goodbye</tag></root>';
+var xmlgoodbye = '<' + '?xml version="1.0"?><root><tag>Goodbye</tag></root>';
 xmlgoodbye = new DOMParser().parseFromString(xmlgoodbye, 'text/xml');
 
 </script>
@@ -102,6 +102,21 @@ function asyncSend(xml) {
 	asyncProxy.writeDoc(xml);
 }
 </script>
+
+<p>HTML_AJAX XML functionality needs the Dom extensions in PHP5 or the DOMXML extension in PHP4.<br>
+It looks like you have:<br>
+<?php
+if (extension_loaded('Dom')) {
+	echo 'The Dom extension';
+}
+else if (extension_loaded('Domxml')) {
+	echo 'The Domxml extension';
+}
+else {
+	echo 'No XML DOM support, so you can expect these examples to fail';
+}
+?>
+</p>
 <ul>
 	<li><a href="javascript:clearTarget()">Clear Target</a></li>
 	<li><a href="javascript:syncCall()">Retrieve XmlDom Sync</a></li>

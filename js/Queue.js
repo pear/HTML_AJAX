@@ -89,12 +89,12 @@ HTML_AJAX_Queue_Ordered.prototype = {
 		}
 		else {
 			this.interned[order] = result;
-			if (this.interned[this.current]) {
-				this.callbacks[this.current](this.interned[this.current]);
-				this.current++;
-			}
 		}
-	} 
+		while (this.interned[this.current]) {
+			this.callbacks[this.current](this.interned[this.current]);
+			this.current++;
+		}
+}
 }
 
 // Make a single request at once, canceling and currently outstanding requests when a new one is made

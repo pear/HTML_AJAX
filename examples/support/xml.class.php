@@ -32,7 +32,7 @@ class TestXml {
 			$element->appendChild($dom->createTextNode('carrot'));
 			return $dom;
 		}
-		else
+		elseif (extension_loaded('Domxml'))
 		{
 			$dom = domxml_new_doc('1.0');
 			$element = $dom->create_element('root');
@@ -50,6 +50,9 @@ class TestXml {
 			$element->set_content('carrot');
 			$root->append_child($element);
 			return $dom;
+		}
+		else {
+			return 'No Dom Support';
 		}
 	}
 
@@ -74,7 +77,7 @@ class TestXml {
 			$element->appendChild($dom->createTextNode('pie'));
 			return $dom;
 		}
-		else
+		else if(extension_loaded('Domxml'))
 		{
 			$dom = domxml_new_doc('1.0');
 			$element = $dom->create_element('root');
@@ -93,6 +96,9 @@ class TestXml {
 			$root->append_child($element);
 			return $dom;
 		}
+		else {
+			return 'No Dom Support';
+		}
 	}
 
 	function writeDoc($dom) {
@@ -101,9 +107,12 @@ class TestXml {
 			// save implementation is broken in dom right now
 			file_put_contents('test.xml', $dom->saveXML());
 		}
-		else
+		else if(extension_loaded('Domxml'))
 		{
 			$doc->dump_file(realpath('test.xml'),false,true);
+		}
+		else {
+			return 'No Dom Support';
 		}
 	}
 }

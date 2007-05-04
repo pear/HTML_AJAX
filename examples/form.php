@@ -76,5 +76,16 @@
 		</table>
 	    <input type="submit" name="submit" value="Submit form" />
         </form>
+
+	<h3>JavaScript callback function target test</h3>
+	<form action="server.php" method="post" onsubmit="return !HTML_AJAX.formSubmit(this, function(result) { document.getElementById('target').innerHTML = result; }, {className: 'test', methodName:'multiarg'});">
+
+		<table>
+			<tr>
+				<td>Text</td>
+				<td><input type="text" name="test_text" value="example" /></td>
+			</tr>
+		</table>
+	</form>
     </body>
 </html>

@@ -1,5 +1,5 @@
 <?php
-define ("NEWLINE", "\n");
+define ("HTML_AJAX_NEWLINE", "\n");
 // {{{ class HTML_AJAX_Debug
 /**
  * AJAX Debugging implementation
@@ -101,11 +101,11 @@ class HTML_AJAX_Debug {
      */
     function xmlError()
     {
-        $error  = " <when>{$this->_timeOccured}</when>" . NEWLINE;
-        $error .= " <msg>{$this->errorMsg}</msg>"       . NEWLINE;
-        $error .= " <code>{$this->errorCode}</code>"    . NEWLINE;
-        $error .= " <line>{$this->errorLine}</line>"    . NEWLINE;
-        $error .= " <file>{$this->errorFile}</file>"    . NEWLINE . NEWLINE;
+        $error  = " <when>{$this->_timeOccured}</when>" . HTML_AJAX_NEWLINE;
+        $error .= " <msg>{$this->errorMsg}</msg>"       . HTML_AJAX_NEWLINE;
+        $error .= " <code>{$this->errorCode}</code>"    . HTML_AJAX_NEWLINE;
+        $error .= " <line>{$this->errorLine}</line>"    . HTML_AJAX_NEWLINE;
+        $error .= " <file>{$this->errorFile}</file>"    . HTML_AJAX_NEWLINE . HTML_AJAX_NEWLINE;
         return $this->error = $error; 
     }
     // }}}

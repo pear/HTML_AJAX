@@ -1,4 +1,15 @@
 // Compat.js
+/**
+* Compat functions
+* @category	HTML
+* @package	AJAX
+* @author	Joshua Eichorn <josh@bluga.net>
+* @copyright	2005 Joshua Eichorn
+* @license	http://www.opensource.org/licenses/lgpl-license.php  LGPL
+*/
+/**
+*  Functions for compatibility with older browsers
+*/
 if (!String.fromCharCode && !String.prototype.fromCharCode) {
 String.prototype.fromCharCode = function(code)
 {
@@ -86,6 +97,10 @@ Array.prototype.pop = function()
 return this.splice(this.length - 1, 1)[0];
 }
 }
+/*
+From IE7, version 0.9 (alpha) (2005-08-19)
+Copyright: 2004-2005, Dean Edwards (http://dean.edwards.name/)
+*/
 if (!DOMParser.parseFromString && window.ActiveXObject)
 {
 function DOMParser() {/* empty constructor */};
@@ -104,7 +119,38 @@ return root.xml || root.outerHTML;
 };
 }
 // Main.js
+/**
+* JavaScript library for use with HTML_AJAX
+*
+* This library is free software; you can redistribute it and/or
+* modify it under the terms of the GNU Lesser General Public
+* License as published by the Free Software Foundation; either
+* version 2.1 of the License, or (at your option) any later version.
+*
+* This library is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+* Lesser General Public License for more details.
+*
+* You should have received a copy of the GNU Lesser General Public
+* License along with this library; if not, write to:
+* Free Software Foundation, Inc.,
+* 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+*
+* @category	HTML
+* @package	Ajax
+* @author	Joshua Eichorn <josh@bluga.net>
+* @author	Arpad Ray <arpad@php.net>
+* @author	David Coallier <davidc@php.net>
+* @author	Elizabeth Smith <auroraeosrose@gmail.com>
+* @copyright	2005 Joshua Eichorn, Arpad Ray, David Coallier, Elizabeth Smith
+* @license	http://www.opensource.org/licenses/lgpl-license.php  LGPL
+*/
+/**
+* HTML_AJAX static methods, this is the main proxyless api, it also handles global error and event handling
+*/
 var HTML_AJAX = {
+version: '@package_version@',
 defaultServerUrl: false,
 defaultEncoding: 'JSON',
 queues: false,
@@ -206,7 +252,7 @@ return HTML_AJAX.fullcall(url,serializer,false,null,callback, payload, options);
 },
 replace: function(id) {
 var callback = function(result) {
-HTML_AJAX_Util.setInnerHTML(document.getElementById(id),result);
+HTML_AJAX_Util.setInnerHTML(HTML_AJAX_Util.getElement(id),result);
 }
 if (arguments.length == 2) {
 HTML_AJAX.grab(arguments[1],callback);
@@ -221,7 +267,7 @@ HTML_AJAX.fullcall(HTML_AJAX.defaultServerUrl,HTML_AJAX.defaultEncoding,argument
 },
 append: function(id) {
 var callback = function(result) {
-HTML_AJAX_Util.setInnerHTML(document.getElementById(id),result,'append');
+HTML_AJAX_Util.setInnerHTML(HTML_AJAX_Util.getElement(id),result,'append');
 }
 if (arguments.length == 2) {
 HTML_AJAX.grab(arguments[1],callback);
@@ -238,6 +284,15 @@ Open: function(request) {
 },
 Load: function(request) {
 },
+/*
+onError: function(e) {
+msg = "";
+for(var i in e) {
+msg += i+':'+e[i]+"\n";
+}
+alert(msg);
+},
+*/
 contentTypeMap: {
 'JSON':			'application/json',
 'Null':			'text/plain',
@@ -369,9 +424,25 @@ target = HTML_AJAX_Util.getElement(target);
 if (!target) {
 target = form;
 }
+try
+{
 var action = form.attributes['action'].value;
-var callback = function(result) {
+}
+catch(e){}
+if(action == undefined)
+{
+action = form.getAttribute('action');
+}
+var callback = false;
+if (HTML_AJAX_Util.getType(target) == 'function') {
+callback = target;
+}
+else {
+callback = function(result) {
+if (typeof result != 'undefined') {
 HTML_AJAX_Util.setInnerHTML(target,result);
+}
+}
 }
 var serializer = HTML_AJAX.serializerForEncoding('Null');
 var request = new HTML_AJAX_Request(serializer);
@@ -500,6 +571,14 @@ return client.makeRequest();
 HTML_AJAX.queues = new Object();
 HTML_AJAX.queues['default'] = new HTML_AJAX_Queue_Immediate();
 // Queue.js
+/**
+* Various processing queues, use when you want to control how multiple requests are made
+* @category	HTML
+* @package	AJAX
+* @author	Joshua Eichorn <josh@bluga.net>
+* @copyright	2005 Joshua Eichorn
+* @license	http://www.opensource.org/licenses/lgpl-license.php  LGPL
+*/
 function HTML_AJAX_Queue_Interval_SingleBuffer(interval,singleOutstandingRequest) {
 this.interval = interval;
 if (singleOutstandingRequest) {
@@ -573,10 +652,10 @@ this.current++;
 }
 else {
 this.interned[order] = result;
-if (this.interned[this.current]) {
+}
+while (this.interned[this.current]) {
 this.callbacks[this.current](this.interned[this.current]);
 this.current++;
-}
 }
 }
 }
@@ -600,6 +679,11 @@ this.client.makeRequest();
 }
 }
 }
+/**
+* Priority queue
+*
+* @author	 Arpad Ray <arpad@php.net>
+*/
 function HTML_AJAX_Queue_Priority_Item(item, time) {
 this.item = item;
 this.time = time;
@@ -764,6 +848,17 @@ this._len = 0;
 };
 HTML_AJAX.clientPools['default'] = new HTML_AJAX_Client_Pool(0);
 // IframeXHR.js
+/**
+* XMLHttpRequest Iframe fallback
+*
+* http://lxr.mozilla.org/seamonkey/source/extensions/xmlextras/tests/ - should work with these
+*
+* @category	HTML
+* @package	AJAX
+* @author	Elizabeth Smith <auroraeosrose@gmail.com>
+* @copyright 	2005 Elizabeth Smith
+* @license	http://www.opensource.org/licenses/lgpl-license.php  LGPL
+*/
 HTML_AJAX_IframeXHR_instances = new Object();
 function HTML_AJAX_IframeXHR()
 {
@@ -949,6 +1044,20 @@ this._url = cloc + (cloc.indexOf('?') >= 0 ? '&' : '?') + 'px=' + escape(HTML_AJ
 }
 }
 // serializer/UrlSerializer.js
+/**
+* URL-encoding serializer
+*
+* This class can be used to serialize and unserialize data in a
+* format compatible with PHP's handling of HTTP query strings.
+* Due to limitations of the format, all input is serialized as an
+* array or a string. See examples/serialize.url.examples.php
+*
+* @version	0.0.1
+* @copyright	2005 Arpad Ray <arpad@php.net>
+* @license	http://www.opensource.org/licenses/lgpl-license.php  LGPL
+*
+* See Main.js for Author/license details
+*/
 function HTML_AJAX_Serialize_Urlencoded() {}
 HTML_AJAX_Serialize_Urlencoded.prototype = {
 contentType: 'application/x-www-form-urlencoded; charset=UTF-8',
@@ -957,6 +1066,13 @@ _keys: [],
 error: false,
 message: "",
 cont: "",
+/**
+*  Serializes a variable
+*
+*  @param	mixed  inp the variable to serialize
+*  @return	string   a string representation of the input,
+*					  which can be reconstructed by unserialize()
+*/
 serialize: function(input, _internal) {
 if (typeof input == 'undefined') {
 return '';
@@ -990,6 +1106,12 @@ ret = ret.substr(0, ret.length - 1);
 }
 return ret;
 },
+/**
+*  Reconstructs a serialized variable
+*
+*  @param	string inp the string to reconstruct
+*  @return	array an array containing the variable represented by the input string, or void on failure
+*/
 unserialize: function(input) {
 if (!input.length || input.length == 0) {
 return;
@@ -1036,9 +1158,20 @@ return;
 }
 return _HTML_AJAX;
 },
+/**
+*  Gets the last error message
+*
+*  @return	string   the last error message from unserialize()
+*/
 getError: function() {
 return this.message + "\n" + this.cont;
 },
+/**
+*  Raises an eror (called by unserialize().)
+*
+*  @param	string	message	the error message
+*  @param	string	cont	   the remaining unserialized content
+*/
 raiseError: function(message, cont) {
 this.error = 1;
 this.message = message;
@@ -1046,6 +1179,18 @@ this.cont = cont;
 }
 }
 // serializer/phpSerializer.js
+/**
+* PHP serializer
+*
+* This class can be used to serialize and unserialize data in a
+* format compatible with PHP's native serialization functions.
+*
+* @version	0.0.3
+* @copyright	2005 Arpad Ray <arpad@php.net>
+* @license	http://www.opensource.org/licenses/lgpl-license.php  LGPL
+*
+* See Main.js for Author/license details
+*/
 function HTML_AJAX_Serialize_PHP() {}
 HTML_AJAX_Serialize_PHP.prototype = {
 error: false,
@@ -1053,6 +1198,15 @@ message: "",
 cont: "",
 defaultEncoding: 'UTF-8',
 contentType: 'application/php-serialized; charset: UTF-8',
+/**
+*  Serializes a variable
+*
+*  @param	mixed  inp the variable to serialize
+*  @return	string   a string representation of the input,
+*					  which can be reconstructed by unserialize()
+*  @author Arpad Ray <arpad@rajeczy.com>
+*  @author David Coallier <davidc@php.net>
+*/
 serialize: function(inp) {
 var type = HTML_AJAX_Util.getType(inp);
 var val;
@@ -1095,6 +1249,12 @@ break;
 if (type != "object" && type != "array") val += ";";
 return val;
 },
+/**
+*  Reconstructs a serialized variable
+*
+*  @param	string inp the string to reconstruct
+*  @return   mixed the variable represented by the input string, or void on failure
+*/
 unserialize: function(inp) {
 this.error = 0;
 if (inp == "" || inp.length < 2) {
@@ -1229,9 +1389,20 @@ this.raiseError("invalid input type", cont);
 }
 return (arguments.length == 1 ? val : [val, rest]);
 },
+/**
+*  Gets the last error message
+*
+*  @return	string   the last error message from unserialize()
+*/
 getError: function() {
 return this.message + "\n" + this.cont;
 },
+/**
+*  Raises an eror (called by unserialize().)
+*
+*  @param	string	message	the error message
+*  @param	string	cont	   the remaining unserialized content
+*/
 raiseError: function(message, cont) {
 this.error = 1;
 this.message = message;
@@ -1239,6 +1410,15 @@ this.cont = cont;
 }
 }
 // Dispatcher.js
+/**
+* Class that is used by generated stubs to make actual AJAX calls
+*
+* @category    HTML
+* @package 	AJAX
+* @author	Joshua Eichorn <josh@bluga.net>
+* @copyright   2005 Joshua Eichorn
+* @license 	http://www.opensource.org/licenses/lgpl-license.php  LGPL
+*/
 function HTML_AJAX_Dispatcher(className,mode,callback,serverUrl,serializerType)
 {
 this.className = className;
@@ -1253,10 +1433,28 @@ this.serverUrl = window.location;
 }
 }
 HTML_AJAX_Dispatcher.prototype = {
+/**
+* Queue to use when making a request
+*/
 queue: 'default',
+/**
+* Timeout for async calls
+*/
 timeout: 20000,
+/**
+* Default request priority
+*/
 priority: 0,
+/**
+* Request options
+*/
 options: {},
+/**
+* Make an ajax call
+*
+* @param   string callName
+* @param   Array   args	arguments to the report method
+*/
 doCall: function(callName,args)
 {
 var request = new HTML_AJAX_Request();
@@ -1298,6 +1496,14 @@ this.callback = callback;
 }
 };
 // HttpClient.js
+/**
+* XMLHttpRequest Wrapper
+* @category    HTML
+* @package 	AJAX
+* @author      Joshua Eichorn <josh@bluga.net>
+* @copyright   2005 Joshua Eichorn
+* @license     http://www.opensource.org/licenses/lgpl-license.php  LGPL
+*/
 function HTML_AJAX_HttpClient() { }
 HTML_AJAX_HttpClient.prototype = {
 request: null,
@@ -1516,6 +1722,25 @@ throw e;
 }
 }
 // Request.js
+/**
+* Class that contains everything needed to make a request
+* This includes:
+*	The url were calling
+*	If were calling a remote method, the class and method name
+*	The payload, unserialized
+*	The timeout for async calls
+*	The callback method
+*	Optional event handlers: onError, Load, Send
+*	A serializer instance
+*
+* @category	HTML
+* @package	AJAX
+* @author	Joshua Eichorn <josh@bluga.net>
+* @copyright	2005 Joshua Eichorn
+* @license	http://www.opensource.org/licenses/lgpl-license.php  LGPL
+*
+* See Main.js for author/license details
+*/
 function HTML_AJAX_Request(serializer) {
 this.serializer = serializer;
 }
@@ -1531,11 +1756,18 @@ args: null,
 callback: null,
 queue: 'default',
 priority: 0,
-customHeaders: {},
+customHeaders: {'X-Requested-With': 'XMLHttpRequest', 'X-Ajax-Engine': 'HTML_AJAX/@package_version@'},
 iframe: false,
 grab: false,
 multipart: false,
 phpCallback: false,
+/**
+* Add an argument for the remote method
+* @param string argument name
+* @param mixed value
+* @return void
+* @throws Error code 1004
+*/
 addArg: function(name, value)
 {
 if ( !this.args ) {
@@ -1547,12 +1779,21 @@ this.args[name] = value;
 throw new Error('Invalid parameter name ('+name+')');
 }
 },
+/**
+* Get the payload in a serialized manner
+*/
 getSerializedPayload: function() {
 return this.serializer.serialize(this.args);
 },
+/**
+* Get the content type
+*/
 getContentType: function() {
 return this.serializer.contentType;
 },
+/**
+* Get the complete url, adding in any needed get params for rpc
+*/
 completeUrl: function() {
 if (this.className || this.methodName) {
 this.addGet('c', this.className);
@@ -1569,12 +1810,18 @@ this.addGet('multipart', '1');
 }
 return this.requestUrl;
 },
+/**
+* Compare to another request by priority
+*/
 compareTo: function(other) {
 if (this.priority == other.priority) {
 return 0;
 }
 return (this.priority > other.priority ? 1 : -1);
 },
+/**
+* Add a GET argument
+*/
 addGet: function(name, value) {
 var url = new String(this.requestUrl);
 url += (url.indexOf('?') < 0 ? '?' : '&') + escape(name) + '=' + escape(value);
@@ -1582,312 +1829,169 @@ this.requestUrl = url;
 }
 }
 // serializer/JSON.js
-Array.prototype.______array = '______array';
+/*
+Copyright (c) 2005 JSON.org
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+The Software shall be used for Good, not Evil.
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+*/
+/*
+The global object JSON contains two methods.
+JSON.stringify(value) takes a JavaScript value and produces a JSON text.
+The value must not be cyclical.
+JSON.parse(text) takes a JSON text and produces a JavaScript value. It will
+throw a 'JSONError' exception if there is an error.
+*/
 var HTML_AJAX_JSON = {
-org: 'http://www.JSON.org',
 copyright: '(c)2005 JSON.org',
 license: 'http://www.crockford.com/JSON/license.html',
-stringify: function (arg) {
-var c, i, l, s = '', v;
-switch (typeof arg) {
+/*
+Stringify a JavaScript value, producing a JSON text.
+*/
+stringify: function (v) {
+var a = [];
+/*
+Emit a string.
+*/
+function e(s) {
+a[a.length] = s;
+}
+/*
+Convert a value.
+*/
+function g(x) {
+var c, i, l, v;
+switch (typeof x) {
 case 'object':
-if (arg) {
-if (arg.______array == '______array') {
-for (i = 0; i < arg.length; ++i) {
-v = this.stringify(arg[i]);
-if (s) {
-s += ',';
+if (x) {
+if (x instanceof Array) {
+e('[');
+l = a.length;
+for (i = 0; i < x.length; i += 1) {
+v = x[i];
+if (typeof v != 'undefined' &&
+typeof v != 'function') {
+if (l < a.length) {
+e(',');
 }
-s += v;
-}
-return '[' + s + ']';
-} else if (typeof arg.toString != 'undefined') {
-for (i in arg) {
-v = arg[i];
-if (typeof v != 'undefined' && typeof v != 'function') {
-v = this.stringify(v);
-if (s) {
-s += ',';
-}
-s += this.stringify(i) + ':' + v;
+g(v);
 }
 }
-return '{' + s + '}';
+e(']');
+return;
+} else if (typeof x.valueOf == 'function') {
+e('{');
+l = a.length;
+for (i in x) {
+v = x[i];
+if (typeof v != 'undefined' &&
+typeof v != 'function' &&
+(!v || typeof v != 'object' ||
+typeof v.valueOf == 'function')) {
+if (l < a.length) {
+e(',');
+}
+g(i);
+e(':');
+g(v);
 }
 }
-return 'null';
+return e('}');
+}
+}
+e('null');
+return;
 case 'number':
-return isFinite(arg) ? String(arg) : 'null';
+e(isFinite(x) ? +x : 'null');
+return;
 case 'string':
-l = arg.length;
-s = '"';
+l = x.length;
+e('"');
 for (i = 0; i < l; i += 1) {
-c = arg.charAt(i);
+c = x.charAt(i);
 if (c >= ' ') {
 if (c == '\\' || c == '"') {
-s += '\\';
+e('\\');
 }
-s += c;
+e(c);
 } else {
 switch (c) {
 case '\b':
-s += '\\b';
+e('\\b');
 break;
 case '\f':
-s += '\\f';
+e('\\f');
 break;
 case '\n':
-s += '\\n';
+e('\\n');
 break;
 case '\r':
-s += '\\r';
+e('\\r');
 break;
 case '\t':
-s += '\\t';
+e('\\t');
 break;
 default:
 c = c.charCodeAt();
-s += '\\u00' + Math.floor(c / 16).toString(16) +
-(c % 16).toString(16);
+e('\\u00' + Math.floor(c / 16).toString(16) +
+(c % 16).toString(16));
 }
 }
 }
-return s + '"';
+e('"');
+return;
 case 'boolean':
-return String(arg);
+e(String(x));
+return;
 default:
-return 'null';
+e('null');
+return;
 }
+}
+g(v);
+return a.join('');
 },
+/*
+Parse a JSON text, producing a JavaScript value.
+*/
 parse: function (text) {
-var at = 0;
-var ch = ' ';
-function error(m) {
-throw {
-name: 'JSONError',
-message: m,
-at: at - 1,
-text: text
-};
-}
-function next() {
-ch = text.charAt(at);
-at += 1;
-return ch;
-}
-function white() {
-while (ch) {
-if (ch <= ' ') {
-next();
-} else if (ch == '/') {
-switch (next()) {
-case '/':
-while (next() && ch != '\n' && ch != '\r') {}
-break;
-case '*':
-next();
-for (;;) {
-if (ch) {
-if (ch == '*') {
-if (next() == '/') {
-next();
-break;
-}
-} else {
-next();
-}
-} else {
-error("Unterminated comment");
-}
-}
-break;
-default:
-error("Syntax error");
-}
-} else {
-break;
-}
-}
-}
-function string() {
-var i, s = '', t, u;
-if (ch == '"') {
-outer:		  while (next()) {
-if (ch == '"') {
-next();
-return s;
-} else if (ch == '\\') {
-switch (next()) {
-case 'b':
-s += '\b';
-break;
-case 'f':
-s += '\f';
-break;
-case 'n':
-s += '\n';
-break;
-case 'r':
-s += '\r';
-break;
-case 't':
-s += '\t';
-break;
-case 'u':
-u = 0;
-for (i = 0; i < 4; i += 1) {
-t = parseInt(next(), 16);
-if (!isFinite(t)) {
-break outer;
-}
-u = u * 16 + t;
-}
-s += String.fromCharCode(u);
-break;
-default:
-s += ch;
-}
-} else {
-s += ch;
-}
-}
-}
-error("Bad string");
-}
-function array() {
-var a = [];
-if (ch == '[') {
-next();
-white();
-if (ch == ']') {
-next();
-return a;
-}
-while (ch) {
-a.push(value());
-white();
-if (ch == ']') {
-next();
-return a;
-} else if (ch != ',') {
-break;
-}
-next();
-white();
-}
-}
-error("Bad array");
-}
-function object() {
-var k, o = {};
-if (ch == '{') {
-next();
-white();
-if (ch == '}') {
-next();
-return o;
-}
-while (ch) {
-k = string();
-white();
-if (ch != ':') {
-break;
-}
-next();
-o[k] = value();
-white();
-if (ch == '}') {
-next();
-return o;
-} else if (ch != ',') {
-break;
-}
-next();
-white();
-}
-}
-error("Bad object");
-}
-function number() {
-var n = '', v;
-if (ch == '-') {
-n = '-';
-next();
-}
-while (ch >= '0' && ch <= '9') {
-n += ch;
-next();
-}
-if (ch == '.') {
-n += '.';
-while (next() && ch >= '0' && ch <= '9') {
-n += ch;
-}
-}
-if (ch == 'e' || ch == 'E') {
-n += 'e';
-next();
-if (ch == '-' || ch == '+') {
-n += ch;
-next();
-}
-while (ch >= '0' && ch <= '9') {
-n += ch;
-next();
-}
-}
-v = +n;
-if (!isFinite(v)) {
-} else {
-return v;
-}
-}
-function word() {
-switch (ch) {
-case 't':
-if (next() == 'r' && next() == 'u' && next() == 'e') {
-next();
-return true;
-}
-break;
-case 'f':
-if (next() == 'a' && next() == 'l' && next() == 's' &&
-next() == 'e') {
-next();
-return false;
-}
-break;
-case 'n':
-if (next() == 'u' && next() == 'l' && next() == 'l') {
-next();
-return null;
-}
-break;
-}
-error("Syntax error");
-}
-function value() {
-white();
-switch (ch) {
-case '{':
-return object();
-case '[':
-return array();
-case '"':
-return string();
-case '-':
-return number();
-default:
-return ch >= '0' && ch <= '9' ? number() : word();
-}
-}
-return value();
+return
+(/^(\s+|[,:{}\[\]]|"(\\["\\\/bfnrtu]|[^\x00-\x1f"\\]+)*"|-?\d+(\.\d*)?([eE][+-]?\d+)?|true|false|null)+$/.test(text))
+&&
+eval('(' + text + ')');
 }
 };
 // serializer/haSerializer.js
+/**
+* HTML_AJAX_Serialize_HA  - custom serialization
+*
+* This class is used with the JSON serializer and the HTML_AJAX_Action php class
+* to allow users to easily write data handling and dom manipulation related to
+* ajax actions directly from their php code
+*
+* See Main.js for Author/license details
+*/
 function HTML_AJAX_Serialize_HA() { }
 HTML_AJAX_Serialize_HA.prototype =
 {
+/**
+*  Takes data from JSON - which should be parseable into a nice array
+*  reads the action to take and pipes it to the right method
+*
+*  @param   string payload incoming data from php
+*  @return   true on success, false on failure
+*/
 unserialize: function(payload)
 {
 var actions = eval(payload);
@@ -1926,107 +2030,21 @@ break;
 }
 }
 },
+/* Dispatch Methods */
 _prependAttr: function(id, attributes)
 {
 var node = document.getElementById(id);
-for (var i in attributes)
-{
-if(i == 'innerHTML')
-{
-HTML_AJAX_Util.setInnerHTML(node, attributes[i], 'prepend');
-}
-else if(i == 'value')
-{
-node.value = attributes[i];
-}
-else
-{
-var value = node.getAttribute(i);
-if(value)
-{
-node.setAttribute(i, attributes[i] + value);
-}
-else
-{
-node.setAttribute(i, attributes[i]);
-}
-}
-}
+this._setAttrs(node, attributes, 'prepend');
 },
 _appendAttr: function(id, attributes)
 {
 var node = document.getElementById(id);
-for (var i in attributes)
-{
-if(i == 'innerHTML')
-{
-HTML_AJAX_Util.setInnerHTML(node, attributes[i], 'append');
-}
-else if(i == 'value')
-{
-node.value = attributes[i];
-}
-else
-{
-var value = node.getAttribute(i);
-if(value)
-{
-node.setAttribute(i, value + attributes[i]);
-}
-else
-{
-node.setAttribute(i, attributes[i]);
-}
-}
-}
+this._setAttrs(node, attributes, 'append');
 },
 _assignAttr: function(id, attributes)
 {
 var node = document.getElementById(id);
-for (var i in attributes)
-{
-if(i == 'innerHTML')
-{
-HTML_AJAX_Util.setInnerHTML(node,attributes[i]);
-}
-else if(i == 'value')
-{
-node.value = attributes[i];
-}
-else if(i == 'style')
-{
-var styles = [];
-if (attributes[i].indexOf(';')) {
-styles = attributes[i].split(';');
-}
-else {
-styles.push(attributes[i]);
-}
-for(var i = 0; i < styles.length; i++) {
-var r = styles[i].match(/^\s*(.+)\s*:\s*(.+)\s*$/);
-if(r) {
-node.style[this._camelize(r[1])] = r[2];
-}
-}
-}
-else
-{
-try {
-node[i] = attributes[i];
-} catch(e) {
-}
-node.setAttribute(i, attributes[i]);
-}
-}
-},
-_camelize: function(instr)
-{
-var p = instr.split('-');
-var out = p[0];
-for(var i = 1; i < p.length; i++) {
-out += p[i].charAt(0).toUpperCase()+p[i].substring(1);
-}
-return out;
+this._setAttrs(node, attributes);
 },
 _clearAttr: function(id, attributes)
 {
@@ -2035,7 +2053,7 @@ for(var i = 0; i < attributes.length; i++)
 {
 if(attributes[i] == 'innerHTML')
 {
-node.innerHTML = '';
+HTML_AJAX_Util.setInnerHTML(node, '');
 }
 else if(attributes[i] == 'value')
 {
@@ -2043,28 +2061,21 @@ node.value = '';
 }
 else
 {
+try
+{
 node.removeAttribute(attributes[i]);
+}
+catch(e)
+{
+node[i] = undefined;
+}
 }
 }
 },
 _createNode: function(id, tag, attributes, type)
 {
 var newnode = document.createElement(tag);
-for (var i in attributes)
-{
-if(i == 'innerHTML')
-{
-newnode.innerHTML = attributes[i];
-}
-else if(i == 'value')
-{
-newnode.value = attributes[i];
-}
-else
-{
-newnode.setAttribute(i, attributes[i]);
-}
-}
+this._setAttrs(newnode, attributes);
 switch(type)
 {
 case 'append':
@@ -2100,17 +2111,7 @@ _replaceNode: function(id, tag, attributes)
 var node = document.getElementById(id);
 var parent = node.parentNode;
 var newnode = document.createElement(tag);
-for (var i in attributes)
-{
-if(i == 'innerHTML')
-{
-newnode.innerHTML = attributes[i];
-}
-else if(i == 'value')
-{
-newnode.value = attributes[i];
-}
-}
+this._setAttrs(newnode, attributes);
 parent.replaceChild(newnode, node);
 },
 _removeNode: function(id)
@@ -2129,9 +2130,151 @@ eval(data);
 _insertAlert: function(data)
 {
 alert(data);
+},
+/* Helper Methods */
+_camelize: function(instr)
+{
+var p = instr.split('-');
+var out = p[0];
+for(var i = 1; i < p.length; i++) {
+out += p[i].charAt(0).toUpperCase()+p[i].substring(1);
+}
+return out;
+},
+_setAttrs: function(node, attributes, type)
+{
+switch(type)
+{
+case 'prepend':
+for (var i in attributes)
+{
+if(i == 'innerHTML')
+{
+HTML_AJAX_Util.setInnerHTML(node, attributes[i], 'append');
+}
+else if(i == 'style')
+{
+var styles = [];
+if(attributes[i].indexOf(';'))
+{
+styles = attributes[i].split(';');
+}
+else
+{
+styles.push(attributes[i]);
+}
+for(var i = 0; i < styles.length; i++)
+{
+var r = styles[i].match(/^\s*(.+)\s*:\s*(.+)\s*$/);
+if(r)
+{
+node.style[this._camelize(r[1])] = r[2] + node.style[this._camelize(r[1])];
+}
+}
+}
+else
+{
+try
+{
+node[i] = attributes[i] + node[i];
+}
+catch(e){}
+node.setAttribute(i, attributes[i] + node[i]);
+}
+}
+break;
+case 'append':
+{
+for (var i in attributes)
+{
+if(i == 'innerHTML')
+{
+HTML_AJAX_Util.setInnerHTML(node, attributes[i], 'append');
+}
+else if(i == 'style')
+{
+var styles = [];
+if(attributes[i].indexOf(';'))
+{
+styles = attributes[i].split(';');
+}
+else
+{
+styles.push(attributes[i]);
+}
+for(var i = 0; i < styles.length; i++)
+{
+var r = styles[i].match(/^\s*(.+)\s*:\s*(.+)\s*$/);
+if(r)
+{
+node.style[this._camelize(r[1])] = node.style[this._camelize(r[1])] + r[2];
+}
+}
+}
+else
+{
+try
+{
+node[i] = node[i] + attributes[i];
+}
+catch(e){}
+node.setAttribute(i, node[i] + attributes[i]);
+}
+}
+break;
+}
+default:
+{
+for (var i in attributes)
+{
+if(i == 'innerHTML')
+{
+HTML_AJAX_Util.setInnerHTML(node, attributes[i]);
+}
+else if(i == 'style')
+{
+var styles = [];
+if(attributes[i].indexOf(';'))
+{
+styles = attributes[i].split(';');
+}
+else
+{
+styles.push(attributes[i]);
+}
+for(var i = 0; i < styles.length; i++)
+{
+var r = styles[i].match(/^\s*(.+)\s*:\s*(.+)\s*$/);
+if(r)
+{
+node.style[this._camelize(r[1])] = r[2];
+}
+}
+}
+else
+{
+try
+{
+node[i] = attributes[i];
+}
+catch(e){}
+node.setAttribute(i, attributes[i]);
+}
+}
+}
+}
 }
 }
 // Loading.js
+/**
+* Default loading implementation
+*
+* @category	HTML
+* @package	Ajax
+* @license	http://www.opensource.org/licenses/lgpl-license.php  LGPL
+* @copyright	2005 Joshua Eichorn
+* see Main.js for license Author details
+*/
 HTML_AJAX.Open = function(request) {
 var loading = document.getElementById('HTML_AJAX_LOADING');
 if (!loading) {
@@ -2174,6 +2317,18 @@ loading.style.display = 'none';
 }
 }
 // util.js
+/**
+* Utility methods
+*
+* @category	HTML
+* @package	Ajax
+* @license	http://www.opensource.org/licenses/lgpl-license.php  LGPL
+*
+* See Main.js for author/license details
+*/
+/**
+* All the utilities we will be using thorough the classes
+*/
 var HTML_AJAX_Util = {
 registerEvent: function(element, event, handler)
 {
@@ -2540,6 +2695,40 @@ return el;
 }
 }
 // behavior/behavior.js
+/**
+ModifiedBehavior v1.0 by Ron Lancaster based on Ben Nolan's Behaviour, June 2005 implementation.
+Modified to use Dean Edward's CSS Query.
+Description
+----------
+Uses css selectors  to apply javascript Behaviors to enable unobtrusive javascript in html documents.
+Dependencies
+------------
+Requires [Dean Edwards CSSQuery](http://dean.edwards.name/my/cssQuery/ "CSSQuery").
+Usage
+------
+Behavior.register(
+"b.someclass",
+function(element) {
+element.onclick = function(){
+alert(this.innerHTML);
+}
+}
+);
+Behavior.register(
+"#someid u",
+function(element) {
+element.onmouseover = function(){
+this.innerHTML = "BLAH!";
+}
+},
+getElementByID("parent")
+);
+Call `Behavior.apply()` to re-apply the rules (if you update the dom, etc).
+License
+------
+Reproduced under BSD licensed. Same license as Ben Nolan's implementation.
+More information for Ben Nolan's implementation: <http://ripcord.co.nz/behaviour/>
+*/
 var Behavior = {
 debug : false,
 list : new Array(),
@@ -2601,4 +2790,9 @@ this.action = action;
 }
 Behavior.start();
 // behavior/cssQuery-p.js
+/*
+cssQuery, version 2.0.2 (2005-08-19)
+Copyright: 2004-2005, Dean Edwards (http://dean.edwards.name/)
+License: http://creativecommons.org/licenses/LGPL/2.1/
+*/
 eval(function(p,a,c,k,e,d){e=function(c){return(c<a?'':e(parseInt(c/a)))+((c=c%a)>35?String.fromCharCode(c+29):c.toString(36))};if(!''.replace(/^/,String)){while(c--)d[e(c)]=k[c]||e(c);k=[function(e){return d[e]}];e=function(){return'\\w+'};c=1};while(c--)if(k[c])p=p.replace(new RegExp('\\b'+e(c)+'\\b','g'),k[c]);return p}('7 x=6(){7 1D="2.0.2";7 C=/\\s*,\\s*/;7 x=6(s,A){33{7 m=[];7 u=1z.32.2c&&!A;7 b=(A)?(A.31==22)?A:[A]:[1g];7 1E=18(s).1l(C),i;9(i=0;i<1E.y;i++){s=1y(1E[i]);8(U&&s.Z(0,3).2b("")==" *#"){s=s.Z(2);A=24([],b,s[1])}1A A=b;7 j=0,t,f,a,c="";H(j<s.y){t=s[j++];f=s[j++];c+=t+f;a="";8(s[j]=="("){H(s[j++]!=")")a+=s[j];a=a.Z(0,-1);c+="("+a+")"}A=(u&&V[c])?V[c]:21(A,t,f,a);8(u)V[c]=A}m=m.30(A)}2a x.2d;5 m}2Z(e){x.2d=e;5[]}};x.1Z=6(){5"6 x() {\\n  [1D "+1D+"]\\n}"};7 V={};x.2c=L;x.2Y=6(s){8(s){s=1y(s).2b("");2a V[s]}1A V={}};7 29={};7 19=L;x.15=6(n,s){8(19)1i("s="+1U(s));29[n]=12 s()};x.2X=6(c){5 c?1i(c):o};7 D={};7 h={};7 q={P:/\\[([\\w-]+(\\|[\\w-]+)?)\\s*(\\W?=)?\\s*([^\\]]*)\\]/};7 T=[];D[" "]=6(r,f,t,n){7 e,i,j;9(i=0;i<f.y;i++){7 s=X(f[i],t,n);9(j=0;(e=s[j]);j++){8(M(e)&&14(e,n))r.z(e)}}};D["#"]=6(r,f,i){7 e,j;9(j=0;(e=f[j]);j++)8(e.B==i)r.z(e)};D["."]=6(r,f,c){c=12 1t("(^|\\\\s)"+c+"(\\\\s|$)");7 e,i;9(i=0;(e=f[i]);i++)8(c.l(e.1V))r.z(e)};D[":"]=6(r,f,p,a){7 t=h[p],e,i;8(t)9(i=0;(e=f[i]);i++)8(t(e,a))r.z(e)};h["2W"]=6(e){7 d=Q(e);8(d.1C)9(7 i=0;i<d.1C.y;i++){8(d.1C[i]==e)5 K}};h["2V"]=6(e){};7 M=6(e){5(e&&e.1c==1&&e.1f!="!")?e:23};7 16=6(e){H(e&&(e=e.2U)&&!M(e))28;5 e};7 G=6(e){H(e&&(e=e.2T)&&!M(e))28;5 e};7 1r=6(e){5 M(e.27)||G(e.27)};7 1P=6(e){5 M(e.26)||16(e.26)};7 1o=6(e){7 c=[];e=1r(e);H(e){c.z(e);e=G(e)}5 c};7 U=K;7 1h=6(e){7 d=Q(e);5(2S d.25=="2R")?/\\.1J$/i.l(d.2Q):2P(d.25=="2O 2N")};7 Q=6(e){5 e.2M||e.1g};7 X=6(e,t){5(t=="*"&&e.1B)?e.1B:e.X(t)};7 17=6(e,t,n){8(t=="*")5 M(e);8(!14(e,n))5 L;8(!1h(e))t=t.2L();5 e.1f==t};7 14=6(e,n){5!n||(n=="*")||(e.2K==n)};7 1e=6(e){5 e.1G};6 24(r,f,B){7 m,i,j;9(i=0;i<f.y;i++){8(m=f[i].1B.2J(B)){8(m.B==B)r.z(m);1A 8(m.y!=23){9(j=0;j<m.y;j++){8(m[j].B==B)r.z(m[j])}}}}5 r};8(![].z)22.2I.z=6(){9(7 i=0;i<1z.y;i++){o[o.y]=1z[i]}5 o.y};7 N=/\\|/;6 21(A,t,f,a){8(N.l(f)){f=f.1l(N);a=f[0];f=f[1]}7 r=[];8(D[t]){D[t](r,A,f,a)}5 r};7 S=/^[^\\s>+~]/;7 20=/[\\s#.:>+~()@]|[^\\s#.:>+~()@]+/g;6 1y(s){8(S.l(s))s=" "+s;5 s.P(20)||[]};7 W=/\\s*([\\s>+~(),]|^|$)\\s*/g;7 I=/([\\s>+~,]|[^(]\\+|^)([#.:@])/g;7 18=6(s){5 s.O(W,"$1").O(I,"$1*$2")};7 1u={1Z:6(){5"\'"},P:/^(\'[^\']*\')|("[^"]*")$/,l:6(s){5 o.P.l(s)},1S:6(s){5 o.l(s)?s:o+s+o},1Y:6(s){5 o.l(s)?s.Z(1,-1):s}};7 1s=6(t){5 1u.1Y(t)};7 E=/([\\/()[\\]?{}|*+-])/g;6 R(s){5 s.O(E,"\\\\$1")};x.15("1j-2H",6(){D[">"]=6(r,f,t,n){7 e,i,j;9(i=0;i<f.y;i++){7 s=1o(f[i]);9(j=0;(e=s[j]);j++)8(17(e,t,n))r.z(e)}};D["+"]=6(r,f,t,n){9(7 i=0;i<f.y;i++){7 e=G(f[i]);8(e&&17(e,t,n))r.z(e)}};D["@"]=6(r,f,a){7 t=T[a].l;7 e,i;9(i=0;(e=f[i]);i++)8(t(e))r.z(e)};h["2G-10"]=6(e){5!16(e)};h["1x"]=6(e,c){c=12 1t("^"+c,"i");H(e&&!e.13("1x"))e=e.1n;5 e&&c.l(e.13("1x"))};q.1X=/\\\\:/g;q.1w="@";q.J={};q.O=6(m,a,n,c,v){7 k=o.1w+m;8(!T[k]){a=o.1W(a,c||"",v||"");T[k]=a;T.z(a)}5 T[k].B};q.1Q=6(s){s=s.O(o.1X,"|");7 m;H(m=s.P(o.P)){7 r=o.O(m[0],m[1],m[2],m[3],m[4]);s=s.O(o.P,r)}5 s};q.1W=6(p,t,v){7 a={};a.B=o.1w+T.y;a.2F=p;t=o.J[t];t=t?t(o.13(p),1s(v)):L;a.l=12 2E("e","5 "+t);5 a};q.13=6(n){1d(n.2D()){F"B":5"e.B";F"2C":5"e.1V";F"9":5"e.2B";F"1T":8(U){5"1U((e.2A.P(/1T=\\\\1v?([^\\\\s\\\\1v]*)\\\\1v?/)||[])[1]||\'\')"}}5"e.13(\'"+n.O(N,":")+"\')"};q.J[""]=6(a){5 a};q.J["="]=6(a,v){5 a+"=="+1u.1S(v)};q.J["~="]=6(a,v){5"/(^| )"+R(v)+"( |$)/.l("+a+")"};q.J["|="]=6(a,v){5"/^"+R(v)+"(-|$)/.l("+a+")"};7 1R=18;18=6(s){5 1R(q.1Q(s))}});x.15("1j-2z",6(){D["~"]=6(r,f,t,n){7 e,i;9(i=0;(e=f[i]);i++){H(e=G(e)){8(17(e,t,n))r.z(e)}}};h["2y"]=6(e,t){t=12 1t(R(1s(t)));5 t.l(1e(e))};h["2x"]=6(e){5 e==Q(e).1H};h["2w"]=6(e){7 n,i;9(i=0;(n=e.1F[i]);i++){8(M(n)||n.1c==3)5 L}5 K};h["1N-10"]=6(e){5!G(e)};h["2v-10"]=6(e){e=e.1n;5 1r(e)==1P(e)};h["2u"]=6(e,s){7 n=x(s,Q(e));9(7 i=0;i<n.y;i++){8(n[i]==e)5 L}5 K};h["1O-10"]=6(e,a){5 1p(e,a,16)};h["1O-1N-10"]=6(e,a){5 1p(e,a,G)};h["2t"]=6(e){5 e.B==2s.2r.Z(1)};h["1M"]=6(e){5 e.1M};h["2q"]=6(e){5 e.1q===L};h["1q"]=6(e){5 e.1q};h["1L"]=6(e){5 e.1L};q.J["^="]=6(a,v){5"/^"+R(v)+"/.l("+a+")"};q.J["$="]=6(a,v){5"/"+R(v)+"$/.l("+a+")"};q.J["*="]=6(a,v){5"/"+R(v)+"/.l("+a+")"};6 1p(e,a,t){1d(a){F"n":5 K;F"2p":a="2n";1a;F"2o":a="2n+1"}7 1m=1o(e.1n);6 1k(i){7 i=(t==G)?1m.y-i:i-1;5 1m[i]==e};8(!Y(a))5 1k(a);a=a.1l("n");7 m=1K(a[0]);7 s=1K(a[1]);8((Y(m)||m==1)&&s==0)5 K;8(m==0&&!Y(s))5 1k(s);8(Y(s))s=0;7 c=1;H(e=t(e))c++;8(Y(m)||m==1)5(t==G)?(c<=s):(s>=c);5(c%m)==s}});x.15("1j-2m",6(){U=1i("L;/*@2l@8(@\\2k)U=K@2j@*/");8(!U){X=6(e,t,n){5 n?e.2i("*",t):e.X(t)};14=6(e,n){5!n||(n=="*")||(e.2h==n)};1h=1g.1I?6(e){5/1J/i.l(Q(e).1I)}:6(e){5 Q(e).1H.1f!="2g"};1e=6(e){5 e.2f||e.1G||1b(e)};6 1b(e){7 t="",n,i;9(i=0;(n=e.1F[i]);i++){1d(n.1c){F 11:F 1:t+=1b(n);1a;F 3:t+=n.2e;1a}}5 t}}});19=K;5 x}();',62,190,'|||||return|function|var|if|for||||||||pseudoClasses||||test|||this||AttributeSelector|||||||cssQuery|length|push|fr|id||selectors||case|nextElementSibling|while||tests|true|false|thisElement||replace|match|getDocument|regEscape||attributeSelectors|isMSIE|cache||getElementsByTagName|isNaN|slice|child||new|getAttribute|compareNamespace|addModule|previousElementSibling|compareTagName|parseSelector|loaded|break|_0|nodeType|switch|getTextContent|tagName|document|isXML|eval|css|_1|split|ch|parentNode|childElements|nthChild|disabled|firstElementChild|getText|RegExp|Quote|x22|PREFIX|lang|_2|arguments|else|all|links|version|se|childNodes|innerText|documentElement|contentType|xml|parseInt|indeterminate|checked|last|nth|lastElementChild|parse|_3|add|href|String|className|create|NS_IE|remove|toString|ST|select|Array|null|_4|mimeType|lastChild|firstChild|continue|modules|delete|join|caching|error|nodeValue|textContent|HTML|prefix|getElementsByTagNameNS|end|x5fwin32|cc_on|standard||odd|even|enabled|hash|location|target|not|only|empty|root|contains|level3|outerHTML|htmlFor|class|toLowerCase|Function|name|first|level2|prototype|item|scopeName|toUpperCase|ownerDocument|Document|XML|Boolean|URL|unknown|typeof|nextSibling|previousSibling|visited|link|valueOf|clearCache|catch|concat|constructor|callee|try'.split('|'),0,{}))

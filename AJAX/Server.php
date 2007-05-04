@@ -121,10 +121,10 @@ class HTML_AJAX_Server
         'behavior'      =>  array('behavior/behavior.js','behavior/cssQuery-p.js'),
 
         // rules to help you use a minimal library set
-        'standard'      =>  array('Compat.js','clientPool.js','util.js','main.js','HttpClient.js','Request.js','serializer/JSON.js',
-                                    'loading.js','serializer/UrlSerializer.js','Alias.js','behavior/behavior.js','behavior/cssQuery-p.js'),
-        'jsonrpc'       =>  array('Compat.js','util.js','main.js','clientPool.js','HttpClient.js','Request.js','serializer/JSON.js'),
-        'proxyobjects'  =>  array('Compat.js','util.js','main.js','clientPool.js','Request.js','serializer/JSON.js','Dispatcher.js'),
+        'standard'      =>  array('Compat.js','clientPool.js','util.js','Main.js','HttpClient.js','Request.js','serializer/JSON.js',
+                                    'Loading.js','serializer/UrlSerializer.js','Alias.js','behavior/behavior.js','behavior/cssQuery-p.js'),
+        'jsonrpc'       =>  array('Compat.js','util.js','Main.js','clientPool.js','HttpClient.js','Request.js','serializer/JSON.js'),
+        'proxyobjects'  =>  array('Compat.js','util.js','Main.js','clientPool.js','Request.js','serializer/JSON.js','Dispatcher.js'),
 
         // BC rules
         'priorityqueue' =>  'Queue.js',
@@ -155,7 +155,7 @@ class HTML_AJAX_Server
      */
     function HTML_AJAX_Server($serverUrl = false) 
     {
-        $this->ajax =& new HTML_AJAX();
+        $this->ajax = new HTML_AJAX();
 
         // parameters for HTML::AJAX
         $parameters = array('stub', 'client');
@@ -476,6 +476,45 @@ class HTML_AJAX_Server
             return $path;
         } else {
             return $this->clientJsLocation;
+        }
+    }
+
+    /**
+     * Set the location of the client js
+     *
+     * @access  public
+     * @param   string  $location   Location
+     * @return  void
+     */
+    function setClientJsLocation($location) 
+    {
+        $this->clientJsLocation = $location;
+    }
+
+    /**
+     * Set the path to a Javascript libraries
+     *
+     * @access  public
+     * @param   string  $library    Library name
+     * @param   string  $path       Path
+     * @return  void
+     */
+    function setJavascriptLibraryPath($library, $path) 
+    {
+        $this->javascriptLibraryPaths[$library] = $path;
+    }
+
+    /**
+     * Set the path to more than one Javascript libraries at once
+     *
+     * @access  public
+     * @param   array   $paths  Paths
+     * @return  void
+     */
+    function setJavascriptLibraryPaths($paths) 
+    {
+        if (is_array($paths)) {
+            $this->javascriptLibraryPaths = array_merge($this->javascriptLibraryPaths, $paths);
         }
     }
 

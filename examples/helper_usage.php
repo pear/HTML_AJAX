@@ -42,6 +42,16 @@ $ajaxHelper->jsLibraries[] = 'customLib';
     // update the element using ajax
     echo $ajaxHelper->updateElement('updateTarget',array('test','echo_string','Some text to echo'),'replace',true);
 ?>
+
+
+<p>Was this page loaded using AJAX: <?php var_dump($ajaxHelper->isAJAX()); ?></p>
+
+Below is the output of HTML_AJAX_Helper::isAJAX() on content loaded from AJAX
+<div id="updateTarget2"></div>
+<?php
+    echo $ajaxHelper->updateElement('updateTarget2','support/isajax.php','replace',true);
+?>
+
 </body>
 </html>
 <?php 

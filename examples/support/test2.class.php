@@ -11,15 +11,8 @@
  * @link       http://pear.php.net/package/HTML_AJAX
  */
 class test2 {
-	function echo_string($string) {
-		return $string;
-	}
-	function slow_echo_string($string) {
-		sleep(2);
-		return $string;
-	}
-	function error_test($string) {
-		trigger_error($string);
+	function test($in) {
+		return $in;
 	}
 }
 ?>

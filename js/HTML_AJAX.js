@@ -105,7 +105,7 @@ if (!Array.pop && !Array.prototype.pop) {
 */
 if (!DOMParser.parseFromString && window.ActiveXObject)
 {
-function DOMParser() {/* empty constructor */};
+DOMParser = new function() {/* empty constructor */};
 DOMParser.prototype = {
 	parseFromString: function(str, contentType) {
 		var xmlDocument = new ActiveXObject('Microsoft.XMLDOM');
@@ -114,7 +114,7 @@ DOMParser.prototype = {
 	}
 };
 
-function XMLSerializer() {/* empty constructor */};
+XMLSerializer = new function() {/* empty constructor */};
 XMLSerializer.prototype = {
 	serializeToString: function(root) {
 		return root.xml || root.outerHTML;
@@ -515,8 +515,14 @@ var HTML_AJAX = {
 				request[i] = options[i];
 			}
 		}
-		HTML_AJAX.makeRequest(request);
-		return true;
+
+		if (request.isAsync == false) {
+			return HTML_AJAX.makeRequest(request);
+		}
+		else {
+			HTML_AJAX.makeRequest(request);
+			return true;
+		}
 	}, // end formSubmit()
 	makeFormAJAX: function(form,target,options) {
 		form = HTML_AJAX_Util.getElement(form);
@@ -1765,7 +1771,7 @@ HTML_AJAX_HttpClient.prototype = {
 			var self = this;
 			this.xmlhttp.open(this.request.requestType,this.request.completeUrl(),this.request.isAsync);
 			if (this.request.customHeaders) {
-				for (i in this.request.customHeaders) {
+				for (var i in this.request.customHeaders) {
 					this.xmlhttp.setRequestHeader(i, this.request.customHeaders[i]);
 				}
 			}

@@ -391,8 +391,14 @@ var HTML_AJAX = {
 				request[i] = options[i];
 			}
 		}
-		HTML_AJAX.makeRequest(request);
-		return true;
+
+		if (request.isAsync == false) {
+			return HTML_AJAX.makeRequest(request);
+		}
+		else {
+			HTML_AJAX.makeRequest(request);
+			return true;
+		}
 	}, // end formSubmit()
 	makeFormAJAX: function(form,target,options) {
 		form = HTML_AJAX_Util.getElement(form);

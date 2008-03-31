@@ -104,7 +104,7 @@ if (!Array.pop && !Array.prototype.pop) {
 */
 if (!DOMParser.parseFromString && window.ActiveXObject)
 {
-function DOMParser() {/* empty constructor */};
+DOMParser = new function() {/* empty constructor */};
 DOMParser.prototype = {
 	parseFromString: function(str, contentType) {
 		var xmlDocument = new ActiveXObject('Microsoft.XMLDOM');
@@ -113,7 +113,7 @@ DOMParser.prototype = {
 	}
 };
 
-function XMLSerializer() {/* empty constructor */};
+XMLSerializer = new function() {/* empty constructor */};
 XMLSerializer.prototype = {
 	serializeToString: function(root) {
 		return root.xml || root.outerHTML;

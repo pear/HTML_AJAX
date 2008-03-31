@@ -18,7 +18,7 @@ require_once 'HTML/AJAX/Helper.php';
 
 // create an instance and set the server url
 $ajaxHelper = new HTML_AJAX_Helper();
-$ajaxHelper->serverUrl = 'auto_server.php';
+$ajaxHelper->serverUrl = 'server.php?gzip=true';
 $ajaxHelper->jsLibraries[] = 'customLib';
 ?>
 <html>

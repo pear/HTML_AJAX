@@ -520,7 +520,7 @@ class HTML_AJAX {
     /**
      * Actually send a list of headers
      *
-     * @param   array list of headers to send, default callback for headers
+     * @param   array list of headers to send
      * @access private
      */
     function _sendHeaders($array)

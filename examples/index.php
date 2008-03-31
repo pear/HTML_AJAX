@@ -58,6 +58,8 @@ Front end files for examples, you can actually run these and see some example ou
 <li><a href='server.php?client=util,main'>server.php?client=util,main</a> - server.php generating a javascript file with the main and util libs in it</li>
 <li><a href='auto_server.php?stub=test2'>server.php?stub=test2</a> - auto_server.php generating a javascript file a which contains a generated proxy class for the test2 php class</li>
 <li><a href='auto_server.php?stub=all'>server.php?stub=all</a> - auto_server.php generating a javascript file which contains proxies for all the php classes registered with it</li>
+<li><a href='server.php?stub=all&gzip=true'>server.php?stub=all&gzip=true</a> - an example with gzip compression enabled (note gzip=true isn't built in, see server.php)<li>
+<li><a href='server.php?stub=all&gzip=true'>server.php?stub=all&gzip=true</a> - another example with gzip compression enabled (note gzip=true isn't built in, see server.php)<li>
 </ul>
 
 <p>
@@ -79,6 +81,7 @@ Other Example files:
 <li><a href='tests/setInnerHTML.php'>setInnerHTML.php</a>	- Tests used to verify the operation of HTML_AJAX_Util.setInnerHTML</li>
 <li><a href='tests/duplicateJSLib.php'>duplicateJSLib.php</a>	- Tests used to verify that HTML_AJAX_Server is removing duplicate JS libraries from client generation correctly</li>
 <li><a href='tests/behaviorSpeed.php'>behaviorSpeed.php</a>	- Tests used to see how fast the JavaScript behavior code runs.</li>
+<li><a href='tests/helper_combine.php'>helper_combine.php</a>	- Tests used to verify helper url javascript include generation.</li>
 <li><a href='interceptors.php'>interceptors.php</a> - Interceptors test</a></li>
 </ul>
 

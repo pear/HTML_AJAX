@@ -95,7 +95,7 @@ HTML_AJAX_HttpClient.prototype = {
 			var self = this;
 			this.xmlhttp.open(this.request.requestType,this.request.completeUrl(),this.request.isAsync);
 			if (this.request.customHeaders) {
-				for (i in this.request.customHeaders) {
+				for (var i in this.request.customHeaders) {
 					this.xmlhttp.setRequestHeader(i, this.request.customHeaders[i]);
 				}
 			}

@@ -93,6 +93,24 @@ class HTML_AJAX_Server
         );
 
     /**
+     * Compression Options
+     *
+     * <code>
+     * array(
+     *  'enabled'   => false,   // enable compression
+     *  'type'      => 'gzip'   // the type of compression to do, options: gzip
+     * )
+     * </code>
+     *
+     * @var array
+     * @access public
+     */
+    var $compression = array(
+        'enabled'       => false,
+        'type'          => 'gzip'
+    );
+
+    /**
      * Javascript library names and there path 
      *
      * the return of $this->clientJsLocation(), is prepended before running readfile on them
@@ -434,8 +452,15 @@ class HTML_AJAX_Server
             $output = $this->ajax->packJavaScript($output);
             $length = strlen($output);
         }
+
+        if ($this->compression['enabled'] && $this->compression['type'] == 'gzip' && strpos($_SERVER["HTTP_ACCEPT_ENCODING"], "gzip") !== false) {
+            $output = gzencode($output,9);
+            $length = strlen($output);
+            $headers['Content-Encoding'] = 'gzip';
+        }
+
         if ($length > 0 && $this->ajax->_sendContentLength()) { 
-            //$headers['Content-Length'] = $length;
+            $headers['Content-Length'] = $length;
         }
         $headers['Content-Type'] = 'text/javascript; charset=utf-8';
         $this->ajax->_sendHeaders($headers);

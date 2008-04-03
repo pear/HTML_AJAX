@@ -893,6 +893,7 @@ class HTML_AJAX {
                 echo $line."<br>";
             }//*/
         }
+        $out .= "\n";
         return $out;
     }
 

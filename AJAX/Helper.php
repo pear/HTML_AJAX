@@ -64,6 +64,7 @@ class HTML_AJAX_Helper
 			}
 			else {
 				$libs[0][] = $library;
+                $combinedLibs[] = $library;
 			}
 		}
 		$libs[0] = implode(',',$libs[0]);

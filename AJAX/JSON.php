@@ -6,6 +6,11 @@
  * Feel free to report bugs against it to HTML_AJAX
  */
 
+/**
+ * Needed for compat functions
+ */
+require_once 'HTML/AJAX.php';
+
 /** 
  * Converts to and from JSON format.
  * 
@@ -755,7 +760,7 @@ class HTML_AJAX_JSON
      */
     function isError($data, $code = null)
     {
-        if (class_exists('pear')) {
+        if (HTML_AJAX_class_exists('pear', false)) {
             return PEAR::isError($data, $code);
         } elseif (is_object($data) && (get_class($data) == 'services_json_error' ||
                                  is_subclass_of($data, 'services_json_error'))) {
@@ -766,7 +771,7 @@ class HTML_AJAX_JSON
     }
 }
 
-if (class_exists('pear_error')) {
+if (HTML_AJAX_class_exists('pear_error', false)) {
 
     class HTML_AJAX_JSON_Error extends PEAR_Error
     {

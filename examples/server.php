@@ -28,6 +28,13 @@ $test =& new test();
 $server->registerClass($test);
 $server->ajax->packJavaScript = true;
 
+if (isset($_GET['gzip']) && $_GET['gzip'] == 'true') {
+	$server->compression['enabled'] = true;
+}
+
+// user HTML_AJAX to deliver a custom library
+$server->registerJSLibrary('customLib','customLib.js','./support/');
+
 // handle different types of requests possiblities are
 // ?client=all - request for all javascript client files
 // ?stub=classname - request for proxy stub for given class, can be combined with client but this may hurt caching unless stub=all is used

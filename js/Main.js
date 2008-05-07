@@ -30,6 +30,7 @@
  * HTML_AJAX static methods, this is the main proxyless api, it also handles global error and event handling
  */
 var HTML_AJAX = {
+	version: '@package_version@',
 	defaultServerUrl: false,
 	defaultEncoding: 'JSON',
 	queues: false,
@@ -139,7 +140,7 @@ var HTML_AJAX = {
 	},
 	replace: function(id) {
 		var callback = function(result) {
-			HTML_AJAX_Util.setInnerHTML(document.getElementById(id),result);
+			HTML_AJAX_Util.setInnerHTML(HTML_AJAX_Util.getElement(id),result);
 		}
 		if (arguments.length == 2) {
 			// grab replacement
@@ -156,7 +157,7 @@ var HTML_AJAX = {
 	},
 	append: function(id) {
 		var callback = function(result) {
-			HTML_AJAX_Util.setInnerHTML(document.getElementById(id),result,'append');
+			HTML_AJAX_Util.setInnerHTML(HTML_AJAX_Util.getElement(id),result,'append');
 		}
 		if (arguments.length == 2) {
 			// grab replacement
@@ -340,9 +341,27 @@ var HTML_AJAX = {
 		if (!target) {
 			target = form;
 		}
-		var action = form.attributes['action'].value;
-		var callback = function(result) {
-			HTML_AJAX_Util.setInnerHTML(target,result);
+		try
+		{
+			var action = form.attributes['action'].value;
+		}
+		catch(e){}
+		if(action == undefined)
+		{
+			action = form.getAttribute('action');
+		}
+
+		var callback = false;
+		if (HTML_AJAX_Util.getType(target) == 'function') {
+			callback = target;
+		}
+		else {
+			callback = function(result) {
+				// result will be undefined if HA_Action is returned, so skip the replace
+				if (typeof result != 'undefined') {
+					HTML_AJAX_Util.setInnerHTML(target,result);
+				}
+			}
 		}
 
 		var serializer = HTML_AJAX.serializerForEncoding('Null');
@@ -372,8 +391,14 @@ var HTML_AJAX = {
 				request[i] = options[i];
 			}
 		}
-		HTML_AJAX.makeRequest(request);
-		return true;
+
+		if (request.isAsync == false) {
+			return HTML_AJAX.makeRequest(request);
+		}
+		else {
+			HTML_AJAX.makeRequest(request);
+			return true;
+		}
 	}, // end formSubmit()
 	makeFormAJAX: function(form,target,options) {
 		form = HTML_AJAX_Util.getElement(form);

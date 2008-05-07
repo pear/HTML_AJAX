@@ -46,6 +46,16 @@ class test {
 		$returnData = array('word' => mb_convert_encoding('Français','UTF-8'), 'suggestion' => array(mb_convert_encoding('Français','UTF-8'), mb_convert_encoding('caractères','UTF-8')));
 		return $returnData;
 	}
+
+	function test1($in) {
+		return $in;
+	}
+	function test2($in) {
+		return $in;
+	}
+	function test3($in) {
+		return $in;
+	}
 }
 
 if (isset($_GET['TEST_CLASS'])) {

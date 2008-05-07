@@ -10,16 +10,24 @@ class Review {
 
 	// data is an array of objects
 	function newReview($data) {
+		// clean data, its coming from the client
+		$data['name'] = htmlentities($data['name']);
+		$data['review'] = htmlentities($data['review']);
+
 		$_SESSION['reviews'][] = $data;
 
 		$key = count($_SESSION['reviews'])-1;
 
-		return "<div onclick='editReview($key,this)'><div class='name'>$data->name</div><div class='review'>$data->review</div></div>";
+		return "<div onclick='editReview($key,this)'><div class='name'>$data[name]</div><div class='review'>$data[review]</div></div>";
 	}
 
 	function updateReview($key,$data) {
+		// clean data, its coming from the client
+		$data['name'] = htmlentities($data['name']);
+		$data['review'] = htmlentities($data['review']);
+
 		$_SESSION['reviews'][$key] = $data;
-		return array($key,"<div onclick='editReview($key,this)'><div class='name'>$data->name</div><div class='review'>$data->review</div></div>");
+		return array($key,"<div onclick='editReview($key,this)'><div class='name'>$data[name]</div><div class='review'>$data[review]</div></div>");
 	}
 }
 ?>

@@ -2,75 +2,64 @@
 /** 
  * This is the package.xml generator for HTML_AJAX
  * 
- * LICENSE: This source file is subject to version 3.0 of the PHP license 
- * that is available through the world-wide-web at the following URI: 
- * http://www.php.net/license/3_0.txt.  If you did not receive a copy of 
- * the PHP License and are unable to obtain it through the web, please 
- * send a note to license@php.net so we can mail you a copy immediately. 
- * 
- * @category   pear 
- * @package    PEAR_PackageFileManager 
- * @author     Greg Beaver <cellog@php.net>  
- * @copyright  2005 The PHP Group 
- * @license    http://www.php.net/license/3_0.txt  PHP License 3.0 
- * @version    CVS: $Id$ 
- * @link       http://pear.php.net/package/PEAR_PackageFileManager 
- * @since      File available since Release 0.1.0
  */
-require_once 'PEAR/PackageFileManager.php';
+require_once 'PEAR/PackageFileManager2.php';
 
-$version = '0.5.1';
+PEAR::setErrorHandling(PEAR_ERROR_DIE);
+
+$version = '0.5.6';
 $notes = <<<EOT
-	Map PEAR_Error objects so they can be caught on the JavaScript side
+ * Fix Coding Standard Problems
 EOT;
 
 $description =<<<EOT
 Provides PHP and JavaScript libraries for performing AJAX (Communication from JavaScript to your browser without reloading the page)
 EOT;
 
-$package = new PEAR_PackageFileManager;
+$packagexml = new PEAR_PackageFileManager2;
+$e = $packagexml->setOptions(
+	array(	'baseinstalldir' => 'HTML',
+		'packagedirectory' => dirname(__FILE__),
+		'filelistgenerator' => 'file',
+		'ignore' => array('package.php', 'package.xml', '*.bak', '*src*', '*.tgz','test.bat','build.php','DeveloperNotes.txt','*cssQuery-src*','jsunit'),
+		'dir_roles' => array('examples' => 'doc','tests' => 'test', 'docs' => 'doc'),
+	)
+);
+	
+$packagexml->setPackage('HTML_AJAX');
+$packagexml->setSummary('PHP and JavaScript AJAX library');
+$packagexml->setDescription($description);
+$packagexml->setChannel('pear.php.net');
+$packagexml->setAPIVersion('0.5.0');
+$packagexml->setReleaseVersion($version);
+$packagexml->setReleaseStability('beta');
+$packagexml->setAPIStability('beta');
+$packagexml->setNotes($notes);
+$packagexml->setPackageType('php'); // this is a PEAR-style php script package
+$packagexml->addRelease(); // add another release section for all other OSes
+$packagexml->setPhpDep('4.1.0');
+$packagexml->setPearinstallerDep('1.4.0a12');
 
-$result = $package->setOptions(array(
-   'package'           => 'HTML_AJAX',
-   'summary'           => 'PHP and JavaScript AJAX library',
-   'description'       => $description,
-   'version'           => $version,
-   'state'             => 'beta',
-   'license'           => 'lgpl',
-   'ignore'            => array('package.php', 'package.xml', '*.bak', '*src*', '*.tgz','test.bat','build.php','DeveloperNotes.txt','*cssQuery-src*'),
-   'filelistgenerator' => 'file', // other option is 'file'
-   'notes'             => $notes,
-   'changelogoldtonew' => false,
-   'baseinstalldir'    => 'HTML', // if your package is like "Packagename" use ''
-   'packagedirectory'  => '',
-   'simpleoutput'      => true
-   ));
+$packagexml->addMaintainer('lead','jeichorn','Joshua Eichorn','josh@bluga.net');
+$packagexml->addMaintainer('lead','davidc','David Coallier','davidc@php.net');
+$packagexml->addMaintainer('developer','arpad','Arpad Ray','arpad@php.net');
+$packagexml->addMaintainer('developer','auroraeosrose','Elizabeth Smith','auroraeosrose@php.net');
+$packagexml->addMaintainer('developer','lyaish','Laurent Yaish','laurenty@gmail.com');
 
-$package->addReplacement('AJAX/Server.php','pear-config', '@data-dir@', 'data_dir');
-$package->addGlobalReplacement('package-info','@package_version@','version');
+$packagexml->setLicense('LGPL', 'http://www.gnu.org/licenses/lgpl.html');
 
-if (PEAR::isError($result)) {
-   echo $result->getMessage();
-   die();
-}
+$packagexml->addReplacement('AJAX/Server.php','pear-config', '@data-dir@', 'data_dir');
+$packagexml->addGlobalReplacement('package-info','@package_version@','version');
 
-$package->addMaintainer('jeichorn','lead','Joshua Eichorn','josh@bluga.net');
-$package->addMaintainer('davidc','lead','David Coallier','davidc@php.net');
-$package->addMaintainer('arpad','developer','Arpad Ray','arpad@php.net');
-$package->addMaintainer('lyaish','developer','Laurent Yaish','laurenty@gmail.com');
+$packagexml->generateContents(); // create the <contents> tag
 
-// dependencies can be added at will here
-$package->addDependency('PEAR', '1.3.5', 'ge', 'pkg', false);
-$package->addDependency('php', '4.1.0', 'ge', 'php', false);
 
-if (isset($_SERVER['argv'][1]) && $_SERVER['argv'][1] == 'commit') {
-   $result = $package->writePackageFile();
+//$pkg = &$packagexml->exportCompatiblePackageFile1(); // get a PEAR_PackageFile object
+if (isset($_GET['make']) || (isset($_SERVER['argv']) && @$_SERVER['argv'][1] == 'make')) {
+	//$pkg->writePackageFile();
+	$packagexml->writePackageFile();
 } else {
-   $result = $package->debugPackageFile();
-}
-
-if (PEAR::isError($result)) {
-   echo $result->getMessage();
-   die();
+	//$pkg->debugPackageFile();
+	$packagexml->debugPackageFile();
 }
 ?>

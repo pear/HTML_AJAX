@@ -82,7 +82,8 @@ function asyncCall() {
 }
 
 function unicodeTest() {
-	asyncProxy.echo_data({'suggestion': ['Français', 'caractères']});
+	//asyncProxy.echo_data({'suggestion': ['Français', 'caractères']});
+	asyncProxy.echo_data({"suggestion":["Fran\u00e7ais","caract\u00e8res"]});
 }
 
 function unicodeTest2() {

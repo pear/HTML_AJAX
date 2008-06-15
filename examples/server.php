@@ -15,7 +15,7 @@
  */
 
  // include the server class
-include 'HTML/AJAX/Server.php';
+require_once 'HTML/AJAX/Server.php';
 
 // include the test class will be registering
 	include 'support/test.class.php';

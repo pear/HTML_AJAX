@@ -2,6 +2,8 @@
 /**
  * HTML/JavaScript Generation Helper
  *
+ * SVN Rev: $Id$
+ *
  * @category   HTML
  * @package    AJAX
  * @author     Joshua Eichorn <josh@bluga.net>

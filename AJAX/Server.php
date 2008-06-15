@@ -2,6 +2,8 @@
 /**
  * OO AJAX Implementation for PHP
  *
+ * SVN Rev: $Id$
+ *
  * @category   HTML
  * @package    AJAX
  * @author     Joshua Eichorn <josh@bluga.net>
@@ -194,7 +196,7 @@ class HTML_AJAX_Server
         if (substr($serverUrl,-1) != '?') {
             $serverUrl .= '?';
         }
-        $this->ajax->serverUrl =  $serverUrl . htmlentities($querystring);
+        $this->ajax->serverUrl =  $serverUrl . $querystring;
         
         $methods = get_class_methods($this);
         foreach($methods as $method) {

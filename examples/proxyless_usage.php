@@ -65,6 +65,16 @@ function grabAsync() {
 	HTML_AJAX.grab(url,grabCallback);
 }
 
+function grabXML() {
+    HTML_AJAX.grab('support/test.xml',function(result) {
+        out = "Got XML: \n";
+        out += result.childNodes.length + " child nodes\n";
+        out += "name = " + result.getElementsByTagName('name')[0].textContent;
+
+       document.getElementById('target').innerHTML = out;
+    });
+}
+
 function grabCallback(result) {
 	document.getElementById('target').innerHTML = result;
 }
@@ -132,6 +142,7 @@ function callCallback(result) {
 	<li><a href="javascript:clearTarget()">Clear Target</a></li>
 	<li><a href="javascript:grabSync()">Run Sync Grab Example</a></li>
 	<li><a href="javascript:grabAsync()">Run Async Grab  Example</a></li>
+	<li><a href="javascript:grabXML()">Use grab to get an xml file</a></li>
 	<li><a href="javascript:postSync()">Run Sync Post Example</a></li>
 	<li><a href="javascript:postAsync()">Run Async Post  Example</a></li>
 	<li><a href="javascript:replaceUrl()">Replace with content from a url</a></li>

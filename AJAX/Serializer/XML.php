@@ -1,5 +1,5 @@
 <?php
-// $Id: XML.php 583 2007-03-05 22:13:30Z jeichorn $
+// $Id: XML.php 620 2008-05-07 22:33:32Z jeichorn $
 /**
  * XML Serializer - does NOT need a js serializer, use responseXML property in XmlHttpRequest
  *

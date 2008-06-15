@@ -195,7 +195,7 @@ var HTML_AJAX = {
 		'Error':		'application/error',
 		'PHP':			'application/php-serialized',
 		'HA' :			'application/html_ajax_action',
-		'Urlencoded':	'application/x-www-form-urlencoded'
+		'Urlencoded':		'application/x-www-form-urlencoded'
 	},
 	// used internally to make queues work, override Load or onError to perform custom events when a request is complete
 	// fires on success and error

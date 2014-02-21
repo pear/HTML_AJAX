@@ -1,0 +1,48 @@
+{
+    "authors": [
+        {
+            "email": "josh@bluga.net",
+            "name": "Joshua Eichorn",
+            "role": "Lead"
+        },
+        {
+            "email": "davidc@php.net",
+            "name": "David Coallier",
+            "role": "Lead"
+        },
+        {
+            "email": "arpad@php.net",
+            "name": "Arpad Ray",
+            "role": "Developer"
+        },
+        {
+            "email": "auroraeosrose@php.net",
+            "name": "Elizabeth Smith",
+            "role": "Developer"
+        },
+        {
+            "email": "laurenty@gmail.com",
+            "name": "Laurent Yaish",
+            "role": "Developer"
+        }
+    ],
+    "autoload": {
+        "classmap": [
+            "./"
+        ]
+    },
+    "description": "More info available on: http://pear.php.net/package/HTML_AJAX",
+    "license": "LGPL",
+    "name": "pear/html_ajax",
+    "support": {
+        "issues": "http://pear.php.net/bugs/search.php?cmd=display&package_name[]=HTML_AJAX",
+        "source": "https://github.com/pear/HTML_AJAX"
+    },
+    "type": "library",
+    "require": {
+        "pear/pear_exception": "*"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "*"
+    }
+}

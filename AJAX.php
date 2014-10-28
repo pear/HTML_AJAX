@@ -404,6 +404,7 @@ class HTML_AJAX
                 // handle error
                 trigger_error('Unknown method: ' . $method);
             }
+            $phpCallback = null;
         } else if (!empty($phpCallback)) {
             if (strpos($phpCallback, '.') !== false) {
                 $phpCallback = explode('.', $phpCallback);
@@ -441,9 +442,9 @@ class HTML_AJAX
             $args = $this->_processInterceptor($class, $method, $phpCallback, $args);
         }
         
-        if (empty($phpCallback)) {
+        if (!empty($class) && !empty($method)) {
             $ret = call_user_func_array(array(&$this->_exportedInstances[$class]['instance'], $method), $args);
-        } else {
+        } else if (!empty($phpCallback)) {
             $ret = call_user_func_array($phpCallback, $args);
         }
         

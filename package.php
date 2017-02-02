@@ -7,9 +7,10 @@ error_reporting(error_reporting() & ~E_STRICT & ~E_DEPRECATED);
 require_once 'PEAR/PackageFileManager2.php';
 PEAR::setErrorHandling(PEAR_ERROR_DIE);
 
-$version = '0.5.7';
+$version = '0.5.8';
 $notes = <<<EOT
-* Fix security bug: Remote Code Execution
+* Fix security bug #21165, CVE-2017-5677: Possible Remote Code Execution through unserializer
+  Thanks to Egidio Romano for reporting the bug.
 EOT;
 
 $description =<<<EOT

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<package packagerversion="1.9.5" version="2.0" xmlns="http://pear.php.net/dtd/package-2.0" xmlns:tasks="http://pear.php.net/dtd/tasks-1.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://pear.php.net/dtd/tasks-1.0
+<package packagerversion="1.9.4" version="2.0" xmlns="http://pear.php.net/dtd/package-2.0" xmlns:tasks="http://pear.php.net/dtd/tasks-1.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://pear.php.net/dtd/tasks-1.0
     http://pear.php.net/dtd/tasks-1.0.xsd
     http://pear.php.net/dtd/package-2.0
     http://pear.php.net/dtd/package-2.0.xsd">
@@ -37,10 +37,10 @@
   <email>laurenty@gmail.com</email>
   <active>yes</active>
  </developer>
- <date>2014-10-28</date>
- <time>22:49:13</time>
+ <date>2017-02-02</date>
+ <time>22:58:53</time>
  <version>
-  <release>0.5.7</release>
+  <release>0.5.8</release>
   <api>0.5.0</api>
  </version>
  <stability>
@@ -49,292 +49,288 @@
  </stability>
  <license uri="http://www.gnu.org/licenses/lgpl.html">LGPL</license>
  <notes>
-* Fix security bug: Remote Code Execution.
-  Thanks to Craig Arendt of Stratum Security for reporting the bug.
+* Fix security bug #21165, CVE-2017-5677: Possible Remote Code Execution through unserializer
+  Thanks to Egidio Romano for reporting the bug.
  </notes>
  <contents>
-  <dir baseinstalldir="HTML" name="/">
-   <file baseinstalldir="HTML" md5sum="a3b0a23ef6b8ddb25f77f94b0de6fca4" name="AJAX/Action.php" role="php">
+  <dir baseinstalldir="/" name="/">
+   <file baseinstalldir="/" md5sum="0dba16422a9b7871bdfca9ece03350c7" name="docs/authors" role="doc">
     <tasks:replace from="@package_version@" to="version" type="package-info" />
    </file>
-   <file baseinstalldir="HTML" md5sum="42d9e74f7387a706a59bb59c5e0d0649" name="AJAX/Debug.php" role="php">
+   <file baseinstalldir="/" md5sum="c21e6ab3066eb3390c152759254bc9e4" name="docs/todo" role="doc">
     <tasks:replace from="@package_version@" to="version" type="package-info" />
    </file>
-   <file baseinstalldir="HTML" md5sum="f030a624bb5a38c9924844de334faa41" name="AJAX/Helper.php" role="php">
+   <file baseinstalldir="/" md5sum="82492c28b5158e9904f86bd2206111d5" name="examples/action_usage.php" role="doc">
     <tasks:replace from="@package_version@" to="version" type="package-info" />
    </file>
-   <file baseinstalldir="HTML" md5sum="2a401957b3eccc994959d812dfce21de" name="AJAX/JSON.php" role="php">
+   <file baseinstalldir="/" md5sum="ebb95e54ae62d108af51eaa03e4e32d4" name="examples/auto_server.php" role="doc">
     <tasks:replace from="@package_version@" to="version" type="package-info" />
    </file>
-   <file baseinstalldir="HTML" md5sum="1bfe4cc78bbd286680bcb5ad562418ec" name="AJAX/Response.php" role="php">
+   <file baseinstalldir="/" md5sum="d5788784add18fb05db82f517084e11b" name="examples/bugfixes.php" role="doc">
     <tasks:replace from="@package_version@" to="version" type="package-info" />
    </file>
-   <file baseinstalldir="HTML" md5sum="93c59d4681e6b8218c93d48da0f1a134" name="AJAX/Server.php" role="php">
+   <file baseinstalldir="/" md5sum="8408959b53ad15ba00af37c322170402" name="examples/error_usage.php" role="doc">
     <tasks:replace from="@package_version@" to="version" type="package-info" />
-    <tasks:replace from="@data-dir@" to="data_dir" type="pear-config" />
    </file>
-   <file baseinstalldir="HTML" md5sum="db9fc794ecfd2253c4b83221a8f93bae" name="AJAX/Serializer/Error.php" role="php">
+   <file baseinstalldir="/" md5sum="f84b36ec4bf44ac62f5806d534fac6c3" name="examples/form.php" role="doc">
     <tasks:replace from="@package_version@" to="version" type="package-info" />
    </file>
-   <file baseinstalldir="HTML" md5sum="4bd35b196f710f2c1f32d359ccc822ad" name="AJAX/Serializer/JSON.php" role="php">
+   <file baseinstalldir="/" md5sum="41d08013bf3e13948d7421d43bd011ec" name="examples/grab.php" role="doc">
     <tasks:replace from="@package_version@" to="version" type="package-info" />
    </file>
-   <file baseinstalldir="HTML" md5sum="0b9a9ccf611418d7538e92b0a9925c48" name="AJAX/Serializer/Null.php" role="php">
+   <file baseinstalldir="/" md5sum="8c4240bc6c3663394b609e47bb5998ca" name="examples/haa_usage.php" role="doc">
     <tasks:replace from="@package_version@" to="version" type="package-info" />
    </file>
-   <file baseinstalldir="HTML" md5sum="dd7bfb341eb3b93b3dd5d74d0ec8a03e" name="AJAX/Serializer/PHP.php" role="php">
+   <file baseinstalldir="/" md5sum="a9a543719f99ed716d2f8396281dd52e" name="examples/helper_usage.php" role="doc">
     <tasks:replace from="@package_version@" to="version" type="package-info" />
    </file>
-   <file baseinstalldir="HTML" md5sum="23c91af380629a762a4ab0eaeea18116" name="AJAX/Serializer/Urlencoded.php" role="php">
+   <file baseinstalldir="/" md5sum="a6eb3aa6278b0a81f32be66aa066badc" name="examples/index.php" role="doc">
     <tasks:replace from="@package_version@" to="version" type="package-info" />
    </file>
-   <file baseinstalldir="HTML" md5sum="27427ba1d92c2eb1c4f366cae7194039" name="AJAX/Serializer/XML.php" role="php">
+   <file baseinstalldir="/" md5sum="84fa1da8c32651e5088e23080f17518a" name="examples/interceptors.php" role="doc">
     <tasks:replace from="@package_version@" to="version" type="package-info" />
    </file>
-   <file baseinstalldir="HTML" md5sum="0dba16422a9b7871bdfca9ece03350c7" name="docs/authors" role="doc">
+   <file baseinstalldir="/" md5sum="9a79a5ecf84aca57988feb21c7cd0ff0" name="examples/interceptorServer.php" role="doc">
     <tasks:replace from="@package_version@" to="version" type="package-info" />
    </file>
-   <file baseinstalldir="HTML" md5sum="c21e6ab3066eb3390c152759254bc9e4" name="docs/todo" role="doc">
+   <file baseinstalldir="/" md5sum="f231ba6b04a70e201442b9c3c0284a3c" name="examples/php_callback.php" role="doc">
     <tasks:replace from="@package_version@" to="version" type="package-info" />
    </file>
-   <file baseinstalldir="HTML" md5sum="82492c28b5158e9904f86bd2206111d5" name="examples/action_usage.php" role="doc">
+   <file baseinstalldir="/" md5sum="a9024c88a8b12b1bf8485d482c25f87e" name="examples/proxyless_usage.php" role="doc">
     <tasks:replace from="@package_version@" to="version" type="package-info" />
    </file>
-   <file baseinstalldir="HTML" md5sum="ebb95e54ae62d108af51eaa03e4e32d4" name="examples/auto_server.php" role="doc">
+   <file baseinstalldir="/" md5sum="632ba5fdbec4d863d9ba8c4b692592b9" name="examples/proxy_usage_inline_javascript.php" role="doc">
     <tasks:replace from="@package_version@" to="version" type="package-info" />
    </file>
-   <file baseinstalldir="HTML" md5sum="d5788784add18fb05db82f517084e11b" name="examples/bugfixes.php" role="doc">
+   <file baseinstalldir="/" md5sum="b37f5f24157fd701523c195990bf4312" name="examples/proxy_usage_server.php" role="doc">
     <tasks:replace from="@package_version@" to="version" type="package-info" />
    </file>
-   <file baseinstalldir="HTML" md5sum="8408959b53ad15ba00af37c322170402" name="examples/error_usage.php" role="doc">
+   <file baseinstalldir="/" md5sum="d8b86c61225996cf72020937a7ce5b1f" name="examples/queue_usage.php" role="doc">
     <tasks:replace from="@package_version@" to="version" type="package-info" />
    </file>
-   <file baseinstalldir="HTML" md5sum="f84b36ec4bf44ac62f5806d534fac6c3" name="examples/form.php" role="doc">
+   <file baseinstalldir="/" md5sum="d576ed746c32ce98cbd3a3294fafb96b" name="examples/README" role="doc">
     <tasks:replace from="@package_version@" to="version" type="package-info" />
    </file>
-   <file baseinstalldir="HTML" md5sum="41d08013bf3e13948d7421d43bd011ec" name="examples/grab.php" role="doc">
+   <file baseinstalldir="/" md5sum="722183f095ca5ae17a4a963573c1e384" name="examples/server.php" role="doc">
     <tasks:replace from="@package_version@" to="version" type="package-info" />
    </file>
-   <file baseinstalldir="HTML" md5sum="8c4240bc6c3663394b609e47bb5998ca" name="examples/haa_usage.php" role="doc">
+   <file baseinstalldir="/" md5sum="c4382ae2db7bf45d161843c17ef2e3e5" name="examples/shoutbox.php" role="doc">
     <tasks:replace from="@package_version@" to="version" type="package-info" />
    </file>
-   <file baseinstalldir="HTML" md5sum="a9a543719f99ed716d2f8396281dd52e" name="examples/helper_usage.php" role="doc">
+   <file baseinstalldir="/" md5sum="62a1df99e204a37fe1f2d6b2508e69b9" name="examples/slow_livesearch.php" role="doc">
     <tasks:replace from="@package_version@" to="version" type="package-info" />
    </file>
-   <file baseinstalldir="HTML" md5sum="a6eb3aa6278b0a81f32be66aa066badc" name="examples/index.php" role="doc">
+   <file baseinstalldir="/" md5sum="794f9471afd5df87013199a75707324b" name="examples/slow_server.php" role="doc">
     <tasks:replace from="@package_version@" to="version" type="package-info" />
    </file>
-   <file baseinstalldir="HTML" md5sum="84fa1da8c32651e5088e23080f17518a" name="examples/interceptors.php" role="doc">
+   <file baseinstalldir="/" md5sum="c73c8e8a776b3de1d4da1489fc33022c" name="examples/xmlserver.php" role="doc">
     <tasks:replace from="@package_version@" to="version" type="package-info" />
    </file>
-   <file baseinstalldir="HTML" md5sum="9a79a5ecf84aca57988feb21c7cd0ff0" name="examples/interceptorServer.php" role="doc">
+   <file baseinstalldir="/" md5sum="f6878defaeb9decf804496c6e3372159" name="examples/xml_usage.php" role="doc">
     <tasks:replace from="@package_version@" to="version" type="package-info" />
    </file>
-   <file baseinstalldir="HTML" md5sum="f231ba6b04a70e201442b9c3c0284a3c" name="examples/php_callback.php" role="doc">
+   <file baseinstalldir="/" md5sum="04b64785e7850f5624c3dcc8a6efa872" name="examples/guestbook/auto_server.php" role="doc">
     <tasks:replace from="@package_version@" to="version" type="package-info" />
    </file>
-   <file baseinstalldir="HTML" md5sum="a9024c88a8b12b1bf8485d482c25f87e" name="examples/proxyless_usage.php" role="doc">
+   <file baseinstalldir="/" md5sum="a33ea9de22ff156db6929a41fab416ee" name="examples/guestbook/guestbook.class.php" role="doc">
     <tasks:replace from="@package_version@" to="version" type="package-info" />
    </file>
-   <file baseinstalldir="HTML" md5sum="632ba5fdbec4d863d9ba8c4b692592b9" name="examples/proxy_usage_inline_javascript.php" role="doc">
+   <file baseinstalldir="/" md5sum="e3a2c7a7798a8335f1fc4e82eba1afc2" name="examples/guestbook/index.php" role="doc">
     <tasks:replace from="@package_version@" to="version" type="package-info" />
    </file>
-   <file baseinstalldir="HTML" md5sum="b37f5f24157fd701523c195990bf4312" name="examples/proxy_usage_server.php" role="doc">
+   <file baseinstalldir="/" md5sum="0f7e70d918e397b577ddd2f1189bb635" name="examples/login/index.php" role="doc">
     <tasks:replace from="@package_version@" to="version" type="package-info" />
    </file>
-   <file baseinstalldir="HTML" md5sum="d8b86c61225996cf72020937a7ce5b1f" name="examples/queue_usage.php" role="doc">
+   <file baseinstalldir="/" md5sum="bfb52a8179489b1191c958436d15e33d" name="examples/login/login.css" role="doc">
     <tasks:replace from="@package_version@" to="version" type="package-info" />
    </file>
-   <file baseinstalldir="HTML" md5sum="d576ed746c32ce98cbd3a3294fafb96b" name="examples/README" role="doc">
+   <file baseinstalldir="/" md5sum="8d22b91692554305f726c453c21ec37c" name="examples/login/php/auto_server.php" role="doc">
     <tasks:replace from="@package_version@" to="version" type="package-info" />
    </file>
-   <file baseinstalldir="HTML" md5sum="722183f095ca5ae17a4a963573c1e384" name="examples/server.php" role="doc">
+   <file baseinstalldir="/" md5sum="4796a5a515da8a45eddc5dc23eeb507f" name="examples/login/php/class.login.php" role="doc">
     <tasks:replace from="@package_version@" to="version" type="package-info" />
    </file>
-   <file baseinstalldir="HTML" md5sum="c4382ae2db7bf45d161843c17ef2e3e5" name="examples/shoutbox.php" role="doc">
+   <file baseinstalldir="/" md5sum="56e47b2e9a2c9c36631e50ca61b1e9b9" name="examples/review/auto_server.php" role="doc">
     <tasks:replace from="@package_version@" to="version" type="package-info" />
    </file>
-   <file baseinstalldir="HTML" md5sum="62a1df99e204a37fe1f2d6b2508e69b9" name="examples/slow_livesearch.php" role="doc">
+   <file baseinstalldir="/" md5sum="33e1c8d9b339db0c95960130eba793c9" name="examples/review/index.php" role="doc">
     <tasks:replace from="@package_version@" to="version" type="package-info" />
    </file>
-   <file baseinstalldir="HTML" md5sum="794f9471afd5df87013199a75707324b" name="examples/slow_server.php" role="doc">
+   <file baseinstalldir="/" md5sum="0a2952f9f051f38d683b983dd53193b2" name="examples/review/review.class.php" role="doc">
     <tasks:replace from="@package_version@" to="version" type="package-info" />
    </file>
-   <file baseinstalldir="HTML" md5sum="c73c8e8a776b3de1d4da1489fc33022c" name="examples/xmlserver.php" role="doc">
+   <file baseinstalldir="/" md5sum="0e4268ee8ff8dbf638d8880a8d40ff53" name="examples/support/customLib.js" role="doc">
     <tasks:replace from="@package_version@" to="version" type="package-info" />
    </file>
-   <file baseinstalldir="HTML" md5sum="f6878defaeb9decf804496c6e3372159" name="examples/xml_usage.php" role="doc">
+   <file baseinstalldir="/" md5sum="5124976f8a7ed5842e1f95fa08a34af3" name="examples/support/interceptor.php" role="doc">
     <tasks:replace from="@package_version@" to="version" type="package-info" />
    </file>
-   <file baseinstalldir="HTML" md5sum="04b64785e7850f5624c3dcc8a6efa872" name="examples/guestbook/auto_server.php" role="doc">
+   <file baseinstalldir="/" md5sum="4ab02737cadb6d4b6a044f9f50acea0d" name="examples/support/isajax.php" role="doc">
     <tasks:replace from="@package_version@" to="version" type="package-info" />
    </file>
-   <file baseinstalldir="HTML" md5sum="a33ea9de22ff156db6929a41fab416ee" name="examples/guestbook/guestbook.class.php" role="doc">
+   <file baseinstalldir="/" md5sum="685d1d6df0bce8cb203fd9d6a90f18b4" name="examples/support/livesearch.class.php" role="doc">
     <tasks:replace from="@package_version@" to="version" type="package-info" />
    </file>
-   <file baseinstalldir="HTML" md5sum="e3a2c7a7798a8335f1fc4e82eba1afc2" name="examples/guestbook/index.php" role="doc">
+   <file baseinstalldir="/" md5sum="d3e8f87caadcafe77135baebe0e0e054" name="examples/support/post_tester.php" role="doc">
     <tasks:replace from="@package_version@" to="version" type="package-info" />
    </file>
-   <file baseinstalldir="HTML" md5sum="0f7e70d918e397b577ddd2f1189bb635" name="examples/login/index.php" role="doc">
+   <file baseinstalldir="/" md5sum="c1c7698dfbee542502557d615e1f50a0" name="examples/support/test.class.php" role="doc">
     <tasks:replace from="@package_version@" to="version" type="package-info" />
    </file>
-   <file baseinstalldir="HTML" md5sum="bfb52a8179489b1191c958436d15e33d" name="examples/login/login.css" role="doc">
+   <file baseinstalldir="/" md5sum="271ddb6d49f830e9cdece3b136e1743d" name="examples/support/test.xml" role="doc">
     <tasks:replace from="@package_version@" to="version" type="package-info" />
    </file>
-   <file baseinstalldir="HTML" md5sum="8d22b91692554305f726c453c21ec37c" name="examples/login/php/auto_server.php" role="doc">
+   <file baseinstalldir="/" md5sum="97e4b81060de794ea626322fbe552052" name="examples/support/test2.class.php" role="doc">
     <tasks:replace from="@package_version@" to="version" type="package-info" />
    </file>
-   <file baseinstalldir="HTML" md5sum="4796a5a515da8a45eddc5dc23eeb507f" name="examples/login/php/class.login.php" role="doc">
+   <file baseinstalldir="/" md5sum="6e18cf6216e4403ecc4d3c87bd59d624" name="examples/support/testHaa.class.php" role="doc">
     <tasks:replace from="@package_version@" to="version" type="package-info" />
    </file>
-   <file baseinstalldir="HTML" md5sum="56e47b2e9a2c9c36631e50ca61b1e9b9" name="examples/review/auto_server.php" role="doc">
+   <file baseinstalldir="/" md5sum="1b4a94d32b86990a31dcd2aacf6d0417" name="examples/support/xml.class.php" role="doc">
     <tasks:replace from="@package_version@" to="version" type="package-info" />
    </file>
-   <file baseinstalldir="HTML" md5sum="33e1c8d9b339db0c95960130eba793c9" name="examples/review/index.php" role="doc">
+   <file baseinstalldir="/" md5sum="5b6ee6d1c7c98767ccc4586ab29fab38" name="examples/tests/behaviorSpeed.php" role="doc">
     <tasks:replace from="@package_version@" to="version" type="package-info" />
    </file>
-   <file baseinstalldir="HTML" md5sum="0a2952f9f051f38d683b983dd53193b2" name="examples/review/review.class.php" role="doc">
+   <file baseinstalldir="/" md5sum="f948c28100f195b6c6f34e91ed4de1f3" name="examples/tests/duplicateJSLib.php" role="doc">
     <tasks:replace from="@package_version@" to="version" type="package-info" />
    </file>
-   <file baseinstalldir="HTML" md5sum="0e4268ee8ff8dbf638d8880a8d40ff53" name="examples/support/customLib.js" role="doc">
+   <file baseinstalldir="/" md5sum="bbfd5284a7d4d73c216497745c1a78c3" name="examples/tests/helper_combine.php" role="doc">
     <tasks:replace from="@package_version@" to="version" type="package-info" />
    </file>
-   <file baseinstalldir="HTML" md5sum="5124976f8a7ed5842e1f95fa08a34af3" name="examples/support/interceptor.php" role="doc">
+   <file baseinstalldir="/" md5sum="e0400b50c02ad6daff882f234cc6273a" name="examples/tests/js_utils_getElements.php" role="doc">
     <tasks:replace from="@package_version@" to="version" type="package-info" />
    </file>
-   <file baseinstalldir="HTML" md5sum="4ab02737cadb6d4b6a044f9f50acea0d" name="examples/support/isajax.php" role="doc">
+   <file baseinstalldir="/" md5sum="6104f006711768050b305ef7b983ff5e" name="examples/tests/js_utils_vardump.php" role="doc">
     <tasks:replace from="@package_version@" to="version" type="package-info" />
    </file>
-   <file baseinstalldir="HTML" md5sum="685d1d6df0bce8cb203fd9d6a90f18b4" name="examples/support/livesearch.class.php" role="doc">
+   <file baseinstalldir="/" md5sum="f9459f17d4fca087a1afe33470afc3ca" name="examples/tests/serialize.php.examples.php" role="doc">
     <tasks:replace from="@package_version@" to="version" type="package-info" />
    </file>
-   <file baseinstalldir="HTML" md5sum="d3e8f87caadcafe77135baebe0e0e054" name="examples/support/post_tester.php" role="doc">
+   <file baseinstalldir="/" md5sum="3c2b14ac0dcab6e424d9cd394fa31ec6" name="examples/tests/serialize.url.examples.php" role="doc">
     <tasks:replace from="@package_version@" to="version" type="package-info" />
    </file>
-   <file baseinstalldir="HTML" md5sum="c1c7698dfbee542502557d615e1f50a0" name="examples/support/test.class.php" role="doc">
+   <file baseinstalldir="/" md5sum="c5f0918a50744a2bca166c8c4a257d42" name="examples/tests/setInnerHTML.js" role="doc">
     <tasks:replace from="@package_version@" to="version" type="package-info" />
    </file>
-   <file baseinstalldir="HTML" md5sum="271ddb6d49f830e9cdece3b136e1743d" name="examples/support/test.xml" role="doc">
+   <file baseinstalldir="/" md5sum="5bcc97a2c1f071f727c0b7447ef98324" name="examples/tests/setInnerHTML.php" role="doc">
     <tasks:replace from="@package_version@" to="version" type="package-info" />
    </file>
-   <file baseinstalldir="HTML" md5sum="97e4b81060de794ea626322fbe552052" name="examples/support/test2.class.php" role="doc">
+   <file baseinstalldir="/" md5sum="f56f28a71a2668d294f20c2e7568eba0" name="examples/tests/test_behavior.html" role="doc">
     <tasks:replace from="@package_version@" to="version" type="package-info" />
    </file>
-   <file baseinstalldir="HTML" md5sum="6e18cf6216e4403ecc4d3c87bd59d624" name="examples/support/testHaa.class.php" role="doc">
+   <file baseinstalldir="/" md5sum="86e66d92e703730a79a0bde6999dcb03" name="examples/tests/test_priority.php" role="doc">
     <tasks:replace from="@package_version@" to="version" type="package-info" />
    </file>
-   <file baseinstalldir="HTML" md5sum="1b4a94d32b86990a31dcd2aacf6d0417" name="examples/support/xml.class.php" role="doc">
+   <file baseinstalldir="/" md5sum="4883bcc9e888617b694e7ea8b9b96fbe" name="examples/tests/test_speed.php" role="doc">
     <tasks:replace from="@package_version@" to="version" type="package-info" />
    </file>
-   <file baseinstalldir="HTML" md5sum="5b6ee6d1c7c98767ccc4586ab29fab38" name="examples/tests/behaviorSpeed.php" role="doc">
+   <file baseinstalldir="/" md5sum="72c5d60c041f5f80f7289fe91732a02e" name="HTML/AJAX.php" role="php">
     <tasks:replace from="@package_version@" to="version" type="package-info" />
    </file>
-   <file baseinstalldir="HTML" md5sum="f948c28100f195b6c6f34e91ed4de1f3" name="examples/tests/duplicateJSLib.php" role="doc">
+   <file baseinstalldir="/" md5sum="a3b0a23ef6b8ddb25f77f94b0de6fca4" name="HTML/AJAX/Action.php" role="php">
     <tasks:replace from="@package_version@" to="version" type="package-info" />
    </file>
-   <file baseinstalldir="HTML" md5sum="bbfd5284a7d4d73c216497745c1a78c3" name="examples/tests/helper_combine.php" role="doc">
+   <file baseinstalldir="/" md5sum="42d9e74f7387a706a59bb59c5e0d0649" name="HTML/AJAX/Debug.php" role="php">
     <tasks:replace from="@package_version@" to="version" type="package-info" />
    </file>
-   <file baseinstalldir="HTML" md5sum="e0400b50c02ad6daff882f234cc6273a" name="examples/tests/js_utils_getElements.php" role="doc">
+   <file baseinstalldir="/" md5sum="f030a624bb5a38c9924844de334faa41" name="HTML/AJAX/Helper.php" role="php">
     <tasks:replace from="@package_version@" to="version" type="package-info" />
    </file>
-   <file baseinstalldir="HTML" md5sum="6104f006711768050b305ef7b983ff5e" name="examples/tests/js_utils_vardump.php" role="doc">
+   <file baseinstalldir="/" md5sum="2a401957b3eccc994959d812dfce21de" name="HTML/AJAX/JSON.php" role="php">
     <tasks:replace from="@package_version@" to="version" type="package-info" />
    </file>
-   <file baseinstalldir="HTML" md5sum="f9459f17d4fca087a1afe33470afc3ca" name="examples/tests/serialize.php.examples.php" role="doc">
+   <file baseinstalldir="/" md5sum="1bfe4cc78bbd286680bcb5ad562418ec" name="HTML/AJAX/Response.php" role="php">
     <tasks:replace from="@package_version@" to="version" type="package-info" />
    </file>
-   <file baseinstalldir="HTML" md5sum="3c2b14ac0dcab6e424d9cd394fa31ec6" name="examples/tests/serialize.url.examples.php" role="doc">
+   <file baseinstalldir="/" md5sum="93c59d4681e6b8218c93d48da0f1a134" name="HTML/AJAX/Server.php" role="php">
     <tasks:replace from="@package_version@" to="version" type="package-info" />
    </file>
-   <file baseinstalldir="HTML" md5sum="c5f0918a50744a2bca166c8c4a257d42" name="examples/tests/setInnerHTML.js" role="doc">
+   <file baseinstalldir="/" md5sum="db9fc794ecfd2253c4b83221a8f93bae" name="HTML/AJAX/Serializer/Error.php" role="php">
     <tasks:replace from="@package_version@" to="version" type="package-info" />
    </file>
-   <file baseinstalldir="HTML" md5sum="5bcc97a2c1f071f727c0b7447ef98324" name="examples/tests/setInnerHTML.php" role="doc">
+   <file baseinstalldir="/" md5sum="4bd35b196f710f2c1f32d359ccc822ad" name="HTML/AJAX/Serializer/JSON.php" role="php">
     <tasks:replace from="@package_version@" to="version" type="package-info" />
    </file>
-   <file baseinstalldir="HTML" md5sum="f56f28a71a2668d294f20c2e7568eba0" name="examples/tests/test_behavior.html" role="doc">
+   <file baseinstalldir="/" md5sum="0b9a9ccf611418d7538e92b0a9925c48" name="HTML/AJAX/Serializer/Null.php" role="php">
     <tasks:replace from="@package_version@" to="version" type="package-info" />
    </file>
-   <file baseinstalldir="HTML" md5sum="86e66d92e703730a79a0bde6999dcb03" name="examples/tests/test_priority.php" role="doc">
+   <file baseinstalldir="/" md5sum="1ff2a8cdbed836125d782ca8d11d9038" name="HTML/AJAX/Serializer/PHP.php" role="php">
     <tasks:replace from="@package_version@" to="version" type="package-info" />
    </file>
-   <file baseinstalldir="HTML" md5sum="4883bcc9e888617b694e7ea8b9b96fbe" name="examples/tests/test_speed.php" role="doc">
+   <file baseinstalldir="/" md5sum="23c91af380629a762a4ab0eaeea18116" name="HTML/AJAX/Serializer/Urlencoded.php" role="php">
     <tasks:replace from="@package_version@" to="version" type="package-info" />
    </file>
-   <file baseinstalldir="HTML" md5sum="bb74ba9b39986cead94db64ea0d2e81e" name="js/Alias.js" role="data">
+   <file baseinstalldir="/" md5sum="27427ba1d92c2eb1c4f366cae7194039" name="HTML/AJAX/Serializer/XML.php" role="php">
     <tasks:replace from="@package_version@" to="version" type="package-info" />
    </file>
-   <file baseinstalldir="HTML" md5sum="8ec4c675140b40478de947b0c1baa9b8" name="js/clientPool.js" role="data">
+   <file baseinstalldir="/" md5sum="bb74ba9b39986cead94db64ea0d2e81e" name="js/Alias.js" role="data">
     <tasks:replace from="@package_version@" to="version" type="package-info" />
    </file>
-   <file baseinstalldir="HTML" md5sum="a1f7acd95494eae497a4fc52d24cc9b0" name="js/Compat.js" role="data">
+   <file baseinstalldir="/" md5sum="8ec4c675140b40478de947b0c1baa9b8" name="js/clientPool.js" role="data">
     <tasks:replace from="@package_version@" to="version" type="package-info" />
    </file>
-   <file baseinstalldir="HTML" md5sum="60a6e18a094b14010cfaf03ffbfe8fc3" name="js/dhtmlHistory.js" role="data">
+   <file baseinstalldir="/" md5sum="a1f7acd95494eae497a4fc52d24cc9b0" name="js/Compat.js" role="data">
     <tasks:replace from="@package_version@" to="version" type="package-info" />
    </file>
-   <file baseinstalldir="HTML" md5sum="a9d3efcfbe3bfab4303d42e177657927" name="js/Dispatcher.js" role="data">
+   <file baseinstalldir="/" md5sum="60a6e18a094b14010cfaf03ffbfe8fc3" name="js/dhtmlHistory.js" role="data">
     <tasks:replace from="@package_version@" to="version" type="package-info" />
    </file>
-   <file baseinstalldir="HTML" md5sum="ebf80cc00abe9ff3a2b8c855162f7dc5" name="js/HTML_AJAX.js" role="data">
+   <file baseinstalldir="/" md5sum="a9d3efcfbe3bfab4303d42e177657927" name="js/Dispatcher.js" role="data">
     <tasks:replace from="@package_version@" to="version" type="package-info" />
    </file>
-   <file baseinstalldir="HTML" md5sum="1fca862bb3ecf3b0a9973b6be095e3c3" name="js/HTML_AJAX_lite.js" role="data">
+   <file baseinstalldir="/" md5sum="ebf80cc00abe9ff3a2b8c855162f7dc5" name="js/HTML_AJAX.js" role="data">
     <tasks:replace from="@package_version@" to="version" type="package-info" />
    </file>
-   <file baseinstalldir="HTML" md5sum="26cc4223efee63d2b80b39686e7875a6" name="js/HttpClient.js" role="data">
+   <file baseinstalldir="/" md5sum="1fca862bb3ecf3b0a9973b6be095e3c3" name="js/HTML_AJAX_lite.js" role="data">
     <tasks:replace from="@package_version@" to="version" type="package-info" />
    </file>
-   <file baseinstalldir="HTML" md5sum="9b58cee23d94f3cf2f417bcc9a7b1d7f" name="js/IframeXHR.js" role="data">
+   <file baseinstalldir="/" md5sum="26cc4223efee63d2b80b39686e7875a6" name="js/HttpClient.js" role="data">
     <tasks:replace from="@package_version@" to="version" type="package-info" />
    </file>
-   <file baseinstalldir="HTML" md5sum="82f371352ac25292dc511e6f916021db" name="js/Loading.js" role="data">
+   <file baseinstalldir="/" md5sum="9b58cee23d94f3cf2f417bcc9a7b1d7f" name="js/IframeXHR.js" role="data">
     <tasks:replace from="@package_version@" to="version" type="package-info" />
    </file>
-   <file baseinstalldir="HTML" md5sum="631088bf8749c3a7146e91a5e84bfe5a" name="js/Main.js" role="data">
+   <file baseinstalldir="/" md5sum="82f371352ac25292dc511e6f916021db" name="js/Loading.js" role="data">
     <tasks:replace from="@package_version@" to="version" type="package-info" />
    </file>
-   <file baseinstalldir="HTML" md5sum="3513f72919dfe1f9831aaa026c040236" name="js/Queue.js" role="data">
+   <file baseinstalldir="/" md5sum="631088bf8749c3a7146e91a5e84bfe5a" name="js/Main.js" role="data">
     <tasks:replace from="@package_version@" to="version" type="package-info" />
    </file>
-   <file baseinstalldir="HTML" md5sum="d0d95c6fbb073365cc8974bf153c08c7" name="js/Request.js" role="data">
+   <file baseinstalldir="/" md5sum="3513f72919dfe1f9831aaa026c040236" name="js/Queue.js" role="data">
     <tasks:replace from="@package_version@" to="version" type="package-info" />
    </file>
-   <file baseinstalldir="HTML" md5sum="95b5a895565103801e794687a3288cf4" name="js/util.js" role="data">
+   <file baseinstalldir="/" md5sum="d0d95c6fbb073365cc8974bf153c08c7" name="js/Request.js" role="data">
     <tasks:replace from="@package_version@" to="version" type="package-info" />
    </file>
-   <file baseinstalldir="HTML" md5sum="a2c88888851a23c308b8a2764fa65713" name="js/behavior/behavior.js" role="data">
+   <file baseinstalldir="/" md5sum="95b5a895565103801e794687a3288cf4" name="js/util.js" role="data">
     <tasks:replace from="@package_version@" to="version" type="package-info" />
    </file>
-   <file baseinstalldir="HTML" md5sum="dfdd3a5094537017b3991c749259ab66" name="js/behavior/cssQuery-p.js" role="data">
+   <file baseinstalldir="/" md5sum="a2c88888851a23c308b8a2764fa65713" name="js/behavior/behavior.js" role="data">
     <tasks:replace from="@package_version@" to="version" type="package-info" />
    </file>
-   <file baseinstalldir="HTML" md5sum="bf839919c879c8903adc10b653b40961" name="js/serializer/haSerializer.js" role="data">
+   <file baseinstalldir="/" md5sum="dfdd3a5094537017b3991c749259ab66" name="js/behavior/cssQuery-p.js" role="data">
     <tasks:replace from="@package_version@" to="version" type="package-info" />
    </file>
-   <file baseinstalldir="HTML" md5sum="54ab560a4dcbc751cbb6ec2c23edb4e0" name="js/serializer/JSON.js" role="data">
+   <file baseinstalldir="/" md5sum="bf839919c879c8903adc10b653b40961" name="js/serializer/haSerializer.js" role="data">
     <tasks:replace from="@package_version@" to="version" type="package-info" />
    </file>
-   <file baseinstalldir="HTML" md5sum="7472826adec2c59451c87d2068ff4094" name="js/serializer/phpSerializer.js" role="data">
+   <file baseinstalldir="/" md5sum="54ab560a4dcbc751cbb6ec2c23edb4e0" name="js/serializer/JSON.js" role="data">
     <tasks:replace from="@package_version@" to="version" type="package-info" />
    </file>
-   <file baseinstalldir="HTML" md5sum="7598fa6c60336ad0cc068ab1fce84bbe" name="js/serializer/UrlSerializer.js" role="data">
+   <file baseinstalldir="/" md5sum="7472826adec2c59451c87d2068ff4094" name="js/serializer/phpSerializer.js" role="data">
     <tasks:replace from="@package_version@" to="version" type="package-info" />
    </file>
-   <file baseinstalldir="HTML" md5sum="4cb2a01ff90840de65baae1db4ebbe36" name="tests/bug-13854.phpt" role="test">
+   <file baseinstalldir="/" md5sum="7598fa6c60336ad0cc068ab1fce84bbe" name="js/serializer/UrlSerializer.js" role="data">
     <tasks:replace from="@package_version@" to="version" type="package-info" />
    </file>
-   <file baseinstalldir="HTML" md5sum="5800d54ea291d9b910a72d0fb12beabd" name="tests/generatestub.001.phpt" role="test">
+   <file baseinstalldir="/" md5sum="4cb2a01ff90840de65baae1db4ebbe36" name="tests/bug-13854.phpt" role="test">
     <tasks:replace from="@package_version@" to="version" type="package-info" />
    </file>
-   <file baseinstalldir="HTML" md5sum="3ab970c3b5f536cddd5c430575a7c4b9" name="tests/generatestub.001.phpt.php" role="test">
+   <file baseinstalldir="/" md5sum="c5b7870ccf1b17c47c178a9dc028aaff" name="tests/bug-21165.phpt" role="test">
     <tasks:replace from="@package_version@" to="version" type="package-info" />
    </file>
-   <file baseinstalldir="HTML" md5sum="829487df274378407bd15c7054fc58c1" name="tests/_setup.php" role="test">
-    <tasks:replace from="@package_version@" to="version" type="package-info" />
-   </file>
-   <file baseinstalldir="HTML" md5sum="72c5d60c041f5f80f7289fe91732a02e" name="AJAX.php" role="php">
+   <file baseinstalldir="/" md5sum="34cb80cdfde0790204fb654149911123" name="tests/_setup.php" role="test">
     <tasks:replace from="@package_version@" to="version" type="package-info" />
    </file>
   </dir>
@@ -362,11 +358,13 @@
    </stability>
    <date>2008-04-01</date>
    <license uri="http://www.gnu.org/licenses/lgpl.html">LGPL</license>
-   <notes>* Gzip compression Support
+   <notes>
+* Gzip compression Support
 * Fix for Bug #12129  	Error with URL generated using HTML_AJAX_Helper::setupAJAX()
 * Add an option to optionally combined js libraries
 * Fix for bug #12415 - Return value of makeRequest in formSubmit when doing a async request
-* Fix for bug #13113 - Opera, JavaScript and XMLSerializer</notes>
+* Fix for bug #13113 - Opera, JavaScript and XMLSerializer
+   </notes>
   </release>
   <release>
    <version>
@@ -379,9 +377,11 @@
    </stability>
    <date>2008-04-04</date>
    <license uri="http://www.gnu.org/licenses/lgpl.html">LGPL</license>
-   <notes>* This fixes ie6 problems, and immediate upgrade from 0.5.3 is recommended
+   <notes>
+* This fixes ie6 problems, and immediate upgrade from 0.5.3 is recommended
 * Fix for bug #13113 - Opera, JavaScript and XMLSerializer
-* Add a newline at the end of packed files</notes>
+* Add a newline at the end of packed files
+   </notes>
   </release>
   <release>
    <version>
@@ -394,8 +394,10 @@
    </stability>
    <date>2008-04-07</date>
    <license uri="http://www.gnu.org/licenses/lgpl.html">LGPL</license>
-   <notes>* Merge bug fixes in combineJsIncludes from Clearhealth
-* Fix for bug #13616, HTML_AJAX_lite.js wasn&apos;t rebuilt in the 0.5.4 release</notes>
+   <notes>
+* Merge bug fixes in combineJsIncludes from Clearhealth
+* Fix for bug #13616, HTML_AJAX_lite.js wasn&apos;t rebuilt in the 0.5.4 release
+   </notes>
   </release>
   <release>
    <version>
@@ -408,15 +410,16 @@
    </stability>
    <date>2008-06-16</date>
    <license uri="http://www.gnu.org/licenses/lgpl.html">LGPL</license>
-   <notes>* Fix Coding Standard Problems
+   <notes>
+* Fix Coding Standard Problems
 * Refactor svn code layout, build system
 * Remove usused jsunit code
 * Add support for content-type text/xml #14032
 * Fix combineActions with empty actions #13854
 * Fix Javascript in HTML_AJAX.replace target document doesn&apos;t get executed in Opera. #14144 put opera on the ie codepath not the gecko codepath
-* Fix Bug #12027 html_ajax.post and Opera (array), this fix might break older versions of Opera, but supporting the new version seems more important</notes>
+* Fix Bug #12027 html_ajax.post and Opera (array), this fix might break older versions of Opera, but supporting the new version seems more important
+   </notes>
   </release>
-
   <release>
    <version>
     <release>0.5.7</release>
@@ -431,6 +434,22 @@
    <notes>
 * Fix security bug: Remote Code Execution
   Thanks to Craig Arendt of Stratum Security for reporting the bug.
+   </notes>
+  </release>
+  <release>
+   <version>
+    <release>0.5.8</release>
+    <api>0.5.0</api>
+   </version>
+   <stability>
+    <release>beta</release>
+    <api>beta</api>
+   </stability>
+   <date>2017-02-02</date>
+   <license uri="http://www.gnu.org/licenses/lgpl.html">LGPL</license>
+   <notes>
+* Fix security bug #21165, CVE-2017-5677: Possible Remote Code Execution through unserializer
+  Thanks to Egidio Romano for reporting the bug.
    </notes>
   </release>
  </changelog>

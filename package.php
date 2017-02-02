@@ -18,7 +18,7 @@ EOT;
 
 $packagexml = new PEAR_PackageFileManager2;
 $e = $packagexml->setOptions(
-	array(	'baseinstalldir' => 'HTML',
+	array(	'baseinstalldir' => '/',
 		'packagedirectory' => dirname(__FILE__),
 		'filelistgenerator' => 'file',
 		'ignore' => array('package.php', 'package.xml', '*.bak', '*src*', '*.tgz','test.bat','build.php','DeveloperNotes.txt','*cssQuery-src*','jsunit'),

@@ -78,7 +78,8 @@ class HTML_AJAX_Serializer_PHP
         }
         
         // Pull out the class names
-        preg_match_all('/O:[0-9]+:"(.*)"/U', $string, $matches);
+        // https://github.com/magento/magento2/commit/d1f09196d124cb6c6e18f74e4765da8b0b372797
+        preg_match_all('/[oc]:[+\\-]?[0-9]+:"(.*)"/Ui', $string, $matches);
         
         // Make sure names are unique (same object serialized twice)
         return array_unique($matches[1]);

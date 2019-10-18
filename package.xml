@@ -37,10 +37,10 @@
   <email>laurenty@gmail.com</email>
   <active>yes</active>
  </developer>
- <date>2017-02-02</date>
- <time>22:58:53</time>
+ <date>2018-11-07</date>
+ <time>17:55:55</time>
  <version>
-  <release>0.5.8</release>
+  <release>0.5.9</release>
   <api>0.5.0</api>
  </version>
  <stability>
@@ -245,6 +245,7 @@
    </file>
    <file baseinstalldir="/" md5sum="93c59d4681e6b8218c93d48da0f1a134" name="HTML/AJAX/Server.php" role="php">
     <tasks:replace from="@package_version@" to="version" type="package-info" />
+    <tasks:replace from="@data-dir@" to="data_dir" type="pear-config" />
    </file>
    <file baseinstalldir="/" md5sum="db9fc794ecfd2253c4b83221a8f93bae" name="HTML/AJAX/Serializer/Error.php" role="php">
     <tasks:replace from="@package_version@" to="version" type="package-info" />
@@ -450,6 +451,21 @@
    <notes>
 * Fix security bug #21165, CVE-2017-5677: Possible Remote Code Execution through unserializer
   Thanks to Egidio Romano for reporting the bug.
+   </notes>
+  </release>
+  <release>
+   <version>
+    <release>0.5.9</release>
+    <api>0.5.0</api>
+   </version>
+   <stability>
+    <release>beta</release>
+    <api>beta</api>
+   </stability>
+   <date>2018-11-07</date>
+   <license uri="http://www.gnu.org/licenses/lgpl.html">LGPL</license>
+   <notes>
+* Fix Bug #10973: package.xml does not replace &apos;@data-dir@&apos; (already fixed in 0.5.2 and lost in 0.5.8)
    </notes>
   </release>
  </changelog>
